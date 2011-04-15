@@ -1,0 +1,39 @@
+  522  vi m
+  523  vi Makefile.am 
+  524  vi m
+  525  /Users/dcolish/workspace/xapian/swig/preinst-swig -I. -I./../generic -I/Users/dcolish/workspace/xapian/xapian-core/include -Werror -c++     -ocaml ../xapian.i 
+  526* 
+  527  siwg -ocaml -co swig.mli
+  528  swig -ocaml -co swig.mli
+  529  swig -ocaml -co swig.ml
+  530  /Users/dcolish/workspace/xapian/swig/preinst-swig -I. -I./../generic -I/Users/dcolish/workspace/xapian/xapian-core/include -Werror -c++     -ocaml ../xapian.i 
+  531  ocamlc -c swig.mli ; ocamlc -c swig.ml
+  532   ocamlc -c -ccopt "-I. -I./../generic -I/Users/dcolish/workspace/xapian/xapian-core/include" example_wrap.c
+  533   ocamlc -c -ccopt "-I. -I./../generic -I/Users/dcolish/workspace/xapian/xapian-core/include" xapian_wrap.c
+  534   ocamlc -c -ccopt -I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian xapian_wrap.c q
+  535   ocamlc -c -ccopt -I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian xapian_wrap.c 
+  536   ocamlc -c -ccopt "-I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian" xapian_wrap.c 
+  537   ocamlc -c -cxx -ccopt -I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian xapian_wrap.c 
+  538   ocamlc -cxx -ccopt -I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian xapian_wrap.c 
+  539   ocamlc -c -xc++ -ccopt -I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian xapian_wrap.c 
+  540   ocamlc -c  -ccopt -xc++ "-I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian" xapian_wrap.c 
+  541   ocamlc -c  -ccopt "-I/usr/include/c++/4.2.1/ -I. -I./../generic -I../../xapian-core/include -I../../xapian-core/include/xapian" xapian_wrap.c 
+  542* ls /usr/include/c++/4.2.1/bits/
+  543  /Users/dcolish/workspace/xapian/swig/preinst-swig -I. -I./../generic -I/Users/dcolish/workspace/xapian/xapian-core/include -Werror -c++  -ocaml ../xapian.i 
+  544  less xapian_wrap.d 
+  545  ocamlopt xapian_wrap.
+  546  ocamlopt xapian_wrap.c 
+  547  ocamlc -cc 'g++ -Wno-write-strings' -g -c -ccopt -g -ccopt "-xc++ " "-I. -I./../generic -I../../xapian-core/include" xapian_wrap.c 
+  548  ocamlc -cc 'g++ -Wno-write-strings' -g -c -ccopt -g -ccopt "-xc++ " -ccopt "-I. -I./../generic -I../../xapian-core/include" xapian_wrap.c 
+  549  ocamlc -g -c xapian.mli 
+  550  ocamlc -g -c xapian.ml
+  551  ocaml -h
+  552  ocaml -I. 
+  553  ocamlrun -I.
+  554  ocamlmktop -I.
+  555  ocaml -I. 
+  556  ocaml "-I. "
+  557  ocaml -I . 
+  558  less xapian.ml
+  559  ocaml -I . 
+  560  history

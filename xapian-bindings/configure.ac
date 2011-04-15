@@ -209,6 +209,11 @@ AC_ARG_WITH(perl,
   [],
   [with_perl=])
 
+AC_ARG_WITH(ocaml,
+  AS_HELP_STRING([--with-ocaml], [enable Ocaml bindings]),
+  [],
+  [with_ocaml=])
+
 case $with_python$with_php$with_ruby$with_tcl$with_csharp$with_java$with_perl in
 *yes*)
   dnl Default unspecified values to no.
@@ -219,6 +224,7 @@ case $with_python$with_php$with_ruby$with_tcl$with_csharp$with_java$with_perl in
   test -z "$with_java" && with_java=no
   test -z "$with_ruby" && with_ruby=no
   test -z "$with_perl" && with_perl=no
+  test -z "with_ocaml" && with_ocaml=no
   ;;
 esac
 
@@ -890,6 +896,39 @@ if test no != "$with_perl" ; then
   fi
 fi
 
+dnl -----------------------------------
+dnl INCLUDES and LIBS for OCAML
+
+if test no != "$with_ocaml"; then
+      AC_CHECK_PROG(OCAML,ocaml,ocaml)
+      if test -n "$OCAML"; then
+        with_ocaml="No (ocaml not available)"
+      else
+        AC_CHECK_PROG(OCAML_OPT,ocamlopt,ocamlopt)
+        OCAML_INCLUDES=-I/usr/lib$LIBPOSTFIX/ocaml
+        OCAML_LIBS=-L/usr/lib$LIBPOSTFIX/ocaml
+        save_CPPFLAGS=$CPPFLAGS
+        CPPFLAGS="$CPPFLAGS $OCAML_INCLUDES"
+        AC_CHECK_HEADER(caml/mlvalues.h,[
+	  with_ocaml="Yes"
+          AC_SUBST(OCAML_INCLUDES)
+          AC_SUBST(OCAML_LIBS)
+	],[
+	  with_ocaml="No (missing header)"
+          AC_MSG_WARN([Unable to find header caml/mlvalues.h. The OCAML packages will not be built])
+        ])
+        CPPFLAGS=$save_CPPFLAGS
+         BINDINGS="$BINDINGS ocaml"
+      fi
+else
+  if test yes = "$with_ocaml" ; then
+    AC_MSG_ERROR([ocaml not found])
+  fi
+fi
+AM_CONDITIONAL(WITH_OCAML, [test yes = "$with_ocaml"])
+AM_CONDITIONAL(WITH_OCAMLOPT, [test "x$OCAML_OPT" != "x"])
+
+
 AC_SUBST(BINDINGS)
 
 dnl Set flags to control warnings (enable more, or disable annoying ones)
@@ -988,6 +1027,7 @@ AC_CONFIG_FILES([Makefile
  csharp/Makefile csharp/AssemblyInfo.cs
  ruby/Makefile
  perl/Makefile perl/util.i
+ ocaml/Makefile
  xapian-bindings.spec
  ])
 AC_OUTPUT
