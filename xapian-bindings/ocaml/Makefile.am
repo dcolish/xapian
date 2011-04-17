@@ -3,7 +3,7 @@
 include ../generic/generic.mk
 
 TESTS_ENVIRONMENT = \
- srcdir="$(srcdir)" LIBTOOL="$(LIBTOOL)" OCAML="$(OCAML)"
+srcdir="$(srcdir)" LIBTOOL="$(LIBTOOL)" OCAML="$(OCAML)"
 
 ## Test programs to be run
 #TESTS = smoketest.lua
