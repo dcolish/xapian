@@ -1,16 +1,24 @@
 %insert (mlitail) %{
-    val version_string : c_obj -> c_obj
 
-    val closure_from_lst : c_obj -> c_obj
-    val build_parsed_query : c_obj -> string -> c_obj
-    val writable_db : string -> int -> c_obj
-    val add_terms : c_obj -> string list -> c_obj list
+val version_string : c_obj -> c_obj
+val major_version : c_obj -> c_obj
+val minor_version : c_obj -> c_obj
+val revision : c_obj -> c_obj
+
+val closure_from_lst : c_obj -> c_obj
+val build_parsed_query : c_obj -> string -> c_obj
+val writable_db : string -> int -> c_obj
+val add_terms : c_obj -> string list -> c_obj list
 
 %}
 
 %insert (mltail) %{
 
 let version_string = _version_string
+let major_version = _major_version
+let minor_version = _minor_version
+let revision = _revision
+
 (* Helpers *)
 
 let closure_from_lst lst = 

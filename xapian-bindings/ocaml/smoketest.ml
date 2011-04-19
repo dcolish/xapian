@@ -4,8 +4,8 @@ open Unix
 
 (* Quick test to ensure the module is loaded *)
 let _ = 
-  assert (compare Xapian.module_name "xapian" == 0);
-  assert (compare (Xapian.version_string '() as string) "1.2.5" == 0)
+  assert (Xapian.module_name =  "xapian");
+  assert ((Xapian.version_string '() as string) = "1.2.5")
 ;;
 
 (* Basis document test *)
@@ -13,13 +13,13 @@ let _ =
 let _ = 
   let doc = new_Document '() in
     ignore (add_terms doc ["hello"]);
-    assert ((doc -> termlist_count() as int) == 1);
+    assert ((doc -> termlist_count() as int) = 1);
     ignore (doc -> set_data ("something"));
-    assert (compare (doc -> get_data() as string) "something" == 0);
+    assert ((doc -> get_data() as string) = "something");
     let tb = doc -> termlist_begin() in
     let te = doc -> termlist_end() in
       assert (tb -> equals(te) as bool == false);
-      assert (compare (tb -> get_term() as string)  "hello" == 0)
+      assert ((tb -> get_term() as string) = "hello")
 ;;
 
 (* simple database test *)
@@ -34,8 +34,8 @@ let _ =
       ignore (qp -> set_database(db));
       let pq = build_parsed_query qp "hello" in
       let tb = pq -> get_terms_begin() in
-        assert (pq -> empty() as bool == false);
-        assert (compare (tb -> get_term() as string) "hello" == 0)
+        assert (pq -> empty() as bool = false);
+        assert ((tb -> get_term() as string) = "hello")
 ;;
 
 

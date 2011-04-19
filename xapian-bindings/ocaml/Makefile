@@ -28,9 +28,9 @@ toplevel: libs
 	ocamlmktop -custom swig.cmo -I /opt/local/lib/ocaml -I `camlp4 -where` dynlink.cma camlp4o.cma swigp4.cmo xapian_wrap.o xapian.cmo -o xapian_top -cclib -L../../xapian-core/.libs -cclib -lxapian -cc 'g++ -Wno-write-strings'
 
 clean:
+	rm -rf *.dSYM _build smoketest
 	rm -f swigp4.ml swig.mli swig.ml
 	rm -f *.cmo *.cmi
 	rm -f xapian_wrap.*
 	rm -f xapian.*
 	rm -f xapian_top
-	rm -rf _build smoketest smoketest.dSYM/
