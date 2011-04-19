@@ -14,13 +14,12 @@ endif
 RSTDOCS = admin_notes.rst bm25.rst code_structure.rst collapsing.rst \
  deprecation.rst facets.rst index.rst internals.rst install.rst intro_ir.rst \
  glossary.rstoverview.rst postingsource.rst quickstartindex.cc.rst \
- quickstartsearch.cc.rst stemming.rst quickstart.rst matcherdesign.rst
+ quickstartsearch.cc.rst stemming.rst quickstart.rst matcherdesign.rst \
  queryparser.rst quickstartexpand.cc.rst remote.rst remote_protocol.rst \
  replication.rts replication_protocol.rst sorting.rst serialisation.rst \
  spelling.rst scalability.rst synonyms.rst termgenerator.rst tests.rst \
  valueranges.rst
-
-RSTHTML = $(RSTDOCS:.rst=.html)
+RST2HTML = $(RSTDOCS:.rst=.html)
 
 # Files which should be put in the distribution by automake
 EXTRA_DIST = doxygen_api.conf.in doxygen_source.conf.in \
