@@ -1,39 +1,6 @@
-Index
-=====
 
--  `ROOT <#ROOT>`_
--  `api <#api>`_
--  `backends <#backends>`_
-
-   -  `backends/brass <#backends_brass>`_
-   -  `backends/chert <#backends_chert>`_
-   -  `backends/flint <#backends_flint>`_
-   -  `backends/inmemory <#backends_inmemory>`_
-   -  `backends/multi <#backends_multi>`_
-   -  `backends/remote <#backends_remote>`_
-
--  `bin <#bin>`_
--  `common <#common>`_
--  `docs <#docs>`_
--  `examples <#examples>`_
--  `expand <#expand>`_
--  `include <#include>`_
--  `languages <#languages>`_
--  `matcher <#matcher>`_
--  `net <#net>`_
--  `queryparser <#queryparser>`_
--  `tests <#tests>`_
-
-   -  `tests/harness <#tests_harness>`_
-   -  `tests/perftest <#tests_perftest>`_
-
--  `unicode <#unicode>`_
--  `weight <#weight>`_
-
---------------
-
-Directory structure
-===================
+Xapian Directory structure
+==========================
 
 `ROOT <http://trac.xapian.org/browser/tags/1.2.5/xapian-core/>`_
 ----------------------------------------------------------------

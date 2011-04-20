@@ -1,3 +1,6 @@
+Quickstart Expand
+=================
+
 ::
 
     /* quickstartexpand.cc: Simplest possible query expansion

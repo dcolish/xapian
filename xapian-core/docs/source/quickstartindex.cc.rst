@@ -1,3 +1,6 @@
+Quickstart Index
+================
+
 ::
 
     /* quickstartindex.cc: Simplest possible indexer
