@@ -60,21 +60,32 @@ The server is xapian-tcpsrv, which is installed by xapian-core's
 "``make install``". This should be started and left running in the
 background before searches are performed.
 
-The arguments xapian-tcpsrv currently knows are::
+The arguments xapian-tcpsrv currently knows are
 
-  --port PORTNUM
-  (required) the port to listen on.
-  --one-shot
-  Handle one connection, and then exit. If --one-shot is not used, then
-  the server runs until it is killed manually.
-  --idle-timeout MSECS
-  Set the timeout on a idle connection.
-  --active-timeout MSECS
-  Set the timeout waiting for responses when the connection is active.
-  --timeout MSECS
-  Set the idle and active timeouts to the same value.
-  --quiet
-  Minimal output.
+.. option::  --port <PORTNUM>
+
+   (required) the port to listen on.
+
+.. option::  --one-shot
+
+   Handle one connection, and then exit. If --one-shot is not used, then
+   the server runs until it is killed manually.
+
+.. option:: --idle-timeout <MSECS>
+
+   Set the timeout on a idle connection.
+
+.. option:: --active-timeout <MSECS>
+
+   Set the timeout waiting for responses when the connection is active.
+
+.. option:: --timeout <MSECS>
+
+   Set the idle and active timeouts to the same value.
+
+.. option:: --quiet
+
+   Minimal output.
 
 One or more databases need to be specified by listing their directories
 - they are opened using the "auto" pseudo-backend.
