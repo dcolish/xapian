@@ -112,8 +112,3 @@ Building from SVN
 
 If you wish to help develop Xapian, read `how to build from the Xapian
 subversion repository <http://xapian.org/bleeding>`_.
-
-
-.. toctree::
-
-   admin_notes
