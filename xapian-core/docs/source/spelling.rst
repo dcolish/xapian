@@ -5,8 +5,6 @@
 Xapian Spelling Correction
 ==========================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

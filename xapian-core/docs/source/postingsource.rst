@@ -6,8 +6,6 @@
 Xapian::PostingSource
 =====================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

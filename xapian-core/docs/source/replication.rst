@@ -2,10 +2,8 @@
 .. Copyright (C) 2008,2010,2011 Olly Betts
 
 =======================================
-Xapian Database Replication Users Guide
+Replication Users Guide
 =======================================
-
-.. contents:: Table of contents
 
 Introduction
 ============
@@ -45,7 +43,7 @@ modifications are made.
 
 This document gives an overview of how and why to use the replication protocol.
 For technical details of the implementation of the replication protocol, see
-the separate `Replication Protocol <replication_protocol.html>`_ document.
+the separate :doc:`Replication Protocol </replication_protocol>` document.
 
 Backend Support
 ===============

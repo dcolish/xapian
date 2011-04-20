@@ -52,8 +52,34 @@ and examples contributed by the Xapian community.
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
-   :glob:
+   :numbered:
 
-   *
-       
+   install
+   admin_notes
+   quickstart
+   scalability
+   intro_ir
+   bm25
+   collapsing
+   replication
+   facets
+   termgenerator
+   postingsource
+   queryparser
+   remote
+   serialisation
+   sorting
+   spelling
+   stemming
+   synonyms
+   valueranges
+   internals
+   overview
+   code_structure
+   matcherdesign
+   remote_protocol
+   replication_protocol
+   tests
+   deprecation
+   glossary
+             

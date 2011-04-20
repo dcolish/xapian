@@ -11,8 +11,10 @@ see the "HACKING" file in the xapian-core source distribution.
 .. toctree::
    :maxdepth: 2
 
+   overview
+   code_structure
    matcherdesign
    remote_protocol
    replication_protocol
    tests
-   code_structure
+

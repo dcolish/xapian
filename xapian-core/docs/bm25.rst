@@ -132,3 +132,7 @@ given query) to (2) to give:
     <table border=0><tr valign=center> <td> <tt><center> <u>2 k<sub>2</sub>
     n<sub>q</sub></u><br>(1 + L)</center></tt> </td> <td> <tt> &nbsp;...(4)
     </tt> </td> </tr></table>
+
+.. toctree::
+
+   collapsing

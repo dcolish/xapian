@@ -541,3 +541,9 @@ program.
     1 results found
     Document ID 2   50% [Don't look a gift horse in the mouth]
 
+
+.. toctree::
+
+   quickstartexpand.cc
+   quickstartindex.cc
+   quickstartsearch.cc
