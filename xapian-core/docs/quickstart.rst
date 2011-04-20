@@ -16,7 +16,6 @@ further. It deliberately avoids going into a lot of detail - see the
    quickstartsearch.cc
    quickstartexpand.cc
 
---------------
 
 Requirements
 ------------
@@ -26,7 +25,6 @@ have the Xapian library installed on your system. For instructions on
 obtaining and installing Xapian, read the `Installation <install.html>`_
 document.
 
---------------
 
 Databases
 ---------
@@ -61,7 +59,6 @@ runtime, but the ability to dynamically load modules for each of these
 backends is likely to be added in future, and would require little
 design modification.
 
---------------
 
 An example indexer
 ------------------
