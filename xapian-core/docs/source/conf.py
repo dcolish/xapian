@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Xapian'
-copyright = u'2011, Dan'
+copyright = u'2011, The Xapian Authors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
