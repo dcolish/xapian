@@ -9,6 +9,13 @@ further. It deliberately avoids going into a lot of detail - see the
 
 .. _`rest of the documentation`: index.html
 
+.. toctree::
+   :hidden:
+
+   quickstartindex.cc
+   quickstartsearch.cc
+   quickstartexpand.cc
+
 --------------
 
 Requirements
@@ -542,8 +549,3 @@ program.
     Document ID 2   50% [Don't look a gift horse in the mouth]
 
 
-.. toctree::
-
-   quickstartindex.cc
-   quickstartsearch.cc
-   quickstartexpand.cc

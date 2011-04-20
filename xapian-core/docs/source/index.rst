@@ -55,8 +55,8 @@ and examples contributed by the Xapian community.
    :numbered:
 
    install
-   admin_notes
    quickstart
+   admin_notes
    scalability
    intro_ir
    bm25

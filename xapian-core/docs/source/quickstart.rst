@@ -16,7 +16,7 @@ Requirements
 
 Before following the steps outlined in this document, you will need to
 have the Xapian library installed on your system. For instructions on
-obtaining and installing Xapian, read the `Installation <install.html>`_
+obtaining and installing Xapian, read the :doc:`Installation </install>`
 document.
 
 --------------
@@ -472,11 +472,11 @@ the flags to pass to the compiler and linker to compile.
 After a successful compilation, this utility should be in your path, so
 you can simply run::
 
-    ``xapian-config --cxxflags``
+    xapian-config --cxxflags
 
 to determine the flags to pass to the compiler, and::
 
-    ``xapian-config --libs``
+    xapian-config --libs
 
 to determine the flags to pass to the linker. These flags are returned
 on the utility's standard output (so you could use backtick notation to
@@ -544,6 +544,6 @@ program.
 
 .. toctree::
 
-   quickstartexpand.cc
    quickstartindex.cc
+   quickstartexpand.cc
    quickstartsearch.cc
