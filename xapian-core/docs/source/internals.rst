@@ -8,7 +8,8 @@ use Xapian in your own code, see the `user documentation <./>`_ instead.
 Use the navigation links above to find the information you want. Also,
 see the "HACKING" file in the xapian-core source distribution.
 
-.. :toctree:
+.. toctree::
+   :maxdepth: 2
 
    matcherdesign
    remote_protocol
