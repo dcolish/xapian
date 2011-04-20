@@ -6,8 +6,6 @@
 Xapian Faceting Support
 =======================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

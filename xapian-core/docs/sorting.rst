@@ -5,8 +5,6 @@
 Sorting of Search Results
 =========================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 
@@ -31,7 +29,7 @@ indexed and the type of queries being run, so you may be able to improve the
 effectiveness of your search system by adjusting these values, but it's a
 fiddly process to tune them so people tend not to bother.
 
-See the `BM25 documentation <bm25.html>`_ for more details of BM25.
+See the :doc:`BM25 documentation </bm25>` for more details of BM25.
 
 The other included weighting schemes are ``TradWeight`` and ``BoolWeight``.
 

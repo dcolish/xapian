@@ -1,8 +1,3 @@
-`matcher <matcherdesign.html>`_ \| `remote
-protocol <remote_protocol.html>`_ \| `replication
-protocol <replication_protocol.html>`_ \| `tests <tests.html>`_ \|
-`internal classes <sourcedoc/html/annotated.html>`_ \| `source code
-directory structure <code_structure.html>`_
 Xapian Internals
 ================
 
@@ -12,3 +7,14 @@ use Xapian in your own code, see the `user documentation <./>`_ instead.
 
 Use the navigation links above to find the information you want. Also,
 see the "HACKING" file in the xapian-core source distribution.
+
+.. toctree::
+   :maxdepth: 2
+
+   overview
+   code_structure
+   matcherdesign
+   remote_protocol
+   replication_protocol
+   tests
+

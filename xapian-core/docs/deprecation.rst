@@ -7,7 +7,6 @@
 Deprecation
 ===========
 
-.. contents:: Table of contents
 
 Introduction
 ============

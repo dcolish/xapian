@@ -2,14 +2,12 @@
 .. Copyright (C) 2010 Olly Betts
 
 ====================================
-Xapian Database Replication Protocol
+Replication Protocol Specification
 ====================================
-
-.. contents:: Table of contents
 
 This document contains details of the implementation of the replication
 protocol, version 1.  For details of how and why to use the replication
-protocol, see the separate `Replication Users Guide <replication.html>`_
+protocol, see the separate :doc:`Replication Users Guide </replication>`
 document.
 
 Protocol description

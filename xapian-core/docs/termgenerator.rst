@@ -1,17 +1,8 @@
 .. Copyright (C) 2007 Olly Betts
 
 ========================================
-Xapian 1.0 Term Indexing/Querying Scheme
+Xapian Term Indexing/Querying Scheme
 ========================================
-
-.. contents:: Table of contents
-
-Introduction
-============
-
-In Xapian 1.0, the default indexing scheme has been changed significantly, to address
-lessons learned from observing the old scheme in real world use.  This document
-describes the new scheme, with references to differences from the old.
 
 Stemming
 ========

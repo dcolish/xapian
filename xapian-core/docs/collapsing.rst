@@ -4,7 +4,6 @@
 Collapsing of Search Results
 ============================
 
-.. contents:: Table of contents
 
 Introduction
 ============

@@ -8,8 +8,6 @@
 Xapian Administrator's Guide
 ============================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

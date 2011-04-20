@@ -131,6 +131,6 @@ sourcedoc/html/index.html: $(SOURCEDOC_SRC) $(APIDOC_SRC) \
 	rm -rf sourcedoc
 	top_srcdir=$(top_srcdir) top_builddir=$(top_builddir) $(DOXYGEN) doxygen_source.conf
 
-.rst.html:
-	$(RST2HTML) --compact-lists --no-doc-title --exit-status=warning $< $@
+include sphinx.am
+
 endif

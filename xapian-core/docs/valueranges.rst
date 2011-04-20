@@ -2,8 +2,6 @@
 Value Ranges
 ============
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

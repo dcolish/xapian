@@ -5,8 +5,6 @@
 Xapian Synonym Support
 ======================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

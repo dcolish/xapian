@@ -6,8 +6,6 @@
 Serialisation of Queries and Documents
 ======================================
 
-.. contents:: Table of contents
-
 Introduction
 ============
 

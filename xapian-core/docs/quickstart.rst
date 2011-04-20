@@ -9,20 +9,13 @@ further. It deliberately avoids going into a lot of detail - see the
 
 .. _`rest of the documentation`: index.html
 
-.. toctree::
-   :hidden:
-
-   quickstartindex.cc
-   quickstartsearch.cc
-   quickstartexpand.cc
-
 
 Requirements
 ------------
 
 Before following the steps outlined in this document, you will need to
 have the Xapian library installed on your system. For instructions on
-obtaining and installing Xapian, read the `Installation <install.html>`_
+obtaining and installing Xapian, read the :doc:`Installation </install>`
 document.
 
 
@@ -248,17 +241,16 @@ Note that this use of ``add_document()`` is actually fairly inefficient:
 if we had a large database, it would be desirable to group as many
 document additions together as possible, by encapsulating them within a
 session. For details of this, and of the transaction facility for
-performing sets of database modifications atomically, see the `API
-Overview <overview.html>`_.
+performing sets of database modifications atomically, see the :doc:`API
+Overview </overview>`.
 
---------------
 
 An example searcher
 -------------------
 
 Now we show the code for a simple searcher, which will search the
-database built by the indexer above. Again, you can read `an "HTML"
-formatted version <quickstartsearch.cc.html>`_.
+database built by the indexer above. Again, you can read :doc:`an "HTML"
+formatted version </quickstartsearch.cc>`.
 
 The "searcher" presented here is, like the "indexer", simply a small
 command line driven program. It takes a path to a database and some
@@ -322,16 +314,12 @@ might have a system searching across two remote databases and a flint
 database.
 
 To open a single database, we create a Xapian::Database object, passing
-the path to the database we want to open:
-
-::
+the path to the database we want to open::
 
         Xapian::Database db(argv[1]);
 
 You can also search multiple database by adding them together using
-``Xapian::Database::add_database``:
-
-::
+``Xapian::Database::add_database``::
 
         Xapian::Database databases;
         databases.add_database(Xapian::Database(argv[1]));
@@ -344,8 +332,7 @@ All searches across databases by Xapian are performed within the context
 of an "*Enquire*" session. This session is represented by a
 ``Xapian::Enquire`` object, and is across a specified collection of
 databases. To change the database collection, it is necessary to open a
-new enquire session, by creating a new ``Xapian::Enquire`` object.
-::
+new enquire session, by creating a new ``Xapian::Enquire`` object.::
 
         Xapian::Enquire enquire(databases);
 
@@ -360,8 +347,7 @@ We are going to use all command line parameters from the second onward
 as terms to search for in the database. For convenience, we shall store
 them in an STL vector. This is probably the point at which we would want
 to apply a stemming algorithm, or any other desired normalisation and
-conversion operation, to the terms.
-::
+conversion operation, to the terms.::
 
         vector<string> queryterms;
         for (int optpos = 2; optpos < argc; optpos++) {
@@ -371,8 +357,7 @@ conversion operation, to the terms.
 Queries are represented within Xapian by ``Xapian::Query`` objects, so
 the next step is to construct one from our query terms. Conveniently
 there is a constructor which will take our vector of terms and create an
-``Xapian::Query`` object from it.
-::
+``Xapian::Query`` object from it.::
 
         Xapian::Query query(Xapian::Query::OP_OR, queryterms.begin(), queryterms.end());
 
@@ -387,9 +372,7 @@ restriction, and are performing a traditional pure probabilistic search.
 We now print a message out to confirm to the user what the query being
 performed is. This is done with the ``Xapian::Query::get_description()``
 method, which is mainly included for debugging purposes, and displays a
-string representation of the query.
-
-::
+string representation of the query.::
 
         cout << "Performing query `" <<
              query.get_description() << "'" << endl;
@@ -400,9 +383,7 @@ Performing the search
 Now, we are ready to perform the search. The first step of this is to
 give the query object to the enquire session. Note that the query is
 copied at this operation, and that changing the Xapian::Query object
-after setting the query with it has no effect.
-
-::
+after setting the query with it has no effect.::
 
         enquire.set_query(query);
 
@@ -415,8 +396,7 @@ Xapian to perform the search: it will do this automatically. We use the
 documents to use, and various options to modify the search, but we give
 it the minimum; which is the first document to return (starting at 0 for
 the top ranked document), and the maximum number of documents to return
-(we specify 10 here):
-::
+(we specify 10 here)::
 
         Xapian::MSet matches = enquire.get_mset(0, 10);
 
@@ -426,8 +406,7 @@ Displaying the results of the search
 Finally, we display the results of the search. The results are stored in
 in the ``Xapian::MSet`` object, which provides the features required to
 be an STL-compatible container, so first we display how many items are
-in the MSet:
-::
+in the MSet::
 
         cout << matches.size() << " results found" << endl;
 
@@ -448,9 +427,7 @@ Now we display some information about each of the items in the
    this, we first use ``i.get_document()`` to get an
    ``Xapian::Document`` object representing the returned document; then
    we use the ``get_data()`` method of this object to get access to the
-   data stored in this document.
-
-::
+   data stored in this document.::
 
         Xapian::MSetIterator i;
         for (i = matches.begin(); i != matches.end(); ++i) {
@@ -459,8 +436,6 @@ Now we display some information about each of the items in the
             Xapian::Document doc = i.get_document();
         cout << "[" << doc.get_data() << "]" << endl;
         }
-
---------------
 
 Compiling
 ---------
@@ -476,11 +451,11 @@ the flags to pass to the compiler and linker to compile.
 After a successful compilation, this utility should be in your path, so
 you can simply run::
 
-    ``xapian-config --cxxflags``
+    xapian-config --cxxflags
 
 to determine the flags to pass to the compiler, and::
 
-    ``xapian-config --libs``
+    xapian-config --libs
 
 to determine the flags to pass to the linker. These flags are returned
 on the utility's standard output (so you could use backtick notation to
@@ -498,13 +473,11 @@ Compiling the quickstart examples
 
 Once you know the compilation flags, compilation is a simple matter of
 invoking the compiler! For our example, we could compile the two
-utilities (quickstartindex and quickstartsearch) with the commands:
-::
+utilities (quickstartindex and quickstartsearch) with the commands::
 
     c++ quickstartindex.cc `xapian-config --libs --cxxflags` -o quickstartindex
     c++ quickstartsearch.cc `xapian-config --libs --cxxflags` -o quickstartsearch
 
---------------
 
 Running the examples
 --------------------
@@ -513,8 +486,7 @@ Once we have compiled the above examples, we can build up a simple
 database as follows. Note that we must first create a directory for the
 database files to live in; although Xapian will create new empty
 database files if they do not yet exist, it will not create a new
-directory for them.
-::
+directory for them.::
 
     $ mkdir proverbs
     $ ./quickstartindex proverbs \
@@ -525,8 +497,7 @@ directory for them.
     > look gift horse mouth
 
 Now, we should have a database with a couple of documents in it. Looking
-in the database directory, you should see something like:
-::
+in the database directory, you should see something like:::
 
     $ ls proverbs/
     [some files]
@@ -537,8 +508,7 @@ that the database is block structured, here consisting of largely empty
 blocks, and will behave much better for large databases.
 
 We can now perform searches over the database using the quickstartsearch
-program.
-::
+program.::
 
     $ ./quickstartsearch proverbs look
     Performing query `look'
@@ -546,3 +516,8 @@ program.
     Document ID 2   50% [Don't look a gift horse in the mouth]
 
 
+.. toctree::
+
+   quickstartindex.cc
+   quickstartexpand.cc
+   quickstartsearch.cc

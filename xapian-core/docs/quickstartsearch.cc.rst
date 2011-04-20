@@ -1,3 +1,6 @@
+Quickstart Search
+=================
+
 ::
 
     /* quickstartsearch.cc: Simplest possible searcher
