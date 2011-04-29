@@ -3,14 +3,14 @@ open Xapian
 open Unix
 
 (* Quick test to ensure the module is loaded *)
-let _ = 
+let () = 
   assert (Xapian.module_name =  "xapian");
   assert ((Xapian.version_string '() as string) = "1.2.5")
 ;;
 
 (* Basis document test *)
 
-let _ = 
+let () = 
   let doc = new_Document '() in
     ignore (add_terms doc ["hello"]);
     assert ((doc -> termlist_count() as int) = 1);
@@ -23,19 +23,23 @@ let _ =
 ;;
 
 (* simple database test *)
-let _ = 
+let () = 
   let db = writable_db "test.db" 1 in
   let doc = new_Document '() in
     ignore (add_terms doc ["hello"]);
     ignore (doc -> set_data("goodbye"));
     ignore (db -> add_document(doc));
     ignore (db -> flush());
+    let enq = new_Enquire '(db) in
     let qp = new_QueryParser '() in 
       ignore (qp -> set_database(db));
       let pq = build_parsed_query qp "hello" in
-      let tb = pq -> get_terms_begin() in
-        assert (pq -> empty() as bool = false);
-        assert ((tb -> get_term() as string) = "hello")
+        enq -> set_query(pq);
+        let matches = enq -> get_mset(0, 10, 0, 0) in
+          assert ((matches -> size() as int) = 1)
+          (* let tb = pq -> get_terms_begin() in *)
+          (*   assert (pq -> empty() as bool = false); *)
+          (*   assert ((tb -> get_term() as string) = "hello"); *)
 ;;
 
 
