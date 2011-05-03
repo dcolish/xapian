@@ -35,7 +35,7 @@ let () =
       ignore (qp -> set_database(db));
       let pq = build_parsed_query qp "hello" in
         enq -> set_query(pq);
-        let matches = enq -> get_mset(0, 10, 0, 0) in
+        let matches = enq -> get_mset(0, 10) in
           assert ((matches -> size() as int) = 1)
           (* let tb = pq -> get_terms_begin() in *)
           (*   assert (pq -> empty() as bool = false); *)
