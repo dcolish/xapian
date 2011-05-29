@@ -1,3 +1,20 @@
+Wed May 11 21:50:11 GMT 2011  Olly Betts <olly@survex.com>
+
+	* ruby/xapian.rb: Fix comments on "end" keywords to match function
+	  names.
+
+Wed May 11 03:50:18 GMT 2011  Olly Betts <olly@survex.com>
+
+	* ruby/smoketest.rb: Older Ruby 1.8.x doesn't have Dir.mktmpdir() -
+	  just skip the compaction tests for these versions.
+
+Mon May 09 01:36:56 GMT 2011  Olly Betts <olly@survex.com>
+
+	* python/pythontest2.py: With Python 2.7, gc.collect() doesn't always
+	  collect all the garbage, so repeat until no further objects are
+	  freed.  (http://bugs.debian.org/625679 and
+	  https://bugs.gentoo.org/349484).
+
 Mon Apr 04 13:58:45 GMT 2011  Olly Betts <olly@survex.com>
 
 	* NEWS: Update release date.

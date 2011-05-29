@@ -1,3 +1,34 @@
+Wed May 11 01:34:34 GMT 2011  Olly Betts <olly@survex.com>
+
+	* AUTHORS: Add Scott Zhang for mingw fixes.
+
+Wed May 11 01:30:54 GMT 2011  Olly Betts <olly@survex.com>
+
+	* net/progclient.cc,net/tcpserver.cc: Need <cstdio> for sprintf on
+	  __WIN32__ and cygwin.
+
+Wed May 11 01:22:07 GMT 2011  Olly Betts <olly@survex.com>
+
+	* configure.ac: Define __MSVCRT_VERSION__ to 0x0601 under mingw so
+	  we get _ftime64().
+
+Wed May 11 01:19:14 GMT 2011  Olly Betts <olly@survex.com>
+
+	* common/closefrom.cc,common/closefrom.h: We don't need closefrom()
+	  under __WIN32__ currently, so disable it there as it doesn't
+	  compile under mingw.
+
+Mon May 09 20:13:17 GMT 2011  Olly Betts <olly@survex.com>
+
+	* examples/delve.cc: Report has_positions().
+
+Thu Apr 07 05:38:36 GMT 2011  Dan Colish <dcolish@gmail.com>
+
+	* matcher/phrasepostlist.cc, matcher/queryoptimiser.cc, 
+	  matcher/exactphrasepostlist.cc, matcher/exactphrasepostlist.h,
+	  matcher/phrasepostlist.h: Remove temporary vector in queryoptimiser
+	  and replace with iterators.
+
 Wed Apr 06 10:27:41 GMT 2011  Richard Boulton <richard@tartarus.org>
 
 	* docs/admin_notes.rst: Remove the word "also", which makes sense
