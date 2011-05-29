@@ -1,5 +1,5 @@
-Overview
-========
+C++ API Overview
+================
 
 This document provides an introduction to the native C++ Xapian API.
 This API provides programmers with the ability to index and search
@@ -11,12 +11,12 @@ part of Xapian concerned with searching through existing databases, not
 that concerned with creating them.
 
 This document assumes you already have Xapian installed, so if you
-haven't, it is a good idea to read `Installing Xapian <install.html>`_
+haven't, it is a good idea to read :doc:`Installing Xapian </install>`
 first.
 
-You may also wish to read the `QuickStart <quickstart.html>`_ reference,
-for some simple worked examples of Xapian usage, and the `Introduction
-to Information Retrieval <intro_ir.html>`_ for a background into the
+You may also wish to read the :doc:`QuickStart </quickstart>` reference,
+for some simple worked examples of Xapian usage, and the :doc:`Introduction
+to Information Retrieval </intro_ir>` for a background into the
 Information Retrieval theories behind Xapian.
 
 This document does not detail the exact calling conventions (parameters
@@ -168,7 +168,8 @@ databases. These files are recognised by the autodetection in the
 Database constructor (if the pathname is file rather than a directory,
 it's treated as a stub database file) or you can open them explicitly
 using Xapian::Auto::open\_stub(). The stub database format specifies one
-database per line. For example:
+database per line. For example::
+
     `` remote localhost:23876 flint /var/spool/xapian/webindex``
 
 Database types
@@ -271,9 +272,7 @@ A search query is represented by a
 simplest useful query is one which searches for a single term (and
 several of these can be combined to form more complex queries). A single
 term query can be created as follows (where ``term`` is a
-``std::string`` holding the term to be searched for):
-
-::
+``std::string`` holding the term to be searched for)::
 
     Xapian::Query query(term);
 
@@ -284,19 +283,17 @@ attaches no specific meaning to the term.
 
 This constructor actually takes a couple of extra parameters, which may
 be used to specify positional and frequency information for terms in the
-query:
-
-::
+query::
 
     Xapian::Query(const string & tname_,
             Xapian::termcount wqf_ = 1,
             Xapian::termpos term_pos_ = 0)
 
-The ``wqf`` (**W**ithin **Q**uery **F**requency) is a measure of how
+The ``wqf`` `(**W**ithin **Q**uery **F**requency)` is a measure of how
 common a term is in the query. This isn't useful for a single term query
 unless it is going to be combined to form a more complex query. In that
 case, it's particularly useful when generating a query from an existing
-document, but may also be used to increase the "importance" of a term in
+document, but may also be used to increase the "importance"  of a term in
 a query. Another way to increase the "importance" of a term is to use
 ``OP_SCALE_WEIGHT``. But if the intention is simply to ensure that a
 particular term is in the query results, you should use a boolean AND or
@@ -366,7 +363,7 @@ Understanding queries
 
 Each term in the query has a weight in each document. Each document may
 also have an additional weight not associated with any of the terms. By
-default the probabilistic weighting scheme `BM25 <bm25.html>`_ is used
+default the probabilistic weighting scheme :doc:`BM25 </bm25>` is used
 to provide the formulae which give these weights.
 
 A query can be thought of as a tree structure. At each node is an
@@ -831,7 +828,7 @@ Examples
 
 Extensively documented examples of simple usage of the Xapian API for
 creating databases and then for searching through them are given in the
-`QuickStart <quickstart.html>`_ tutorial.
+:doc:`QuickStart </quickstart>` tutorial.
 
 Further examples of usage of Xapian are available in the examples
 subdirectory of xapian-core.
