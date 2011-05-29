@@ -5,7 +5,9 @@ The document contains a quick introduction to the basic concepts, and
 then a walk-through development of a simple application using the Xapian
 library, together with commentary on how the application could be taken
 further. It deliberately avoids going into a lot of detail - see the
-`rest of the documentation <index.html>`_ for more detail.
+`rest of the documentation`_ for more detail.
+
+.. _`rest of the documentation`: index.html
 
 --------------
 
@@ -59,7 +61,9 @@ An example indexer
 
 We now present sample code for an indexer. This is deliberately
 simplified to make it easier to follow. You can also read it in `an HTML
-formatted version <quickstartindex.cc.html>`_.
+formatted version`_.
+
+.. _`an HTML formatted version`: quickstartsearch.cc.html
 
 The "indexer" presented here is simply a small program which takes a
 path to a database and a set of parameters defining a document on the
@@ -249,7 +253,7 @@ An example searcher
 -------------------
 
 Now we show the code for a simple searcher, which will search the
-database built by the indexer above. Again, you can read `an HTML
+database built by the indexer above. Again, you can read `an "HTML"
 formatted version <quickstartsearch.cc.html>`_.
 
 The "searcher" presented here is, like the "indexer", simply a small
@@ -466,10 +470,12 @@ assist you in finding the installed Xapian library, and in generating
 the flags to pass to the compiler and linker to compile.
 
 After a successful compilation, this utility should be in your path, so
-you can simply run
+you can simply run::
+
     ``xapian-config --cxxflags``
 
-to determine the flags to pass to the compiler, and
+to determine the flags to pass to the compiler, and::
+
     ``xapian-config --libs``
 
 to determine the flags to pass to the linker. These flags are returned

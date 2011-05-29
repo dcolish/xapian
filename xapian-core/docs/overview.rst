@@ -1,5 +1,5 @@
-C++ API Overview
-================
+Overview
+========
 
 This document provides an introduction to the native C++ Xapian API.
 This API provides programmers with the ability to index and search
@@ -11,12 +11,12 @@ part of Xapian concerned with searching through existing databases, not
 that concerned with creating them.
 
 This document assumes you already have Xapian installed, so if you
-haven't, it is a good idea to read :doc:`Installing Xapian </install>`
+haven't, it is a good idea to read `Installing Xapian <install.html>`_
 first.
 
-You may also wish to read the :doc:`QuickStart </quickstart>` reference,
-for some simple worked examples of Xapian usage, and the :doc:`Introduction
-to Information Retrieval </intro_ir>` for a background into the
+You may also wish to read the `QuickStart <quickstart.html>`_ reference,
+for some simple worked examples of Xapian usage, and the `Introduction
+to Information Retrieval <intro_ir.html>`_ for a background into the
 Information Retrieval theories behind Xapian.
 
 This document does not detail the exact calling conventions (parameters
@@ -363,7 +363,7 @@ Understanding queries
 
 Each term in the query has a weight in each document. Each document may
 also have an additional weight not associated with any of the terms. By
-default the probabilistic weighting scheme :doc:`BM25 </bm25>` is used
+default the probabilistic weighting scheme `BM25 <bm25.html>`_ is used
 to provide the formulae which give these weights.
 
 A query can be thought of as a tree structure. At each node is an
@@ -828,7 +828,7 @@ Examples
 
 Extensively documented examples of simple usage of the Xapian API for
 creating databases and then for searching through them are given in the
-:doc:`QuickStart </quickstart>` tutorial.
+`QuickStart <quickstart.html>`_ tutorial.
 
 Further examples of usage of Xapian are available in the examples
 subdirectory of xapian-core.

@@ -101,8 +101,7 @@ The current limits are:
    support for "LARGE FILES" where possible.
    So what is the limit for a modern OS? Taking Linux 2.4 with the ext2
    filing system as an example, quoting from
-   linux/Documentation/filesystems/ext2.txt:
-       ::
+   linux/Documentation/filesystems/ext2.txt::
 
              Filesystem block size:     1kB        2kB        4kB        8kB
 

@@ -167,9 +167,9 @@ Trios, -IC-AT-IV etc., also occur, but sequences of length four,
 Sometimes the validity of an ending depends on the immediately preceding
 group of letters. In Italian, for example, certain pronouns and pronoun
 groups attach to present participle and infinitive forms of verbs, for
-example,
+example,::
     scrivendole = scrivendo (writing) + le (to her)
-     mandarglielo = mandare (to give) + glielo (it to him)
+    mandarglielo = mandare (to give) + glielo (it to him)
 
 If E is the ending, the possible forms are -andoE, -endoE, -arE, -erE,
 -irE, so E is removed in the context -Xndo or Yr, where X is a or e, and

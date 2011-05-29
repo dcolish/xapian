@@ -192,14 +192,24 @@ if a document is in *R* it is relevant, and if not in *R* it is
 non-relevant. Suppose the IR system is able to give us back K documents,
 among which r are relevant. *Precision* and *recall* are defined as
 being,
-    ``precision = ``
-    ````
-    r
-    K
-    ``,   recall = ``
-    ````
-    r
-    R
+
+.. raw:: html
+    
+    <blockquote>
+    <table border=0><tr valign=center>
+    <td><tt>precision =&nbsp;</tt></td>
+    <td>
+    <tt><center>
+    <u>r</u><br>K</center></tt>
+    </td>
+    <td><tt>,&nbsp;&nbsp;&nbsp;recall =&nbsp;</tt></td>
+    <td>
+    <tt><center>
+    <u>r</u><br>R</center></tt>
+    </td>
+    </tr></table>
+    </blockquote>
+
 
 Precision is the density of relevant documents among those retrieved.
 Recall is the proportion of relevant documents retrieved. In most IR
@@ -251,20 +261,31 @@ In 1976, Stephen Robertson derived a formula which gives an ideal
 numeric weight to a term t of Q. Just how this weight gets used we will
 see below, but essentially a high weight means an important term and a
 low weight means an unimportant term. The formula is,
-    ``w(t) = log ``
-    (
-    ````
-    p (1 - q)
-    (1 - p) q
-    )
+
+.. raw:: html
+
+   <blockquote>
+   <table border=0><tr valign=center>
+   <td><tt>w(t) = log&nbsp;</tt></td>
+   <td>
+   <font size="+2">(</font>
+   </td>
+   <td>
+   <tt><center>
+   <u>p (1 - q)</u><br>(1 - p) q</center></tt>
+   </td>
+   <td>
+   <font size="+2">)</font>
+   </td>
+   </tr></table>
+   </blockquote>
 
 (The base of the logarithm doesn't matter, but we can suppose it is e.)
 p is the probability that t indexes a relevant document, and q the
 probability that t indexes a non-relevant document. And of course, 1 - p
 is the probability that t does not index a relevant document, and 1 - q
 the probability that t does not index a non-relevant document. More
-mathematically,
-    ::
+mathematically,::
 
         p = P(t -> D | D in R)
         q = P(t -> D | D not in R)
@@ -280,7 +301,8 @@ documents indexed by t to the total number of relevant documents.
 
 The total number of non-relevant documents is N - R, and the number of
 those indexed by t is n - r, so we can estimate q as (n - r)/(N - R).
-This gives us the estimates,
+This gives us the estimates,::
+
     ``    p = ``
     ````
     r
@@ -298,17 +320,32 @@ This gives us the estimates,
     n - r
     N - R
 
-and so substituting in the formula for w(t) we get the estimate,
-    ``w(t) = log ``
-    (
-    ````
-    r (N - R - n + r)
-    (R - r)(n - r)
-    )
+and so substituting in the formula for w(t) we get the estimate, :
+
+.. raw:: html
+   
+   <blockquote>
+   <table border=0><tr valign=center>
+   <td>
+   <tt>w(t) = log&nbsp;</tt>
+   </td>
+   <td>
+   <font size="+2">(</font>
+   </td>
+   <td>
+   <tt><center>
+   <u>r (N - R - n + r)</u><br>(R - r)(n - r)</center></tt>
+   </td>
+   <td>
+   <font size="+2">)</font>
+   </td>
+   </tr></table>
+   </blockquote>
 
 Unfortunately, this formula is subject to violent behaviour when, say, n
 = r (infinity) or r = 0 (minus infinity), and so Robertson suggests the
-modified form
+modified form::
+
     ``w(t) = log ``
     (
     ````
@@ -338,7 +375,8 @@ relevant documents, which indeed can rarely be discovered, but a small
 set of documents which have been judged as relevant.
 
 Suppose we have no documents marked as relevant. Then R = r = 0, and
-w(t) becomes,
+w(t) becomes,::
+
     ``log ``
     (
     ````
@@ -414,7 +452,8 @@ Using the weights. The *MSet*
 -----------------------------
 
 Now to pull everything together. From the probabilistic term weights we
-can assign a weight to any document, d, as follows,
+can assign a weight to any document, d, as follows,::
+
     ``W(d) = ``
     ````
     Σ
@@ -476,7 +515,8 @@ typically set to be 1000 or less). So the MSet is actually the best K
 documents found in the match process.
 
 A modification of this weighting scheme can be employed that takes into
-account the query itself:
+account the query itself::
+
     ``W(d) = ``
     ````
     Σ
@@ -512,15 +552,13 @@ Terms from this list can therefore be used to expand the size of the
 query, after which the query can be re-run to get a better MSet. Because
 this list of terms is mainly used for query expansion, it is called the
 *expand set* or *ESet*.
-The term expansion weighting formula is as follows,
-    ::
+The term expansion weighting formula is as follows,::
 
         W(t) = r w(t)
 
 in other words we multiply the term weight by the number of relevant
 documents that have been indexed by the term.
-The ESet then has this form,
-::
+The ESet then has this form,::
 
          ESet:        item 0:   t0  W(t0)
                       item 1:   t1  W(t1)
@@ -539,7 +577,8 @@ relevant documents.
 
 This simple form of W(t) is traditional in the probabilistic model, but
 seems less than optimal because it does not take into account wdf
-information. One can if fact try to generalise it to
+information. One can if fact try to generalise it to::
+
     ``W(t) = ``
     ````
     Σ
