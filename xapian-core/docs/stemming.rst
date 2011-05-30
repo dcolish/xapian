@@ -168,6 +168,7 @@ Sometimes the validity of an ending depends on the immediately preceding
 group of letters. In Italian, for example, certain pronouns and pronoun
 groups attach to present participle and infinitive forms of verbs, for
 example,::
+
     scrivendole = scrivendo (writing) + le (to her)
     mandarglielo = mandare (to give) + glielo (it to him)
 
