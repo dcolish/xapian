@@ -46,6 +46,15 @@ In the query ``one OR two AND three`` the AND takes precedence, so this
 is the same as ``one OR (two AND three)``. You can override the
 precedence using ``(one OR two) AND three``.
 
+The default precedence from highest to lowest is:
+
+* +, - (equal)
+* AND, NOT (equal)
+* XOR
+* OR
+
+
+
 '+' and '-'
 ~~~~~~~~~~~
 
