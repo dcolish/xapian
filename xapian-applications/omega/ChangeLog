@@ -1,3 +1,23 @@
+Sun May 29 13:00:26 GMT 2011  Olly Betts <olly@survex.com>
+
+	* templates/query: Make search query input type=search.
+
+Sun May 29 12:24:43 GMT 2011  Olly Betts <olly@survex.com>
+
+	* templates/query: Autofocus the search query input (using HTML
+	  autofocus attribute with Javascript fallback for older browsers).
+	  (ticket#544)
+
+Wed May 25 14:33:18 GMT 2011  Olly Betts <olly@survex.com>
+
+	* docs/omegascript.rst: Correct the documentation of the colours used by
+	  $highlight{}.
+
+Fri May 13 05:50:35 GMT 2011  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst: Add using unoconv as more complex example of
+	  using --filter (ticket#324).
+
 Wed Apr 20 07:00:56 GMT 2011  Olly Betts <olly@survex.com>
 
 	* NEWS: Fix typo; clarify wording.
