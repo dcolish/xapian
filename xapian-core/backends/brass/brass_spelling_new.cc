@@ -67,7 +67,6 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 		toggle_fragment(buf, word);
 	}
 }
-#include <iostream>
 
 void BrassSpellingTableNew::populate_word(const string& word, unsigned max_distance, vector<TermList*>& result)
 {
@@ -77,8 +76,6 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 
 	string data;
 	fragment buf;
-
-	std::cout << "word: " << word << std::endl;
 
 	populate_ngram_word(word, max_distance, buf, data, result);
 
