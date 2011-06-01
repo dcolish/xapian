@@ -544,7 +544,7 @@ Database::get_spelling_suggestion(const string &word,
     if (word.size() <= 1) return string();
     AutoPtr<TermList> merger;
     for (size_t i = 0; i < internal.size(); ++i) {
-	TermList * tl = internal[i]->open_spelling_termlist(word);
+	TermList * tl = internal[i]->open_spelling_termlist_max(word, max_edit_distance);
 	LOGLINE(SPELLING, "Sub db " << i << " tl = " << (void*)tl);
 	if (tl) {
 	    if (merger.get()) {

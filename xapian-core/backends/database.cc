@@ -233,6 +233,15 @@ Database::Internal::open_spelling_termlist(const string &) const
 }
 
 TermList *
+Database::Internal::open_spelling_termlist_max(const string & word, unsigned) const
+{
+    // Only implemented for some database backends - others will just not
+    // suggest spelling corrections (or not contribute to them in a multiple
+    // database situation).
+    return open_spelling_termlist(word);
+}
+
+TermList *
 Database::Internal::open_spelling_wordlist() const
 {
     // Only implemented for some database backends - others will just not

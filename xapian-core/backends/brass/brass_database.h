@@ -30,7 +30,7 @@
 #include "brass_positionlist.h"
 #include "brass_postlist.h"
 #include "brass_record.h"
-#include "brass_spelling.h"
+#include "brass_spelling_new.h"
 #include "brass_synonym.h"
 #include "brass_termlisttable.h"
 #include "brass_values.h"
@@ -94,7 +94,7 @@ class BrassDatabase : public Xapian::Database::Internal {
 
 	/** Table storing spelling correction data.
 	 */
-	mutable BrassSpellingTable spelling_table;
+	mutable BrassSpellingTableNew spelling_table;
 
 	/** Table storing records.
 	 *
@@ -274,6 +274,7 @@ class BrassDatabase : public Xapian::Database::Internal {
 	TermList * open_allterms(const string & prefix) const;
 
 	TermList * open_spelling_termlist(const string & word) const;
+	TermList * open_spelling_termlist_max(const string & word, unsigned max_distance) const;
 	TermList * open_spelling_wordlist() const;
 	Xapian::doccount get_spelling_frequency(const string & word) const;
 

@@ -41,250 +41,333 @@
 using namespace Brass;
 using namespace std;
 
-void
-BrassSpellingTable::merge_changes()
+void BrassSpellingTable::merge_changes()
 {
-    map<fragment, set<string> >::const_iterator i;
-    for (i = termlist_deltas.begin(); i != termlist_deltas.end(); ++i) {
-	string key = i->first;
-	const set<string> & changes = i->second;
+	map<fragment, set<string> >::const_iterator i;
+	for (i = termlist_deltas.begin(); i != termlist_deltas.end(); ++i)
+	{
+		string key = i->first;
+		const set<string> & changes = i->second;
 
-	set<string>::const_iterator d = changes.begin();
-	if (d == changes.end()) continue;
+		set<string>::const_iterator d = changes.begin();
+		if (d == changes.end()) continue;
 
-	string updated;
-	string current;
-	PrefixCompressedStringWriter out(updated);
-	if (get_exact_entry(key, current)) {
-	    PrefixCompressedStringItor in(current);
-	    updated.reserve(current.size()); // FIXME plus some?
-	    while (!in.at_end() && d != changes.end()) {
-		const string & word = *in;
-		Assert(d != changes.end());
-		int cmp = word.compare(*d);
-		if (cmp < 0) {
-		    out.append(word);
-		    ++in;
-		} else if (cmp > 0) {
-		    out.append(*d);
-		    ++d;
-		} else {
-		    // If an existing entry is in the changes list, that means
-		    // we should remove it.
-		    ++in;
-		    ++d;
+		string updated;
+		string current;
+		PrefixCompressedStringWriter out(updated);
+		if (get_exact_entry(key, current))
+		{
+			PrefixCompressedStringItor in(current);
+			updated.reserve(current.size()); // FIXME plus some?
+			while (!in.at_end() && d != changes.end())
+			{
+				const string & word = *in;
+				Assert(d != changes.end());
+				int cmp = word.compare(*d);
+				if (cmp < 0)
+				{
+					out.append(word);
+					++in;
+				}
+				else if (cmp > 0)
+				{
+					out.append(*d);
+					++d;
+				}
+				else
+				{
+					// If an existing entry is in the changes list, that means
+					// we should remove it.
+					++in;
+					++d;
+				}
+			}
+			if (!in.at_end())
+			{
+				// FIXME : easy to optimise this to a fix-up and substring copy.
+				while (!in.at_end())
+				{
+					out.append(*in++);
+				}
+			}
 		}
-	    }
-	    if (!in.at_end()) {
-		// FIXME : easy to optimise this to a fix-up and substring copy.
-		while (!in.at_end()) {
-		    out.append(*in++);
+
+		while (d != changes.end())
+		{
+			out.append(*d++);
 		}
-	    }
-	}
-	while (d != changes.end()) {
-	    out.append(*d++);
-	}
-	if (!updated.empty()) {
-	    add(key, updated);
-	} else {
-	    del(key);
-	}
-    }
-    termlist_deltas.clear();
 
-    map<string, Xapian::termcount>::const_iterator j;
-    for (j = wordfreq_changes.begin(); j != wordfreq_changes.end(); ++j) {
-	string key = "W" + j->first;
-	if (j->second) {
-	    string tag;
-	    pack_uint_last(tag, j->second);
-	    add(key, tag);
-	} else {
-	    del(key);
+		if (!updated.empty())
+		{
+			add(key, updated);
+		}
+		else
+		{
+			del(key);
+		}
 	}
-    }
-    wordfreq_changes.clear();
+	termlist_deltas.clear();
+
+	map<string, Xapian::termcount>::const_iterator j;
+	for (j = wordfreq_changes.begin(); j != wordfreq_changes.end(); ++j)
+	{
+		set_entry_wordfreq(j->first, j->second);
+	}
+	wordfreq_changes.clear();
 }
 
-void
-BrassSpellingTable::toggle_fragment(fragment frag, const string & word)
+void BrassSpellingTable::toggle_fragment(fragment frag, const string & word)
 {
-    map<fragment, set<string> >::iterator i = termlist_deltas.find(frag);
-    if (i == termlist_deltas.end()) {
-	i = termlist_deltas.insert(make_pair(frag, set<string>())).first;
-    }
-    // The commonest case is that we're adding lots of words, so try insert
-    // first and if that reports that the word already exists, remove it.
-    pair<set<string>::iterator, bool> res = i->second.insert(word);
-    if (!res.second) {
-	// word is already in the set, so remove it.
-	i->second.erase(res.first);
-    }
+	map<fragment, set<string> >::iterator i = termlist_deltas.find(frag);
+	if (i == termlist_deltas.end())
+	{
+		i = termlist_deltas.insert(make_pair(frag, set<string> ())).first;
+	}
+	// The commonest case is that we're adding lots of words, so try insert
+	// first and if that reports that the word already exists, remove it.
+	pair<set<string>::iterator, bool> res = i->second.insert(word);
+	if (!res.second)
+	{
+		// word is already in the set, so remove it.
+		i->second.erase(res.first);
+	}
 }
 
-void
-BrassSpellingTable::add_word(const string & word, Xapian::termcount freqinc)
+void BrassSpellingTable::add_word(const string & word, Xapian::termcount freqinc)
 {
-    if (word.size() <= 1) return;
+	if (word.size() <= 1) return;
 
-    map<string, Xapian::termcount>::iterator i = wordfreq_changes.find(word);
-    if (i != wordfreq_changes.end()) {
-	// Word "word" already exists and has been modified.
-	if (i->second) {
-	    i->second += freqinc;
-	    return;
+	map<string, Xapian::termcount>::iterator i = wordfreq_changes.find(word);
+	if (i != wordfreq_changes.end())
+	{
+		// Word "word" already exists and has been modified.
+		if (i->second)
+		{
+			i->second += freqinc;
+			return;
+		}
+		// If "word" is currently modified such that it no longer exists, so
+		// we need to execute the code below to re-add trigrams for it.
+		i->second = freqinc;
 	}
-	// If "word" is currently modified such that it no longer exists, so
-	// we need to execute the code below to re-add trigrams for it.
-	i->second = freqinc;
-    } else {
-	string key = "W" + word;
-	string data;
-	if (get_exact_entry(key, data)) {
-	    // Word "word" already exists, so increment its count.
-	    Xapian::termcount freq;
-	    const char * p = data.data();
-	    if (!unpack_uint_last(&p, p + data.size(), &freq) || freq == 0) {
-		throw Xapian::DatabaseCorruptError("Bad spelling word freq");
-	    }
-	    wordfreq_changes[word] = freq + freqinc;
-	    return;
+	else
+	{
+		Xapian::termcount freq = get_entry_wordfreq(word);
+		if (freq != 0)
+		{
+			wordfreq_changes[word] = freq + freqinc;
+			return;
+		}
+		wordfreq_changes[word] = freqinc;
 	}
-	wordfreq_changes[word] = freqinc;
-    }
 
-    // New word - need to create trigrams for it.
+	// New word - need to create trigrams for it.
 
-    fragment buf;
-    // Head:
-    buf[0] = 'H';
-    buf[1] = word[0];
-    buf[2] = word[1];
-    buf[3] = '\0';
-    toggle_fragment(buf, word);
-
-    // Tail:
-    buf[0] = 'T';
-    buf[1] = word[word.size() - 2];
-    buf[2] = word[word.size() - 1];
-    buf[3] = '\0';
-    toggle_fragment(buf, word);
-
-    if (word.size() <= 4) {
-	// We also generate 'bookends' for two, three, and four character
-	// terms so we can handle transposition of the middle two characters
-	// of a four character word, substitution or deletion of the middle
-	// character of a three character word, or insertion in the middle of a
-	// two character word.
-	// 'Bookends':
-	buf[0] = 'B';
-	buf[1] = word[0];
-	buf[3] = '\0';
-	toggle_fragment(buf, word);
-    }
-    if (word.size() > 2) {
-	// Middles:
-	buf[0] = 'M';
-	for (size_t start = 0; start <= word.size() - 3; ++start) {
-	    memcpy(buf.data + 1, word.data() + start, 3);
-	    toggle_fragment(buf, word);
-	}
-    }
+	toggle_word(word);
 }
 
-void
-BrassSpellingTable::remove_word(const string & word, Xapian::termcount freqdec)
+void BrassSpellingTable::remove_word(const string & word, Xapian::termcount freqdec)
 {
-    map<string, Xapian::termcount>::iterator i = wordfreq_changes.find(word);
-    if (i != wordfreq_changes.end()) {
-	if (i->second == 0) {
-	    // Word has already been deleted.
-	    return;
+	map<string, Xapian::termcount>::iterator i = wordfreq_changes.find(word);
+	if (i != wordfreq_changes.end())
+	{
+		if (i->second == 0)
+		{
+			// Word has already been deleted.
+			return;
+		}
+		// Word "word" exists and has been modified.
+		if (freqdec < i->second)
+		{
+			i->second -= freqdec;
+			return;
+		}
+
+		// Mark word as deleted.
+		i->second = 0;
 	}
-	// Word "word" exists and has been modified.
-	if (freqdec < i->second) {
-	    i->second -= freqdec;
-	    return;
+	else
+	{
+		Xapian::termcount freq = get_entry_wordfreq(word);
+		if (freq == 0) return;
+
+		if (freqdec < freq)
+		{
+			wordfreq_changes[word] = freq - freqdec;
+			return;
+		}
+		// Mark word as deleted.
+		wordfreq_changes[word] = 0;
 	}
 
-	// Mark word as deleted.
-	i->second = 0;
-    } else {
-	string key = "W" + word;
-	string data;
-	if (!get_exact_entry(key, data)) {
-	    // This word doesn't exist.
-	    return;
-	}
+	// Remove fragment entries for word.
 
-	Xapian::termcount freq;
-	const char *p = data.data();
-	if (!unpack_uint_last(&p, p + data.size(), &freq)) {
-	    throw Xapian::DatabaseCorruptError("Bad spelling word freq");
-	}
-	if (freqdec < freq) {
-	    wordfreq_changes[word] = freq - freqdec;
-	    return;
-	}
-	// Mark word as deleted.
-	wordfreq_changes[word] = 0;
-    }
-
-    // Remove fragment entries for word.
-
-    fragment buf;
-    // Head:
-    buf[0] = 'H';
-    buf[1] = word[0];
-    buf[2] = word[1];
-    buf[3] = '\0';
-    toggle_fragment(buf, word);
-
-    // Tail:
-    buf[0] = 'T';
-    buf[1] = word[word.size() - 2];
-    buf[2] = word[word.size() - 1];
-    buf[3] = '\0';
-    toggle_fragment(buf, word);
-
-    if (word.size() <= 4) {
-	// 'Bookends':
-	buf[0] = 'B';
-	buf[1] = word[0];
-	buf[3] = '\0';
-	toggle_fragment(buf, word);
-    }
-    if (word.size() > 2) {
-	// Middles:
-	buf[0] = 'M';
-	for (size_t start = 0; start <= word.size() - 3; ++start) {
-	    memcpy(buf.data + 1, word.data() + start, 3);
-	    toggle_fragment(buf, word);
-	}
-    }
+	toggle_word(word);
 }
 
-struct TermListGreaterApproxSize {
-    bool operator()(const TermList *a, const TermList *b) {
-	return a->get_approx_size() > b->get_approx_size();
-    }
+struct TermListGreaterApproxSize
+{
+		bool operator()(const TermList *a, const TermList *b)
+		{
+			return a->get_approx_size() > b->get_approx_size();
+		}
 };
 
 TermList *
 BrassSpellingTable::open_termlist(const string & word)
 {
-    // This should have been handled by Database::get_spelling_suggestion().
-    AssertRel(word.size(),>,1);
+	return open_termlist(word, word.size());
+}
 
-    // Merge any pending changes to disk, but don't call commit() so they
-    // won't be switched live.
-    if (!wordfreq_changes.empty()) merge_changes();
+TermList *
+BrassSpellingTable::open_termlist(const string & word, unsigned max_distance)
+{
+	// This should have been handled by Database::get_spelling_suggestion().
+	AssertRel(word.size(),>,1);
 
-    // Build a priority queue of TermList objects which returns those of
-    // greatest approximate size first.
-    priority_queue<TermList*, vector<TermList*>, TermListGreaterApproxSize> pq;
-    try {
+	// Merge any pending changes to disk, but don't call commit() so they
+	// won't be switched live.
+	if (!wordfreq_changes.empty()) merge_changes();
+
+	// Build a priority queue of TermList objects which returns those of
+	// greatest approximate size first.
+	priority_queue<TermList*, vector<TermList*> , TermListGreaterApproxSize> pq;
+	try
+	{
+		vector<TermList*> result;
+		result.reserve(word.size());
+
+		populate_word(word, (int) max_distance, result);
+
+		for (size_t i = 0; i < result.size(); ++i)
+			pq.push(result[i]);
+
+		if (pq.empty()) return NULL;
+
+		// Build up an OrTermList tree by combine leaves and/or branches in
+		// pairs.  The tree is balanced by the approximated sizes of the leaf
+		// BrassSpellingTermList objects - the way the tree is built are very
+		// similar to how an optimal Huffman code is often constructed.
+		//
+		// Balancing the tree like this should tend to minimise the amount of
+		// work done.
+		while (pq.size() > 1)
+		{
+			// Build the tree such that left is always >= right so that
+			// OrTermList can rely on this when trying to minimise work.
+			TermList * termlist = pq.top();
+			pq.pop();
+
+			termlist = new OrTermList(pq.top(), termlist);
+			pq.pop();
+			pq.push(termlist);
+		}
+
+		return pq.top();
+	}
+	catch (...)
+	{
+		// Make sure we delete all the TermList objects to avoid leaking
+		// memory.
+		while (!pq.empty())
+		{
+			delete pq.top();
+			pq.pop();
+		}
+		throw;
+	}
+}
+
+Xapian::doccount BrassSpellingTable::get_word_frequency(const string & word) const
+{
+	map<string, Xapian::termcount>::const_iterator i;
+	i = wordfreq_changes.find(word);
+	if (i != wordfreq_changes.end())
+	{
+		// Modified frequency for word:
+		return i->second;
+	}
+	return get_entry_wordfreq(word);
+}
+
+void BrassSpellingTable::set_entry_wordfreq(const string& word, Xapian::termcount freq)
+{
+	string key = "W" + word;
+	if (freq != 0)
+	{
+		string tag;
+		pack_uint_last(tag, freq);
+		add(key, tag);
+	}
+	else
+	{
+		del(key);
+	}
+}
+
+Xapian::termcount BrassSpellingTable::get_entry_wordfreq(const string& word) const
+{
+	string key = "W" + word;
+	string data;
+	if (get_exact_entry(key, data))
+	{
+		// Word "word" already exists.
+		Xapian::termcount freq;
+		const char *p = data.data();
+		if (!unpack_uint_last(&p, p + data.size(), &freq) || freq == 0)
+		{
+			throw Xapian::DatabaseCorruptError("Bad spelling word freq");
+		}
+		return freq;
+	}
+	return 0;
+}
+
+void BrassSpellingTable::toggle_word(const string& word)
+{
+	fragment buf;
+
+	// Head:
+	buf[0] = 'H';
+	buf[1] = word[0];
+	buf[2] = word[1];
+	buf[3] = '\0';
+	toggle_fragment(buf, word);
+
+	// Tail:
+	buf[0] = 'T';
+	buf[1] = word[word.size() - 2];
+	buf[2] = word[word.size() - 1];
+	buf[3] = '\0';
+	toggle_fragment(buf, word);
+
+	if (word.size() <= 4)
+	{
+		// We also generate 'bookends' for two, three, and four character
+		// terms so we can handle transposition of the middle two characters
+		// of a four character word, substitution or deletion of the middle
+		// character of a three character word, or insertion in the middle of a
+		// two character word.
+		// 'Bookends':
+		buf[0] = 'B';
+		buf[1] = word[0];
+		buf[3] = '\0';
+		toggle_fragment(buf, word);
+	}
+	if (word.size() > 2)
+	{
+		// Middles:
+		buf[0] = 'M';
+		for (size_t start = 0; start <= word.size() - 3; ++start)
+		{
+			memcpy(buf.data + 1, word.data() + start, 3);
+			toggle_fragment(buf, word);
+		}
+	}
+}
+
+void BrassSpellingTable::populate_word(const string& word, unsigned, vector<TermList*>& result)
+{
 	string data;
 	fragment buf;
 
@@ -292,205 +375,141 @@ BrassSpellingTable::open_termlist(const string & word)
 	buf[0] = 'H';
 	buf[1] = word[0];
 	buf[2] = word[1];
-	if (get_exact_entry(string(buf), data))
-	    pq.push(new BrassSpellingTermList(data));
+	if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
 
 	// Tail:
 	buf[0] = 'T';
 	buf[1] = word[word.size() - 2];
 	buf[2] = word[word.size() - 1];
-	if (get_exact_entry(string(buf), data))
-	    pq.push(new BrassSpellingTermList(data));
+	if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
 
-	if (word.size() <= 4) {
-	    // We also generate 'bookends' for two, three, and four character
-	    // terms so we can handle transposition of the middle two
-	    // characters of a four character word, substitution or deletion of
-	    // the middle character of a three character word, or insertion in
-	    // the middle of a two character word.
-	    buf[0] = 'B';
-	    buf[1] = word[0];
-	    buf[3] = '\0';
-	    if (get_exact_entry(string(buf), data))
-		pq.push(new BrassSpellingTermList(data));
+	if (word.size() <= 4)
+	{
+		// We also generate 'bookends' for two, three, and four character
+		// terms so we can handle transposition of the middle two
+		// characters of a four character word, substitution or deletion of
+		// the middle character of a three character word, or insertion in
+		// the middle of a two character word.
+		buf[0] = 'B';
+		buf[1] = word[0];
+		buf[3] = '\0';
+		if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
 	}
-	if (word.size() > 2) {
-	    // Middles:
-	    buf[0] = 'M';
-	    for (size_t start = 0; start <= word.size() - 3; ++start) {
-		memcpy(buf.data + 1, word.data() + start, 3);
-		if (get_exact_entry(string(buf), data))
-		    pq.push(new BrassSpellingTermList(data));
-	    }
 
-	    if (word.size() == 3) {
-		// For three letter words, we generate the two "single
-		// transposition" forms too, so that we can produce good
-		// spelling suggestions.
-		// ABC -> BAC
+	if (word.size() > 2)
+	{
+		// Middles:
+		buf[0] = 'M';
+		for (size_t start = 0; start <= word.size() - 3; ++start)
+		{
+			memcpy(buf.data + 1, word.data() + start, 3);
+			if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
+		}
+
+		if (word.size() == 3)
+		{
+			// For three letter words, we generate the two "single
+			// transposition" forms too, so that we can produce good
+			// spelling suggestions.
+			// ABC -> BAC
+			buf[1] = word[1];
+			buf[2] = word[0];
+			if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
+			// ABC -> ACB
+			buf[1] = word[0];
+			buf[2] = word[2];
+			buf[3] = word[1];
+			if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
+		}
+	}
+	else
+	{
+		Assert(word.size() == 2);
+		// For two letter words, we generate H and T terms for the
+		// transposed form so that we can produce good spelling
+		// suggestions.
+		// AB -> BA
+		buf[0] = 'H';
 		buf[1] = word[1];
 		buf[2] = word[0];
-		if (get_exact_entry(string(buf), data))
-		    pq.push(new BrassSpellingTermList(data));
-		// ABC -> ACB
-		buf[1] = word[0];
-		buf[2] = word[2];
-		buf[3] = word[1];
-		if (get_exact_entry(string(buf), data))
-		    pq.push(new BrassSpellingTermList(data));
-	    }
-	} else {
-	    Assert(word.size() == 2);
-	    // For two letter words, we generate H and T terms for the
-	    // transposed form so that we can produce good spelling
-	    // suggestions.
-	    // AB -> BA
-	    buf[0] = 'H';
-	    buf[1] = word[1];
-	    buf[2] = word[0];
-	    if (get_exact_entry(string(buf), data))
-		pq.push(new BrassSpellingTermList(data));
-	    buf[0] = 'T';
-	    if (get_exact_entry(string(buf), data))
-		pq.push(new BrassSpellingTermList(data));
+		if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
+		buf[0] = 'T';
+		if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
 	}
-
-	if (pq.empty()) return NULL;
-
-	// Build up an OrTermList tree by combine leaves and/or branches in
-	// pairs.  The tree is balanced by the approximated sizes of the leaf
-	// BrassSpellingTermList objects - the way the tree is built are very
-	// similar to how an optimal Huffman code is often constructed.
-	//
-	// Balancing the tree like this should tend to minimise the amount of
-	// work done.
-	while (pq.size() > 1) {
-	    // Build the tree such that left is always >= right so that
-	    // OrTermList can rely on this when trying to minimise work.
-	    TermList * termlist = pq.top();
-	    pq.pop();
-
-	    termlist = new OrTermList(pq.top(), termlist);
-	    pq.pop();
-	    pq.push(termlist);
-	}
-
-	return pq.top();
-    } catch (...) {
-	// Make sure we delete all the TermList objects to avoid leaking
-	// memory.
-	while (!pq.empty()) {
-	    delete pq.top();
-	    pq.pop();
-	}
-	throw;
-    }
-}
-
-Xapian::doccount
-BrassSpellingTable::get_word_frequency(const string & word) const
-{
-    map<string, Xapian::termcount>::const_iterator i;
-    i = wordfreq_changes.find(word);
-    if (i != wordfreq_changes.end()) {
-	// Modified frequency for word:
-	return i->second;
-    }
-
-    string key = "W" + word;
-    string data;
-    if (get_exact_entry(key, data)) {
-	// Word "word" already exists.
-	Xapian::termcount freq;
-	const char *p = data.data();
-	if (!unpack_uint_last(&p, p + data.size(), &freq)) {
-	    throw Xapian::DatabaseCorruptError("Bad spelling word freq");
-	}
-	return freq;
-    }
-
-    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////
 
-Xapian::termcount
-BrassSpellingTermList::get_approx_size() const
+Xapian::termcount BrassSpellingTermList::get_approx_size() const
 {
-    // This is only used to decide how to build a OR-tree of TermList objects
-    // so we just need to return "sizes" which are ordered roughly correctly.
-    return data.size();
+	// This is only used to decide how to build a OR-tree of TermList objects
+	// so we just need to return "sizes" which are ordered roughly correctly.
+	return data.size();
 }
 
-std::string
-BrassSpellingTermList::get_termname() const
+std::string BrassSpellingTermList::get_termname() const
 {
-    return current_term;
+	return current_term;
 }
 
-Xapian::termcount
-BrassSpellingTermList::get_wdf() const
+Xapian::termcount BrassSpellingTermList::get_wdf() const
 {
-    return 1;
+	return 1;
 }
 
-Xapian::doccount
-BrassSpellingTermList::get_termfreq() const
+Xapian::doccount BrassSpellingTermList::get_termfreq() const
 {
-    return 1;
+	return 1;
 }
 
-Xapian::termcount
-BrassSpellingTermList::get_collection_freq() const
+Xapian::termcount BrassSpellingTermList::get_collection_freq() const
 {
-    return 1;
+	return 1;
 }
 
 TermList *
 BrassSpellingTermList::next()
 {
-    if (p == data.size()) {
-	p = 0;
-	data.resize(0);
-	return NULL;
-    }
-    if (!current_term.empty()) {
 	if (p == data.size())
-	    throw Xapian::DatabaseCorruptError("Bad spelling termlist");
-	current_term.resize(byte(data[p++]) ^ MAGIC_XOR_VALUE);
-    }
-    size_t add;
-    if (p == data.size() ||
-	(add = byte(data[p]) ^ MAGIC_XOR_VALUE) >= data.size() - p)
-	throw Xapian::DatabaseCorruptError("Bad spelling termlist");
-    current_term.append(data.data() + p + 1, add);
-    p += add + 1;
-    return NULL;
+	{
+		p = 0;
+		data.resize(0);
+		return NULL;
+	}
+	if (!current_term.empty())
+	{
+		if (p == data.size()) throw Xapian::DatabaseCorruptError("Bad spelling termlist");
+		current_term.resize(byte(data[p++]) ^ MAGIC_XOR_VALUE);
+	}
+	size_t add;
+	if (p == data.size() || (add = byte(data[p]) ^ MAGIC_XOR_VALUE) >= data.size() - p) throw Xapian::DatabaseCorruptError(
+			"Bad spelling termlist");
+	current_term.append(data.data() + p + 1, add);
+	p += add + 1;
+	return NULL;
 }
 
 TermList *
 BrassSpellingTermList::skip_to(const string & term)
 {
-    while (!data.empty() && current_term < term) {
-	(void)BrassSpellingTermList::next();
-    }
-    return NULL;
+	while (!data.empty() && current_term < term)
+	{
+		(void) BrassSpellingTermList::next();
+	}
+	return NULL;
 }
 
-bool
-BrassSpellingTermList::at_end() const
+bool BrassSpellingTermList::at_end() const
 {
-    return data.empty();
+	return data.empty();
 }
 
-Xapian::termcount
-BrassSpellingTermList::positionlist_count() const
+Xapian::termcount BrassSpellingTermList::positionlist_count() const
 {
-    throw Xapian::UnimplementedError("BrassSpellingTermList::positionlist_count() not implemented");
+	throw Xapian::UnimplementedError("BrassSpellingTermList::positionlist_count() not implemented");
 }
 
-Xapian::PositionIterator
-BrassSpellingTermList::positionlist_begin() const
+Xapian::PositionIterator BrassSpellingTermList::positionlist_begin() const
 {
-    throw Xapian::UnimplementedError("BrassSpellingTermList::positionlist_begin() not implemented");
+	throw Xapian::UnimplementedError("BrassSpellingTermList::positionlist_begin() not implemented");
 }

@@ -964,6 +964,12 @@ BrassDatabase::open_spelling_termlist(const string & word) const
 }
 
 TermList *
+BrassDatabase::open_spelling_termlist_max(const string & word, unsigned max_distance) const
+{
+    return spelling_table.open_termlist(word, max_distance);
+}
+
+TermList *
 BrassDatabase::open_spelling_wordlist() const
 {
     BrassCursor * cursor = spelling_table.cursor_get();
