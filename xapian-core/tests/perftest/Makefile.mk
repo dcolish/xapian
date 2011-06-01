@@ -19,7 +19,8 @@ noinst_HEADERS += perftest/perftest.h
 
 collated_perftest_sources = \
  perftest/perftest_matchdecider.cc \
- perftest/perftest_randomidx.cc
+ perftest/perftest_randomidx.cc \
+ perftest/perftest_spelling.cc
 
 perftest_perftest_SOURCES = perftest/perftest.cc $(collated_perftest_sources) \
  perftest/perftest_all.h perftest/perftest_collated.h \
