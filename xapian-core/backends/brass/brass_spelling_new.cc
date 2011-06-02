@@ -22,12 +22,14 @@
 
 #include <xapian/error.h>
 #include <xapian/types.h>
+#include <xapian/unicode.h>
 
 #include "brass_spelling_new.h"
 
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <map>
 
 using namespace Brass;
 using namespace std;
@@ -36,19 +38,24 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 {
 	const int n = 3;
 	const int end = int(word.size()) - n + 1;
-	const int offset = n;
 	const char placeholder = 'H';
+
+	vector<unsigned> word_utf(Xapian::Utf8Iterator(word), Xapian::Utf8Iterator());
 
 	fragment buf;
 
+	//start - position of n-gram in string. -1 - head, end - tail.
 	for (int start = -1; start <= end; ++start)
 	{
-		buf[0] = (char) (start + offset);
+		//Store position of n-gram in string
+		buf[0] = char(start + n);
+		//If head, put placeholder as the first char
 		buf[1] = (start >= 0) ? word[start] : placeholder;
 
 		for (int i = 1; i < n - 1; ++i)
 			buf[i + 1] = word[start + i];
 
+		//If tail, put placeholder as the last char
 		buf[n] = (start < end) ? word[start + n - 1] : placeholder;
 
 		toggle_fragment(buf, word);
@@ -56,7 +63,13 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 
 	if (word.size() <= n + 1)
 	{
-		buf[0] = offset - n + 1;
+		// We also generate 'bookends' for two, three, and four character
+		// terms so we can handle transposition of the middle two
+		// characters of a four character word, substitution or deletion of
+		// the middle character of a three character word, or insertion in
+		// the middle of a two character word. We store first and last characters.
+
+		buf[0] = 1;
 
 		for (int i = 1; i < n - 1; ++i)
 			buf[i] = placeholder;
@@ -71,7 +84,6 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 void BrassSpellingTableNew::populate_word(const string& word, unsigned max_distance, vector<TermList*>& result)
 {
 	const int n = 3;
-	const int offset = n;
 	const char placeholder = 'H';
 
 	string data;
@@ -79,15 +91,10 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 
 	populate_ngram_word(word, max_distance, buf, data, result);
 
+	//'Bookends'
 	if (word.size() <= n + 1)
 	{
-		// We also generate 'bookends' for two, three, and four character
-		// terms so we can handle transposition of the middle two
-		// characters of a four character word, substitution or deletion of
-		// the middle character of a three character word, or insertion in
-		// the middle of a two character word.
-
-		buf[0] = offset - n + 1;
+		buf[0] = 1;
 
 		for (int i = 1; i < n - 1; ++i)
 			buf[i] = placeholder;
@@ -98,6 +105,7 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 		populate_action(buf, data, result);
 	}
 
+	//Transpositions for short words.
 	if (int(word.size()) <= n)
 	{
 		string word_copy = word;
@@ -115,7 +123,6 @@ void BrassSpellingTableNew::populate_ngram_word(const string& word, unsigned max
 {
 	const int n = 3;
 	const int end = int(word.size()) - n + 1;
-	const int offset = n;
 	const char placeholder = 'H';
 
 	for (int start = -1; start <= end; ++start)
@@ -129,13 +136,13 @@ void BrassSpellingTableNew::populate_ngram_word(const string& word, unsigned max
 
 		for (int i = max(start - int(max_distance), -1); i <= start + int(max_distance); ++i)
 		{
-			buf[0] = char(offset + i);
+			buf[0] = char(n + i);
 			populate_action(buf, data, result);
 		}
 	}
 }
 
-void BrassSpellingTableNew::populate_action(const fragment& buf, string& data, std::vector<TermList*>& result)
+void BrassSpellingTableNew::populate_action(const fragment& buf, string& data, vector<TermList*>& result)
 {
 	if (get_exact_entry(buf, data)) result.push_back(new BrassSpellingTermList(data));
 }

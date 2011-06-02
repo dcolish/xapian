@@ -43,70 +43,7 @@ using namespace std;
 
 void BrassSpellingTable::merge_changes()
 {
-	map<fragment, set<string> >::const_iterator i;
-	for (i = termlist_deltas.begin(); i != termlist_deltas.end(); ++i)
-	{
-		string key = i->first;
-		const set<string> & changes = i->second;
-
-		set<string>::const_iterator d = changes.begin();
-		if (d == changes.end()) continue;
-
-		string updated;
-		string current;
-		PrefixCompressedStringWriter out(updated);
-		if (get_exact_entry(key, current))
-		{
-			PrefixCompressedStringItor in(current);
-			updated.reserve(current.size()); // FIXME plus some?
-			while (!in.at_end() && d != changes.end())
-			{
-				const string & word = *in;
-				Assert(d != changes.end());
-				int cmp = word.compare(*d);
-				if (cmp < 0)
-				{
-					out.append(word);
-					++in;
-				}
-				else if (cmp > 0)
-				{
-					out.append(*d);
-					++d;
-				}
-				else
-				{
-					// If an existing entry is in the changes list, that means
-					// we should remove it.
-					++in;
-					++d;
-				}
-			}
-			if (!in.at_end())
-			{
-				// FIXME : easy to optimise this to a fix-up and substring copy.
-				while (!in.at_end())
-				{
-					out.append(*in++);
-				}
-			}
-		}
-
-		while (d != changes.end())
-		{
-			out.append(*d++);
-		}
-
-		if (!updated.empty())
-		{
-			add(key, updated);
-		}
-		else
-		{
-			del(key);
-		}
-	}
-	termlist_deltas.clear();
+	merge_fragment_changes();
 
 	map<string, Xapian::termcount>::const_iterator j;
 	for (j = wordfreq_changes.begin(); j != wordfreq_changes.end(); ++j)
@@ -123,6 +60,7 @@ void BrassSpellingTable::toggle_fragment(fragment frag, const string & word)
 	{
 		i = termlist_deltas.insert(make_pair(frag, set<string> ())).first;
 	}
+
 	// The commonest case is that we're adding lots of words, so try insert
 	// first and if that reports that the word already exists, remove it.
 	pair<set<string>::iterator, bool> res = i->second.insert(word);
@@ -237,7 +175,7 @@ BrassSpellingTable::open_termlist(const string & word, unsigned max_distance)
 		vector<TermList*> result;
 		result.reserve(word.size());
 
-		populate_word(word, (int) max_distance, result);
+		populate_word(word, max_distance, result);
 
 		for (size_t i = 0; i < result.size(); ++i)
 			pq.push(result[i]);
@@ -323,6 +261,74 @@ Xapian::termcount BrassSpellingTable::get_entry_wordfreq(const string& word) con
 	return 0;
 }
 
+void BrassSpellingTable::merge_fragment_changes()
+{
+	map<fragment, set<string> >::const_iterator i;
+	for (i = termlist_deltas.begin(); i != termlist_deltas.end(); ++i)
+	{
+		string key = i->first;
+		const set<string> & changes = i->second;
+
+		set<string>::const_iterator d = changes.begin();
+		if (d == changes.end()) continue;
+
+		string updated;
+		string current;
+		PrefixCompressedStringWriter out(updated);
+		if (get_exact_entry(key, current))
+		{
+			PrefixCompressedStringItor in(current);
+			updated.reserve(current.size()); // FIXME plus some?
+			while (!in.at_end() && d != changes.end())
+			{
+				const string & word = *in;
+				Assert(d != changes.end());
+				int cmp = word.compare(*d);
+				if (cmp < 0)
+				{
+					out.append(word);
+					++in;
+				}
+				else if (cmp > 0)
+				{
+					out.append(*d);
+					++d;
+				}
+				else
+				{
+					// If an existing entry is in the changes list, that means
+					// we should remove it.
+					++in;
+					++d;
+				}
+			}
+			if (!in.at_end())
+			{
+				// FIXME : easy to optimise this to a fix-up and substring copy.
+				while (!in.at_end())
+				{
+					out.append(*in++);
+				}
+			}
+		}
+
+		while (d != changes.end())
+		{
+			out.append(*d++);
+		}
+
+		if (!updated.empty())
+		{
+			add(key, updated);
+		}
+		else
+		{
+			del(key);
+		}
+	}
+	termlist_deltas.clear();
+}
+
 void BrassSpellingTable::toggle_word(const string& word)
 {
 	fragment buf;
@@ -360,7 +366,8 @@ void BrassSpellingTable::toggle_word(const string& word)
 		buf[0] = 'M';
 		for (size_t start = 0; start <= word.size() - 3; ++start)
 		{
-			memcpy(buf.data + 1, word.data() + start, 3);
+			for (int i = 0; i < 3; ++i)
+				buf[i + 1] = word[start + i];
 			toggle_fragment(buf, word);
 		}
 	}
@@ -402,7 +409,9 @@ void BrassSpellingTable::populate_word(const string& word, unsigned, vector<Term
 		buf[0] = 'M';
 		for (size_t start = 0; start <= word.size() - 3; ++start)
 		{
-			memcpy(buf.data + 1, word.data() + start, 3);
+			//			memcpy(buf.data + 1, word.data() + start, 3);
+			for (int i = 0; i < 3; ++i)
+				buf[i + 1] = word[start + i];
 			if (get_exact_entry(string(buf), data)) result.push_back(new BrassSpellingTermList(data));
 		}
 

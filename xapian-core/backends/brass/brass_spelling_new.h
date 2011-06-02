@@ -26,6 +26,7 @@
 #include "brass_spelling.h"
 
 #include <string>
+#include <map>
 
 class BrassSpellingTableNew : public BrassSpellingTable
 {

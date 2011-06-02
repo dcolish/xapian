@@ -36,23 +36,30 @@ namespace Brass
 {
 	struct fragment
 	{
-			char data[4];
+			string data;
 
 			// Default constructor.
-			fragment()
+			fragment() :
+				data(4, 0)
 			{
 			}
 
 			// Allow implicit conversion.
-			fragment(char data_[4])
+			fragment(char data_[4]) :
+				data(data_, 4)
 			{
-				std::memcpy(data, data_, 4);
+			}
+
+			fragment(const string& data_) :
+				data(data_)
+			{
 			}
 
 			char & operator[](unsigned i)
 			{
 				return data[i];
 			}
+
 			const char & operator[](unsigned i) const
 			{
 				return data[i];
@@ -60,12 +67,12 @@ namespace Brass
 
 			operator std::string() const
 			{
-				return std::string(data, 4);
+				return data;
 			}
 
 			bool operator<(const fragment &b) const
 			{
-				return std::memcmp(data, b.data, 4) < 0;
+				return data.compare(b.data) < 0;
 			}
 	};
 
@@ -80,6 +87,8 @@ class BrassSpellingTable : public BrassLazyTable
 		std::map<Brass::fragment, std::set<std::string> > termlist_deltas;
 
 	protected:
+		virtual void merge_fragment_changes();
+
 		void toggle_fragment(Brass::fragment frag, const std::string & word);
 
 		virtual void toggle_word(const string& word);
