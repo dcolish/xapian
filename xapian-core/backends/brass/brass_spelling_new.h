@@ -30,10 +30,10 @@
 
 class BrassSpellingTableNew : public BrassSpellingTable
 {
-		void populate_ngram_word(const string& word, unsigned max_distance, Brass::fragment& buf, string& data,
+		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, string& str_buf, string& data,
 				std::vector<TermList*>& result);
 
-		void populate_action(const Brass::fragment& buf, string& data, std::vector<TermList*>& result);
+		void populate_action(const string& str_buf, string& data, std::vector<TermList*>& result);
 
 	protected:
 		void toggle_word(const string& word);

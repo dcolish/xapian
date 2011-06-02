@@ -32,36 +32,45 @@
 #include <map>
 
 using namespace Brass;
+using namespace Xapian;
+using namespace Unicode;
 using namespace std;
 
 void BrassSpellingTableNew::toggle_word(const string& word)
 {
+	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
+
 	const int n = 3;
-	const int end = int(word.size()) - n + 1;
+	const int end = int(word_utf.size()) - n + 1;
 	const char placeholder = 'H';
 
-	vector<unsigned> word_utf(Xapian::Utf8Iterator(word), Xapian::Utf8Iterator());
-
-	fragment buf;
+	string str_buf;
+	str_buf.reserve(word_utf.size() * sizeof(unsigned));
 
 	//start - position of n-gram in string. -1 - head, end - tail.
 	for (int start = -1; start <= end; ++start)
 	{
+		str_buf.clear();
 		//Store position of n-gram in string
-		buf[0] = char(start + n);
+		str_buf.push_back(char(start + n));
+
 		//If head, put placeholder as the first char
-		buf[1] = (start >= 0) ? word[start] : placeholder;
+		if (start >= 0)
+			append_utf8(str_buf, word_utf[start]);
+		else str_buf.push_back(placeholder);
 
 		for (int i = 1; i < n - 1; ++i)
-			buf[i + 1] = word[start + i];
+			append_utf8(str_buf, word_utf[start + i]);
 
 		//If tail, put placeholder as the last char
-		buf[n] = (start < end) ? word[start + n - 1] : placeholder;
+		if (start < end)
+			append_utf8(str_buf, word_utf[start + n - 1]);
+		else str_buf.push_back(placeholder);
 
-		toggle_fragment(buf, word);
+		toggle_fragment(str_buf, word);
 	}
 
-	if (word.size() <= n + 1)
+	if (word_utf.size() <= n + 1)
 	{
 		// We also generate 'bookends' for two, three, and four character
 		// terms so we can handle transposition of the middle two
@@ -69,15 +78,14 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 		// the middle character of a three character word, or insertion in
 		// the middle of a two character word. We store first and last characters.
 
-		buf[0] = 1;
+		str_buf.clear();
+		str_buf.push_back(1);
+		str_buf.append(n - 2, placeholder);
 
-		for (int i = 1; i < n - 1; ++i)
-			buf[i] = placeholder;
+		append_utf8(str_buf, word_utf[0]);
+		append_utf8(str_buf, word_utf[word_utf.size() - 1]);
 
-		buf[n - 1] = word[0];
-		buf[n] = word[word.size() - 1];
-
-		toggle_fragment(buf, word);
+		toggle_fragment(str_buf, word);
 	}
 }
 
@@ -86,63 +94,74 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 	const int n = 3;
 	const char placeholder = 'H';
 
-	string data;
-	fragment buf;
+	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
-	populate_ngram_word(word, max_distance, buf, data, result);
+	string str_buf;
+	str_buf.reserve(word_utf.size() * sizeof(unsigned));
+
+	string data;
+
+	populate_ngram_word(word_utf, max_distance, str_buf, data, result);
 
 	//'Bookends'
-	if (word.size() <= n + 1)
+	if (word_utf.size() <= n + 1)
 	{
-		buf[0] = 1;
+		str_buf.clear();
+		str_buf.push_back(1);
+		str_buf.append(n - 2, placeholder);
 
-		for (int i = 1; i < n - 1; ++i)
-			buf[i] = placeholder;
+		append_utf8(str_buf, word_utf[0]);
+		append_utf8(str_buf, word_utf[word_utf.size() - 1]);
 
-		buf[n - 1] = word[0];
-		buf[n] = word[word.size() - 1];
-
-		populate_action(buf, data, result);
+		populate_action(str_buf, data, result);
 	}
 
 	//Transpositions for short words.
-	if (int(word.size()) <= n)
+	if (int(word_utf.size()) <= n)
 	{
-		string word_copy = word;
-		for (int i = 0; i < int(word_copy.size()) - 1; ++i)
+		for (int i = 0; i < int(word_utf.size()) - 1; ++i)
 		{
-			swap(word_copy[i], word_copy[i + 1]);
-			populate_ngram_word(word_copy, max_distance, buf, data, result);
-			swap(word_copy[i], word_copy[i + 1]);
+			swap(word_utf[i], word_utf[i + 1]);
+			populate_ngram_word(word_utf, max_distance, str_buf, data, result);
+			swap(word_utf[i], word_utf[i + 1]);
 		}
 	}
 }
 
-void BrassSpellingTableNew::populate_ngram_word(const string& word, unsigned max_distance, fragment& buf, string& data,
-		vector<TermList*>& result)
+void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf, unsigned max_distance,
+		string& str_buf, string& data, vector<TermList*>& result)
 {
 	const int n = 3;
-	const int end = int(word.size()) - n + 1;
+	const int end = int(word_utf.size()) - n + 1;
 	const char placeholder = 'H';
 
 	for (int start = -1; start <= end; ++start)
 	{
-		buf[1] = (start >= 0) ? word[start] : placeholder;
+		str_buf.clear();
+		str_buf.push_back(1);
+
+		if (start >= 0)
+			append_utf8(str_buf, word_utf[start]);
+		else str_buf.push_back(placeholder);
 
 		for (int i = 1; i < n - 1; ++i)
-			buf[i + 1] = word[start + i];
+			append_utf8(str_buf, word_utf[start + i]);
 
-		buf[n] = (start < end) ? word[start + n - 1] : placeholder;
+		//If tail, put placeholder as the last char
+		if (start < end)
+			append_utf8(str_buf, word_utf[start + n - 1]);
+		else str_buf.push_back(placeholder);
 
 		for (int i = max(start - int(max_distance), -1); i <= start + int(max_distance); ++i)
 		{
-			buf[0] = char(n + i);
-			populate_action(buf, data, result);
+			str_buf[0] = char(n + i);
+			populate_action(str_buf, data, result);
 		}
 	}
 }
 
-void BrassSpellingTableNew::populate_action(const fragment& buf, string& data, vector<TermList*>& result)
+void BrassSpellingTableNew::populate_action(const string& str_buf, string& data, vector<TermList*>& result)
 {
+	fragment buf(str_buf);
 	if (get_exact_entry(buf, data)) result.push_back(new BrassSpellingTermList(data));
 }
