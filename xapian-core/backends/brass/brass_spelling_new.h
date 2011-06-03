@@ -26,19 +26,19 @@
 #include "brass_spelling.h"
 
 #include <string>
-#include <map>
+#include <vector>
 
 class BrassSpellingTableNew : public BrassSpellingTable
 {
-		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, string& str_buf, string& data,
-				std::vector<TermList*>& result);
+		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, std::string& str_buf,
+				std::string& data, std::vector<TermList*>& result);
 
-		void populate_action(const string& str_buf, string& data, std::vector<TermList*>& result);
+		void populate_action(const std::string& str_buf, string& data, std::vector<TermList*>& result);
 
 	protected:
-		void toggle_word(const string& word);
+		void toggle_word(const std::string& word);
 
-		void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result);
+		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
 
 	public:
 		/** Create a new BrassSpellingTableNew object.

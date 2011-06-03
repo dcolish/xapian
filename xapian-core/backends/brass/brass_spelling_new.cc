@@ -44,6 +44,8 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 	const int end = int(word_utf.size()) - n + 1;
 	const char placeholder = 'H';
 
+	set<string> str_buf_set;
+
 	string str_buf;
 	str_buf.reserve(word_utf.size() * sizeof(unsigned));
 
@@ -67,7 +69,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 			append_utf8(str_buf, word_utf[start + n - 1]);
 		else str_buf.push_back(placeholder);
 
-		toggle_fragment(str_buf, word);
+		if (str_buf_set.insert(str_buf).second) toggle_fragment(str_buf, word);
 	}
 
 	if (word_utf.size() <= n + 1)
@@ -85,7 +87,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 		append_utf8(str_buf, word_utf[0]);
 		append_utf8(str_buf, word_utf[word_utf.size() - 1]);
 
-		toggle_fragment(str_buf, word);
+		if (str_buf_set.insert(str_buf).second) toggle_fragment(str_buf, word);
 	}
 }
 
@@ -147,7 +149,6 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 		for (int i = 1; i < n - 1; ++i)
 			append_utf8(str_buf, word_utf[start + i]);
 
-		//If tail, put placeholder as the last char
 		if (start < end)
 			append_utf8(str_buf, word_utf[start + n - 1]);
 		else str_buf.push_back(placeholder);
@@ -162,6 +163,5 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 
 void BrassSpellingTableNew::populate_action(const string& str_buf, string& data, vector<TermList*>& result)
 {
-	fragment buf(str_buf);
-	if (get_exact_entry(buf, data)) result.push_back(new BrassSpellingTermList(data));
+	if (get_exact_entry(str_buf, data)) result.push_back(new BrassSpellingTermList(data));
 }
