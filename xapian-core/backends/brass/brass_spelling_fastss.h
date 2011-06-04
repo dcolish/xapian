@@ -35,7 +35,9 @@
 
 class BrassSpellingTableFastSS : public BrassSpellingTable
 {
-		//		static const unsigned K = 2;
+		static const unsigned K = 2;
+		static const unsigned LIMIT = 8;
+		static const unsigned PREFIX_LENGTH = 3;
 
 		class TermIndexCompare
 		{
@@ -69,7 +71,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
 				unsigned error_mask, unsigned start, unsigned k, unsigned limit);
 
-		void populate_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask, std::vector<
+		void populate_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask, unsigned limit, std::vector<
 				TermList*>& result);
 
 		void populate_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
@@ -80,9 +82,6 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 
 		static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
 		static void unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask);
-
-		static int compare_string(const std::vector<unsigned>& first_word, const std::vector<unsigned>& second_word,
-				unsigned first_error_mask, unsigned second_error_mask);
 
 		static int compare_string(const std::vector<unsigned>& first_word, const std::vector<unsigned>& second_word,
 				unsigned first_error_mask, unsigned second_error_mask, unsigned limit);
