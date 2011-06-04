@@ -35,7 +35,7 @@
 
 class BrassSpellingTableFastSS : public BrassSpellingTable
 {
-		static const unsigned K = 2;
+		//		static const unsigned K = 2;
 
 		class TermIndexCompare
 		{
@@ -55,23 +55,24 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				bool operator()(unsigned first_term, unsigned second_term);
 		};
 
-		static unsigned get_data_int(const string& data, unsigned index);
+		unsigned get_data_int(const string& data, unsigned index);
 
-		static void append_data_int(string& data, unsigned value);
+		void append_data_int(string& data, unsigned value);
 
-		int binarySearch(const string& data, const string& word, unsigned error_mask, int start, int end, bool lower);
+		unsigned term_binary_search(const string& data, const vector<unsigned>& word, unsigned error_mask, unsigned start,
+				unsigned end, bool lower);
 
-		void toggleTerm(const string& word, string& prefix, unsigned index, unsigned error_mask);
+		void toggle_term(const string& word, string& prefix, unsigned index, unsigned error_mask);
 
-		void toggleRecursiveTerm(const string& word, string& prefix, unsigned index, unsigned error_mask,
+		void toggle_recursive_term(const string& word, string& prefix, unsigned index, unsigned error_mask,
 				unsigned start, unsigned k, unsigned limit);
 
-		void populateTerm(const string& word, string& prefix, unsigned error_mask);
+		void populate_term(const string& word, string& prefix, unsigned error_mask, std::vector<TermList*>& result);
 
-		void populateRecursiveTerm(const string& word, string& prefix, unsigned error_mask, unsigned start, unsigned k,
-				unsigned limit);
+		void populate_recursive_term(const string& word, string& prefix, unsigned error_mask, unsigned start,
+				unsigned k, unsigned limit, std::vector<TermList*>& result);
 
-		void get_term_prefix(string& prefix, const string& word, unsigned error_mask, unsigned prefix_length);
+		void get_term_prefix(const string& word, string& prefix, unsigned error_mask, unsigned prefix_length);
 
 		static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
 		static void unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask);
@@ -94,15 +95,6 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result);
 
 	public:
-
-		/** Create a new BrassSpellingTable object.
-		 *
-		 *  This method does not create or open the table on disk - you
-		 *  must call the create() or open() methods respectively!
-		 *
-		 *  @param dbdir		The directory the brass database is stored in.
-		 *  @param readonly		true if we're opening read-only, else false.
-		 */
 		BrassSpellingTableFastSS(const std::string & dbdir, bool readonly) :
 			BrassSpellingTable(dbdir, readonly), wordlist_map(), termlist_deltas(), term_compare(wordlist_map)
 		{
@@ -110,7 +102,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 
 		string get_word(unsigned index);
 
-		/** Override methods of BrassTable.
+		/** Override methods of BrassSpellingTable.
 		 *
 		 *  NB: these aren't virtual, but we always call them on the subclass in
 		 *  cases where it matters.
@@ -118,10 +110,43 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		 */
 		void cancel()
 		{
+			wordlist_map.clear();
 			termlist_deltas.clear();
 			BrassSpellingTable::cancel();
 		}
 		// @}
+};
+
+class BrassSpellingFastSSTermList : public TermList
+{
+		std::vector<std::string> words;
+		unsigned index;
+
+	public:
+		BrassSpellingFastSSTermList(const std::vector<std::string>& words_) :
+			words(words_), index(0)
+		{
+		}
+
+		Xapian::termcount get_approx_size() const;
+
+		std::string get_termname() const;
+
+		Xapian::termcount get_wdf() const;
+
+		Xapian::doccount get_termfreq() const;
+
+		Xapian::termcount get_collection_freq() const;
+
+		TermList * next();
+
+		TermList * skip_to(const std::string & term);
+
+		bool at_end() const;
+
+		Xapian::termcount positionlist_count() const;
+
+		Xapian::PositionIterator positionlist_begin() const;
 };
 
 #endif // XAPIAN_INCLUDED_BRASS_SPELLING_FASTSS_H
