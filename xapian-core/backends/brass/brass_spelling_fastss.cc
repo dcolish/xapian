@@ -1,4 +1,4 @@
-/** @file brass_spelling.cc
+/** @file brass_spelling_fastss.cc
  * @brief Spelling correction data for a brass database.
  */
 /* Copyright (C) 2004,2005,2006,2007,2008,2009,2010 Olly Betts
@@ -39,8 +39,6 @@
 #include <set>
 #include <string>
 
-#include <iostream>
-
 using namespace Brass;
 using namespace Xapian;
 using namespace Unicode;
@@ -75,23 +73,23 @@ void BrassSpellingTableFastSS::unpack_term_index(unsigned termindex, unsigned& w
 	error_mask = termindex >> shift;
 }
 
-void BrassSpellingTableFastSS::get_term_prefix(const string& word, string& prefix, unsigned error_mask,
+void BrassSpellingTableFastSS::get_term_prefix(const vector<unsigned>& word, string& prefix, unsigned error_mask,
 		unsigned prefix_length)
 {
 	for (unsigned i = 0; i < word.size() && prefix.size() < prefix_length; ++i, error_mask >>= 1)
 	{
-		if (~error_mask & 1) prefix.push_back(word[i]);
+		if (~error_mask & 1) append_utf8(prefix, word[i]);
 	}
 }
 
-int BrassSpellingTableFastSS::compare_string(const string& first_word, const string& second_word,
+int BrassSpellingTableFastSS::compare_string(const vector<unsigned>& first_word, const vector<unsigned>& second_word,
 		unsigned first_error_mask, unsigned second_error_mask)
 {
 	return compare_string(first_word, second_word, first_error_mask, second_error_mask, max(first_word.size(),
 			second_word.size()));
 }
 
-int BrassSpellingTableFastSS::compare_string(const string& first_word, const string& second_word,
+int BrassSpellingTableFastSS::compare_string(const vector<unsigned>& first_word, const vector<unsigned>& second_word,
 		unsigned first_error_mask, unsigned second_error_mask, unsigned limit)
 {
 	unsigned first_i = 0;
@@ -124,9 +122,16 @@ int BrassSpellingTableFastSS::compare_string(const string& first_word, const str
 
 void BrassSpellingTableFastSS::merge_fragment_changes()
 {
+	string word;
 	for (unsigned i = 0; i < wordlist_map.size(); ++i)
 	{
-		add("WI" + i, wordlist_map[i]);
+		word.clear();
+		const vector<unsigned>& word_utf = wordlist_map[i];
+
+		for (unsigned j = 0; j < word_utf.size(); ++j)
+			append_utf8(word, word_utf[j]);
+
+		add("WI" + i, word);
 	}
 
 	string data;
@@ -149,14 +154,17 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 
 void BrassSpellingTableFastSS::toggle_word(const string& word)
 {
-	wordlist_map.push_back(word);
+	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
+
+	wordlist_map.push_back(word_utf);
 	unsigned index = wordlist_map.size() - 1;
 
 	string prefix;
-	toggle_recursive_term(word, prefix, index, 0, 0, 2, 8);
+	toggle_recursive_term(word_utf, prefix, index, 0, 0, 2, 8);
 }
 
-void BrassSpellingTableFastSS::toggle_term(const string& word, string& prefix, unsigned index, unsigned error_mask)
+void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string& prefix, unsigned index,
+		unsigned error_mask)
 {
 	prefix.clear();
 	get_term_prefix(word, prefix, error_mask, 3);
@@ -171,12 +179,12 @@ void BrassSpellingTableFastSS::toggle_term(const string& word, string& prefix, u
 	it->second.insert(pack_term_index(index, error_mask));
 }
 
-void BrassSpellingTableFastSS::toggle_recursive_term(const string& word, string& prefix, unsigned index,
+void BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& word, string& prefix, unsigned index,
 		unsigned error_mask, unsigned start, unsigned k, unsigned limit)
 {
-	if (k == 0) return;
-
 	toggle_term(word, prefix, index, error_mask);
+
+	if (k == 0) return;
 
 	for (unsigned i = start; i < min(word.size(), limit); ++i)
 	{
@@ -204,8 +212,8 @@ void BrassSpellingTableFastSS::append_data_int(string& data, unsigned value)
 	}
 }
 
-void BrassSpellingTableFastSS::populate_term(const string& word, string& prefix, unsigned error_mask,
-		vector<TermList*>& result)
+void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, string& prefix, unsigned error_mask, vector<
+		TermList*>& result)
 {
 	prefix.clear();
 	get_term_prefix(word, prefix, error_mask, 3);
@@ -213,8 +221,8 @@ void BrassSpellingTableFastSS::populate_term(const string& word, string& prefix,
 	string data;
 	if (get_exact_entry("I" + prefix, data))
 	{
-		//		int lower = term_binary_search(data, word, error_mask, 0, data.size() / sizeof(unsigned), true);
-		//		int upper = term_binary_search(data, word, error_mask, lower, data.size() / sizeof(unsigned), false);
+		//		int lower = term_binary_search(data, word, error_mask, 0, data.size() / sizeof(unsigned), true, 8);
+		//		int upper = term_binary_search(data, word, error_mask, lower, data.size() / sizeof(unsigned), false, 8);
 
 		vector<string> result_list;
 		//		result_list.reserve(upper - lower);
@@ -235,12 +243,12 @@ void BrassSpellingTableFastSS::populate_term(const string& word, string& prefix,
 	}
 }
 
-unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const string& word, unsigned error_mask,
-		unsigned start, unsigned end, bool lower)
+unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const vector<unsigned>& word,
+		unsigned error_mask, unsigned start, unsigned end, bool lower, unsigned limit)
 {
 	unsigned count = end - start;
 
-	string current_word;
+	vector<unsigned> current_word;
 	while (count > 0)
 	{
 		unsigned current = start;
@@ -253,9 +261,9 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 		unsigned current_error_mask;
 		unpack_term_index(value, current_index, current_error_mask);
 
-		get_exact_entry("WI" + current_index, current_word);
+		get_word_entry(current_index, current_word);
 
-		int result = compare_string(current_word, word, current_error_mask, error_mask, 8);
+		int result = compare_string(current_word, word, current_error_mask, error_mask, limit);
 		if ((lower && result < 0) || (!lower && result <= 0))
 		{
 			start = ++current;
@@ -266,12 +274,21 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 	return start;
 }
 
-void BrassSpellingTableFastSS::populate_recursive_term(const string& word, string& prefix, unsigned error_mask,
-		unsigned start, unsigned k, unsigned limit, vector<TermList*>& result)
+void BrassSpellingTableFastSS::get_word_entry(unsigned index, vector<unsigned>& word)
 {
-	if (k == 0) return;
+	string entry;
+	if (get_exact_entry("WI" + index, entry))
+	{
+		word.assign((Utf8Iterator(entry)), Utf8Iterator());
+	}
+}
 
+void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& word, string& prefix,
+		unsigned error_mask, unsigned start, unsigned k, unsigned limit, vector<TermList*>& result)
+{
 	populate_term(word, prefix, error_mask, result);
+
+	if (k == 0) return;
 
 	for (unsigned i = start; i < min(word.size(), limit); ++i)
 	{
@@ -282,10 +299,10 @@ void BrassSpellingTableFastSS::populate_recursive_term(const string& word, strin
 
 void BrassSpellingTableFastSS::populate_word(const string& word, unsigned max_distance, vector<TermList*>& result)
 {
-	string prefix;
-	populate_recursive_term(word, prefix, 0, 0, min(max_distance, (unsigned) 2), 8, result);
+	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
-	//	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
+	string prefix;
+	populate_recursive_term(word_utf, prefix, 0, 0, min(max_distance, (unsigned) 2), 8, result);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -297,7 +314,7 @@ Xapian::termcount BrassSpellingFastSSTermList::get_approx_size() const
 
 std::string BrassSpellingFastSSTermList::get_termname() const
 {
-	return words[index - 1];
+	return words[index];
 }
 
 Xapian::termcount BrassSpellingFastSSTermList::get_wdf() const
@@ -318,21 +335,21 @@ Xapian::termcount BrassSpellingFastSSTermList::get_collection_freq() const
 TermList *
 BrassSpellingFastSSTermList::next()
 {
-	if (index < words.size()) ++index;
+	if (index < int(words.size())) ++index;
 	return NULL;
 }
 
 TermList *
 BrassSpellingFastSSTermList::skip_to(const string & term)
 {
-	while (index < words.size() && words[index] != term)
+	while (index < int(words.size()) && words[index] != term)
 		++index;
 	return NULL;
 }
 
 bool BrassSpellingFastSSTermList::at_end() const
 {
-	return index == words.size();
+	return index == int(words.size());
 }
 
 Xapian::termcount BrassSpellingFastSSTermList::positionlist_count() const

@@ -1,4 +1,4 @@
-/** @file brass_spelling.h
+/** @file brass_spelling_fastss.h
  * @brief Spelling correction data for a brass database.
  */
 /* Copyright (C) 2007,2008,2009,2010 Olly Betts
@@ -39,7 +39,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 
 		class TermIndexCompare
 		{
-				std::vector<string>& wordlist_map;
+				std::vector<std::vector<unsigned> >& wordlist_map;
 
 			public:
 				TermIndexCompare(const TermIndexCompare& other) :
@@ -47,7 +47,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				{
 				}
 
-				TermIndexCompare(std::vector<string>& wordlist_map_) :
+				TermIndexCompare(std::vector<std::vector<unsigned> >& wordlist_map_) :
 					wordlist_map(wordlist_map_)
 				{
 				}
@@ -55,36 +55,40 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				bool operator()(unsigned first_term, unsigned second_term);
 		};
 
+		void get_word_entry(unsigned index, std::vector<unsigned>& word);
+
 		unsigned get_data_int(const string& data, unsigned index);
 
 		void append_data_int(string& data, unsigned value);
 
-		unsigned term_binary_search(const string& data, const vector<unsigned>& word, unsigned error_mask, unsigned start,
-				unsigned end, bool lower);
+		unsigned term_binary_search(const string& data, const std::vector<unsigned>& word, unsigned error_mask,
+				unsigned start, unsigned end, bool lower, unsigned limit);
 
-		void toggle_term(const string& word, string& prefix, unsigned index, unsigned error_mask);
+		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask);
 
-		void toggle_recursive_term(const string& word, string& prefix, unsigned index, unsigned error_mask,
-				unsigned start, unsigned k, unsigned limit);
+		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
+				unsigned error_mask, unsigned start, unsigned k, unsigned limit);
 
-		void populate_term(const string& word, string& prefix, unsigned error_mask, std::vector<TermList*>& result);
+		void populate_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask, std::vector<
+				TermList*>& result);
 
-		void populate_recursive_term(const string& word, string& prefix, unsigned error_mask, unsigned start,
-				unsigned k, unsigned limit, std::vector<TermList*>& result);
+		void populate_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
+				unsigned start, unsigned k, unsigned limit, std::vector<TermList*>& result);
 
-		void get_term_prefix(const string& word, string& prefix, unsigned error_mask, unsigned prefix_length);
+		void get_term_prefix(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
+				unsigned prefix_length);
 
 		static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
 		static void unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask);
 
-		static int compare_string(const string& first_word, const string& second_word, unsigned first_error_mask,
-				unsigned second_error_mask);
+		static int compare_string(const std::vector<unsigned>& first_word, const std::vector<unsigned>& second_word,
+				unsigned first_error_mask, unsigned second_error_mask);
 
-		static int compare_string(const string& first_word, const string& second_word, unsigned first_error_mask,
-				unsigned second_error_mask, unsigned limit);
+		static int compare_string(const std::vector<unsigned>& first_word, const std::vector<unsigned>& second_word,
+				unsigned first_error_mask, unsigned second_error_mask, unsigned limit);
 
-		std::vector<string> wordlist_map;
-		std::map<std::string, std::set<unsigned, TermIndexCompare> > termlist_deltas;
+		std::vector<std::vector<unsigned> > wordlist_map;
+		std::map<string, std::set<unsigned, TermIndexCompare> > termlist_deltas;
 		TermIndexCompare term_compare;
 
 	protected:
@@ -120,11 +124,11 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 class BrassSpellingFastSSTermList : public TermList
 {
 		std::vector<std::string> words;
-		unsigned index;
+		int index;
 
 	public:
 		BrassSpellingFastSSTermList(const std::vector<std::string>& words_) :
-			words(words_), index(0)
+			words(words_), index(-1)
 		{
 		}
 
