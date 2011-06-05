@@ -39,6 +39,8 @@
 #include "brass_types.h"
 #include "valuestats.h"
 
+#include "brass_spelling_fastss.h"
+
 #include <map>
 
 class BrassTermList;
@@ -94,7 +96,7 @@ class BrassDatabase : public Xapian::Database::Internal {
 
 	/** Table storing spelling correction data.
 	 */
-	mutable BrassSpellingTableNew spelling_table;
+	mutable BrassSpellingTableFastSS spelling_table;
 
 	/** Table storing records.
 	 *
