@@ -1,7 +1,7 @@
 /** @file brass_spelling_fastss.cc
- * @brief Spelling correction data for a brass database.
+ * @brief FastSS spelling correction algorithm for a brass database.
  */
-/* Copyright (C) 2004,2005,2006,2007,2008,2009,2010 Olly Betts
+/* Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,23 +23,12 @@
 #include <xapian/error.h>
 #include <xapian/types.h>
 
-#include "expandweight.h"
 #include "brass_spelling_fastss.h"
-#include "omassert.h"
-#include "ortermlist.h"
-#include "pack.h"
 #include <xapian/unicode.h>
 
-#include "../prefix_compressed_strings.h"
-
-#include <algorithm>
-#include <map>
-#include <queue>
 #include <vector>
-#include <set>
 #include <string>
-
-#include <iostream>
+#include <tr1/unordered_set>
 
 using namespace Brass;
 using namespace Xapian;
@@ -185,7 +174,7 @@ void BrassSpellingTableFastSS::toggle_word(const string& word)
 	unsigned index = wordlist_map.size() - 1;
 
 	string prefix;
-	toggle_recursive_term(word_utf, prefix, index, 0, 0, K);
+	toggle_recursive_term(word_utf, prefix, index, 0, 0, min(K, word.size() / 2));
 }
 
 void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string& prefix, unsigned index,
@@ -285,15 +274,6 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
 	}
 }
 
-void BrassSpellingTableFastSS::get_word_entry(unsigned index, vector<unsigned>& word_utf)
-{
-	string word;
-	if (get_word(index, word))
-	{
-		word_utf.assign((Utf8Iterator(word)), Utf8Iterator());
-	}
-}
-
 void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& word, string& data, string& prefix,
 		unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance, unordered_set<unsigned>& result)
 {
@@ -315,7 +295,7 @@ void BrassSpellingTableFastSS::populate_word(const string& word, unsigned max_di
 	string prefix;
 	string data;
 	unordered_set<unsigned> result_set;
-	populate_recursive_term(word_utf, data, prefix, 0, 0, 0, min(max_distance, K), result_set);
+	populate_recursive_term(word_utf, data, prefix, 0, 0, 0, min(min(max_distance, K), word.size() / 2), result_set);
 
 	vector<unsigned> result_vector(result_set.begin(), result_set.end());
 	result.push_back(new BrassSpellingFastSSTermList(result_vector, *this));

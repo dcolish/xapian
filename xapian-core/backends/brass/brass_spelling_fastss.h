@@ -1,7 +1,7 @@
 /** @file brass_spelling_fastss.h
- * @brief Spelling correction data for a brass database.
+ * @brief FastSS spelling correction algorithm for a brass database.
  */
-/* Copyright (C) 2007,2008,2009,2010 Olly Betts
+/* Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,18 +23,13 @@
 
 #include <xapian/types.h>
 
-#include "brass_lazytable.h"
 #include "brass_spelling.h"
 #include "termlist.h"
 
-#include <map>
-#include <set>
 #include <vector>
 #include <tr1/unordered_set>
 
 #include <string>
-
-string convBase(unsigned long v, long base);
 
 class BrassSpellingTableFastSS : public BrassSpellingTable
 {
@@ -60,8 +55,6 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				bool operator()(unsigned first_term, unsigned second_term);
 		};
 
-		void get_word_entry(unsigned index, std::vector<unsigned>& word);
-
 		unsigned get_data_int(const string& data, unsigned index);
 
 		void append_data_int(string& data, unsigned value);
@@ -74,13 +67,16 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
 				unsigned error_mask, unsigned start, unsigned k);
 
+		//Search for a word and fill result set
 		void populate_term(const std::vector<unsigned>& word, string& data, string& prefix, unsigned error_mask,
 				bool update_prefix, std::tr1::unordered_set<unsigned>& result);
 
+		//Recursively search for a word with 0, 1, ..., max_distance errors.
 		void populate_recursive_term(const std::vector<unsigned>& word, string& data, string& prefix,
 				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance, std::tr1::unordered_set<
 						unsigned>& result);
 
+		//Generate prefix of a word using given error mask.
 		void get_term_prefix(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
 				unsigned prefix_length);
 
