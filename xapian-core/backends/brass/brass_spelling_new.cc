@@ -1,7 +1,7 @@
-/** @file brass_spelling.cc
- * @brief Spelling correction data for a brass database.
+/** @file brass_spelling_new.cc
+ * @brief N-gram based optimised spelling correction algorithm for a brass database.
  */
-/* Copyright (C) 2004,2005,2006,2007,2008,2009,2010 Olly Betts
+/* Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,8 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 			append_utf8(str_buf, word_utf[start + n - 1]);
 		else str_buf.push_back(placeholder);
 
-		if (str_buf_set.insert(str_buf).second) toggle_fragment(str_buf, word);
+		if (str_buf_set.insert(str_buf).second)
+			toggle_fragment(str_buf, word);
 	}
 
 	if (word_utf.size() <= n + 1)
@@ -87,7 +88,8 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 		append_utf8(str_buf, word_utf[0]);
 		append_utf8(str_buf, word_utf[word_utf.size() - 1]);
 
-		if (str_buf_set.insert(str_buf).second) toggle_fragment(str_buf, word);
+		if (str_buf_set.insert(str_buf).second)
+			toggle_fragment(str_buf, word);
 	}
 }
 
@@ -163,5 +165,6 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 
 void BrassSpellingTableNew::populate_action(const string& str_buf, string& data, vector<TermList*>& result)
 {
-	if (get_exact_entry(str_buf, data)) result.push_back(new BrassSpellingTermList(data));
+	if (get_exact_entry(str_buf, data))
+		result.push_back(new BrassSpellingTermList(data));
 }

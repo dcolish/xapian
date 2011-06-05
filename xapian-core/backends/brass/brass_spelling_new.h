@@ -1,7 +1,7 @@
-/** @file brass_spelling.h
- * @brief Spelling correction data for a brass database.
+/** @file brass_spelling_new.h
+ * @brief N-gram based optimised spelling correction algorithm for a brass database.
  */
-/* Copyright (C) 2007,2008,2009,2010 Olly Betts
+/* Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,14 +41,6 @@ class BrassSpellingTableNew : public BrassSpellingTable
 		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
 
 	public:
-		/** Create a new BrassSpellingTableNew object.
-		 *
-		 *  This method does not create or open the table on disk - you
-		 *  must call the create() or open() methods respectively!
-		 *
-		 *  @param dbdir		The directory the brass database is stored in.
-		 *  @param readonly		true if we're opening read-only, else false.
-		 */
 		BrassSpellingTableNew(const std::string & dbdir, bool readonly) :
 			BrassSpellingTable(dbdir, readonly)
 		{
