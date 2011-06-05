@@ -30,8 +30,11 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <tr1/unordered_set>
 
 #include <string>
+
+string convBase(unsigned long v, long base);
 
 class BrassSpellingTableFastSS : public BrassSpellingTable
 {
@@ -64,18 +67,19 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		void append_data_int(string& data, unsigned value);
 
 		unsigned term_binary_search(const string& data, const std::vector<unsigned>& word, unsigned error_mask,
-				unsigned start, unsigned end, bool lower, unsigned limit);
+				unsigned start, unsigned end, bool lower);
 
 		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask);
 
 		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
-				unsigned error_mask, unsigned start, unsigned k, unsigned limit);
+				unsigned error_mask, unsigned start, unsigned k);
 
-		void populate_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask, unsigned limit, std::vector<
-				TermList*>& result);
+		void populate_term(const std::vector<unsigned>& word, string& data, string& prefix, unsigned error_mask,
+				bool update_prefix, std::tr1::unordered_set<unsigned>& result);
 
-		void populate_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
-				unsigned start, unsigned k, unsigned limit, std::vector<TermList*>& result);
+		void populate_recursive_term(const std::vector<unsigned>& word, string& data, string& prefix,
+				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance, std::tr1::unordered_set<
+						unsigned>& result);
 
 		void get_term_prefix(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
 				unsigned prefix_length);
@@ -103,7 +107,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		{
 		}
 
-		string get_word(unsigned index);
+		bool get_word(unsigned index, string& word) const;
 
 		/** Override methods of BrassSpellingTable.
 		 *
@@ -122,12 +126,14 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 
 class BrassSpellingFastSSTermList : public TermList
 {
-		std::vector<std::string> words;
-		int index;
+		const BrassSpellingTableFastSS& table;
+		std::vector<unsigned> words;
+		std::string word;
+		unsigned index;
 
 	public:
-		BrassSpellingFastSSTermList(const std::vector<std::string>& words_) :
-			words(words_), index(-1)
+		BrassSpellingFastSSTermList(const std::vector<unsigned>& words_, const BrassSpellingTableFastSS& table_) :
+			table(table_), words(words_), index(0)
 		{
 		}
 
