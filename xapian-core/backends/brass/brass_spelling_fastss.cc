@@ -27,6 +27,7 @@
 #include <xapian/unicode.h>
 #include <xapian/unordered_set.h>
 
+#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -49,6 +50,29 @@ bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term,
 
 	const vector<unsigned>& first_word = wordlist_map[first_word_index];
 	const vector<unsigned>& second_word = wordlist_map[second_word_index];
+
+	return compare_string(first_word, second_word, first_error_mask, second_error_mask, max(first_word.size(),
+			second_word.size())) < 0;
+}
+
+bool BrassSpellingTableFastSS::TermDataCompare::operator()(unsigned first_term, unsigned second_term)
+{
+	unsigned first_word_index;
+	unsigned first_error_mask;
+
+	unpack_term_index(first_term, first_word_index, first_error_mask);
+
+	unsigned second_word_index;
+	unsigned second_error_mask;
+
+	unpack_term_index(second_term, second_word_index, second_error_mask);
+
+	string word_buffer;
+	table.get_exact_entry(string("WI") += first_word_index, word_buffer);
+	first_word.assign((Utf8Iterator(word_buffer)), Utf8Iterator());
+
+	table.get_exact_entry(string("WI") += second_word_index, word_buffer);
+	second_word.assign((Utf8Iterator(word_buffer)), Utf8Iterator());
 
 	return compare_string(first_word, second_word, first_error_mask, second_error_mask, max(first_word.size(),
 			second_word.size())) < 0;
@@ -135,29 +159,113 @@ int BrassSpellingTableFastSS::compare_string(const vector<unsigned>& first_word,
 
 void BrassSpellingTableFastSS::merge_fragment_changes()
 {
+	unsigned index_max = 0;
+	vector<unsigned> index_stack;
+
+	string databuffer;
+	if (get_exact_entry("INDEXMAX", databuffer))
+		index_max = get_data_int(databuffer, 0);
+
+	if (get_exact_entry("INDEXSTACK", databuffer))
+		for (unsigned i = 0; i < databuffer.size() / sizeof(unsigned); ++i)
+			index_stack.push_back(get_data_int(databuffer, i));
+
+	vector<unsigned> wordlist_index_map(wordlist_map.size(), 0);
+	unordered_set<unsigned> wordlist_remove_set;
+
 	string word;
 	for (unsigned i = 0; i < wordlist_map.size(); ++i)
 	{
-		word.clear();
 		const vector<unsigned>& word_utf = wordlist_map[i];
 
+		word.clear();
 		for (unsigned j = 0; j < word_utf.size(); ++j)
 			append_utf8(word, word_utf[j]);
 
-		add(string("WI") += i, word);
+		if (get_exact_entry(word, databuffer))
+		{
+			unsigned index = get_data_int(databuffer, 0);
+			wordlist_index_map[i] = index;
+			wordlist_remove_set.insert(index);
+			index_stack.push_back(index);
+
+			string key = string("WI") += index;
+			del(word);
+			del(key);
+		}
+		else
+		{
+			unsigned index;
+			if (!index_stack.empty())
+			{
+				index = index_stack.back();
+				index_stack.pop_back();
+			}
+			else index = index_max++;
+			wordlist_index_map[i] = index;
+
+			string key = string("WI") += index;
+			add(key, word);
+			databuffer.clear();
+			append_data_int(databuffer, index);
+			add(word, databuffer);
+		}
 	}
 
-	string data;
+	databuffer.clear();
+	append_data_int(databuffer, index_max);
+	add("INDEXMAX", databuffer);
 
-	map<string, set<unsigned, TermIndexCompare> >::const_iterator it;
+	databuffer.clear();
+	for (unsigned i = 0; i < index_stack.size(); ++i)
+		append_data_int(databuffer, index_stack[i]);
+	add("INDEXSTACK", databuffer);
+
+	string data;
+	vector<unsigned> full_prefix_vector;
+
+	unsigned word_index;
+	unsigned error_mask;
+
+	map<string, vector<unsigned> >::iterator it;
 	for (it = termlist_deltas.begin(); it != termlist_deltas.end(); ++it)
 	{
-		data.clear();
-		set<unsigned, TermIndexCompare>::const_iterator set_it;
+		unsigned source_count = 0;
 
-		for (set_it = it->second.begin(); set_it != it->second.end(); ++set_it)
+		full_prefix_vector.clear();
+		if (get_exact_entry(it->first, data))
 		{
-			append_data_int(data, *set_it);
+			for (unsigned i = 0; i < data.size() / sizeof(unsigned); ++i)
+			{
+				unsigned value = get_data_int(data, i);
+				unpack_term_index(value, word_index, error_mask);
+				if (wordlist_remove_set.count(word_index) == 0)
+				{
+					full_prefix_vector.push_back(value);
+					++source_count;
+				}
+			}
+		}
+
+		vector<unsigned>& prefix_vector = it->second;
+		sort(prefix_vector.begin(), prefix_vector.end(), term_compare);
+		for (unsigned i = 0; i < prefix_vector.size(); ++i)
+		{
+			unpack_term_index(prefix_vector[i], word_index, error_mask);
+			if (wordlist_remove_set.count(word_index) == 0)
+				full_prefix_vector.push_back(pack_term_index(wordlist_index_map[word_index], error_mask));
+		}
+
+		inplace_merge(full_prefix_vector.begin(), full_prefix_vector.begin() + source_count, full_prefix_vector.end(),
+				TermDataCompare(*this));
+
+		vector<unsigned>::const_iterator set_it;
+
+		data.clear();
+		for (set_it = full_prefix_vector.begin(); set_it != full_prefix_vector.end(); ++set_it)
+		{
+			unsigned value = *set_it;
+			append_data_int(data, value);
 		}
 		add(it->first, data);
 	}
@@ -186,14 +294,13 @@ void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string&
 		get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
 	}
 
-	map<string, set<unsigned, TermIndexCompare> >::iterator it = termlist_deltas.find(prefix);
+	map<string, vector<unsigned> >::iterator it = termlist_deltas.find(prefix);
 
-	if (update_prefix && it == termlist_deltas.end())
+	if (it == termlist_deltas.end())
 	{
-		set<unsigned, TermIndexCompare> empty_set(term_compare);
-		it = termlist_deltas.insert(make_pair(prefix, empty_set)).first;
+		it = termlist_deltas.insert(make_pair(prefix, vector<unsigned> ())).first;
 	}
-	it->second.insert(pack_term_index(index, error_mask));
+	it->second.push_back(pack_term_index(index, error_mask));
 }
 
 void BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& word, string& prefix, unsigned index,

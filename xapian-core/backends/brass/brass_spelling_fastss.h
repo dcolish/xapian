@@ -37,6 +37,21 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
 		static const unsigned PREFIX_LENGTH = 3;
 
+		class TermDataCompare
+		{
+				const BrassSpellingTableFastSS& table;
+				std::vector<unsigned> first_word;
+				std::vector<unsigned> second_word;
+
+			public:
+				TermDataCompare(const BrassSpellingTableFastSS& table_) :
+					table(table_)
+				{
+				}
+
+				bool operator()(unsigned first_term, unsigned second_term);
+		};
+
 		class TermIndexCompare
 		{
 				std::vector<std::vector<unsigned> >& wordlist_map;
@@ -62,7 +77,8 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		unsigned term_binary_search(const string& data, const std::vector<unsigned>& word, unsigned error_mask,
 				unsigned start, unsigned end, bool lower);
 
-		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask, bool update_prefix);
+		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask,
+				bool update_prefix);
 
 		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
 				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance);
@@ -87,7 +103,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				unsigned first_error_mask, unsigned second_error_mask, unsigned limit);
 
 		std::vector<std::vector<unsigned> > wordlist_map;
-		std::map<string, std::set<unsigned, TermIndexCompare> > termlist_deltas;
+		std::map<string, std::vector<unsigned> > termlist_deltas;
 		TermIndexCompare term_compare;
 
 	protected:
