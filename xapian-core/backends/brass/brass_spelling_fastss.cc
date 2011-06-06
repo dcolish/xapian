@@ -25,16 +25,15 @@
 
 #include "brass_spelling_fastss.h"
 #include <xapian/unicode.h>
+#include <xapian/unordered_set.h>
 
 #include <vector>
 #include <string>
-#include <tr1/unordered_set>
 
 using namespace Brass;
 using namespace Xapian;
 using namespace Xapian::Unicode;
 using namespace std;
-using namespace std::tr1;
 
 bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term, unsigned second_term)
 {
@@ -57,13 +56,13 @@ bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term,
 
 unsigned BrassSpellingTableFastSS::pack_term_index(unsigned wordindex, unsigned error_mask)
 {
-	const unsigned shift = (sizeof(unsigned) * 8 * 3) / 4;
+	const unsigned shift = sizeof(unsigned) * 8 - LIMIT;
 	return (wordindex & ((1 << shift) - 1)) | (error_mask << shift);
 }
 
 void BrassSpellingTableFastSS::unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask)
 {
-	const unsigned shift = (sizeof(unsigned) * 8 * 3) / 4;
+	const unsigned shift = sizeof(unsigned) * 8 - LIMIT;
 	wordindex = termindex & ((1 << shift) - 1);
 	error_mask = termindex >> shift;
 }
@@ -174,19 +173,22 @@ void BrassSpellingTableFastSS::toggle_word(const string& word)
 	unsigned index = wordlist_map.size() - 1;
 
 	string prefix;
-	toggle_recursive_term(word_utf, prefix, index, 0, 0, min(K, word.size() / 2));
+	toggle_recursive_term(word_utf, prefix, index, 0, 0, 0, min(MAX_DISTANCE, word.size() / 2));
 }
 
 void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string& prefix, unsigned index,
-		unsigned error_mask)
+		unsigned error_mask, bool update_prefix)
 {
-	prefix.clear();
-	prefix.push_back('I');
-	get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
+	if (update_prefix)
+	{
+		prefix.clear();
+		prefix.push_back('I');
+		get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
+	}
 
 	map<string, set<unsigned, TermIndexCompare> >::iterator it = termlist_deltas.find(prefix);
 
-	if (it == termlist_deltas.end())
+	if (update_prefix && it == termlist_deltas.end())
 	{
 		set<unsigned, TermIndexCompare> empty_set(term_compare);
 		it = termlist_deltas.insert(make_pair(prefix, empty_set)).first;
@@ -195,15 +197,16 @@ void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string&
 }
 
 void BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& word, string& prefix, unsigned index,
-		unsigned error_mask, unsigned start, unsigned k)
+		unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance)
 {
-	toggle_term(word, prefix, index, error_mask);
+	bool update_prefix = start <= PREFIX_LENGTH + distance;
+	toggle_term(word, prefix, index, error_mask, update_prefix);
 
-	if (k != 0)
+	if (distance < max_distance)
 		for (unsigned i = start; i < min(word.size(), LIMIT); ++i)
 		{
 			unsigned current_error_mask = error_mask | (1 << i);
-			toggle_recursive_term(word, prefix, index, current_error_mask, i + 1, k - 1);
+			toggle_recursive_term(word, prefix, index, current_error_mask, i + 1, distance + 1, max_distance);
 		}
 }
 
@@ -295,7 +298,8 @@ void BrassSpellingTableFastSS::populate_word(const string& word, unsigned max_di
 	string prefix;
 	string data;
 	unordered_set<unsigned> result_set;
-	populate_recursive_term(word_utf, data, prefix, 0, 0, 0, min(min(max_distance, K), word.size() / 2), result_set);
+	populate_recursive_term(word_utf, data, prefix, 0, 0, 0, min(min(max_distance, MAX_DISTANCE), word.size() / 2),
+			result_set);
 
 	vector<unsigned> result_vector(result_set.begin(), result_set.end());
 	result.push_back(new BrassSpellingFastSSTermList(result_vector, *this));

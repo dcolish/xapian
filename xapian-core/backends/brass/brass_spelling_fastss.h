@@ -27,14 +27,14 @@
 #include "termlist.h"
 
 #include <vector>
-#include <tr1/unordered_set>
+#include <xapian/unordered_set.h>
 
 #include <string>
 
 class BrassSpellingTableFastSS : public BrassSpellingTable
 {
-		static const unsigned K = 2;
-		static const unsigned LIMIT = 8;
+		static const unsigned MAX_DISTANCE = 2;
+		static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
 		static const unsigned PREFIX_LENGTH = 3;
 
 		class TermIndexCompare
@@ -62,10 +62,10 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		unsigned term_binary_search(const string& data, const std::vector<unsigned>& word, unsigned error_mask,
 				unsigned start, unsigned end, bool lower);
 
-		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask);
+		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask, bool update_prefix);
 
 		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
-				unsigned error_mask, unsigned start, unsigned k);
+				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance);
 
 		//Search for a word and fill result set
 		void populate_term(const std::vector<unsigned>& word, string& data, string& prefix, unsigned error_mask,
