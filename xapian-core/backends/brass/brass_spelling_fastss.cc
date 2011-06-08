@@ -30,6 +30,9 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <limits>
+
+#include <iostream>
 
 using namespace Brass;
 using namespace Xapian;
@@ -38,44 +41,33 @@ using namespace std;
 
 bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term, unsigned second_term)
 {
-	unsigned first_word_index;
-	unsigned first_error_mask;
-
 	unpack_term_index(first_term, first_word_index, first_error_mask);
-
-	unsigned second_word_index;
-	unsigned second_error_mask;
-
 	unpack_term_index(second_term, second_word_index, second_error_mask);
 
 	const vector<unsigned>& first_word = wordlist_map[first_word_index];
 	const vector<unsigned>& second_word = wordlist_map[second_word_index];
 
-	return compare_string(first_word, second_word, first_error_mask, second_error_mask, max(first_word.size(),
-			second_word.size())) < 0;
+	return compare_string(first_word.begin(), first_word.end(), second_word.begin(), second_word.end(),
+			first_error_mask, second_error_mask, numeric_limits<unsigned>::max()) < 0;
 }
 
 bool BrassSpellingTableFastSS::TermDataCompare::operator()(unsigned first_term, unsigned second_term)
 {
-	unsigned first_word_index;
-	unsigned first_error_mask;
-
 	unpack_term_index(first_term, first_word_index, first_error_mask);
-
-	unsigned second_word_index;
-	unsigned second_error_mask;
-
 	unpack_term_index(second_term, second_word_index, second_error_mask);
 
-	string word_buffer;
-	table.get_exact_entry(string("WI") += first_word_index, word_buffer);
-	first_word.assign((Utf8Iterator(word_buffer)), Utf8Iterator());
+	table.get_word(first_word_index, key_buffer, first_word_buffer);
+	table.get_word(second_word_index, key_buffer, second_word_buffer);
 
-	table.get_exact_entry(string("WI") += second_word_index, word_buffer);
-	second_word.assign((Utf8Iterator(word_buffer)), Utf8Iterator());
+	return compare_string((Utf8Iterator(first_word_buffer)), Utf8Iterator(), (Utf8Iterator(second_word_buffer)),
+			Utf8Iterator(), first_error_mask, second_error_mask, numeric_limits<unsigned>::max()) < 0;
+}
 
-	return compare_string(first_word, second_word, first_error_mask, second_error_mask, max(first_word.size(),
-			second_word.size())) < 0;
+void BrassSpellingTableFastSS::get_word_key(unsigned index, string& key)
+{
+	key.clear();
+	key.append("WI");
+	append_data_int(key, index);
 }
 
 unsigned BrassSpellingTableFastSS::pack_term_index(unsigned wordindex, unsigned error_mask)
@@ -96,7 +88,7 @@ unsigned BrassSpellingTableFastSS::get_data_int(const string& data, unsigned ind
 	unsigned result = 0;
 	for (unsigned i = 0; i < sizeof(unsigned); ++i)
 	{
-		result |= data[index * sizeof(unsigned) + i] << (i * 8);
+		result |= unsigned(byte(data[index * sizeof(unsigned) + i])) << (i * 8);
 	}
 	return result;
 }
@@ -121,42 +113,6 @@ void BrassSpellingTableFastSS::get_term_prefix(const vector<unsigned>& word, str
 	}
 }
 
-int BrassSpellingTableFastSS::compare_string(const vector<unsigned>& first_word, const vector<unsigned>& second_word,
-		unsigned first_error_mask, unsigned second_error_mask, unsigned limit)
-{
-	unsigned first_i = 0;
-	unsigned second_i = 0;
-	const unsigned first_end = min(first_word.size(), limit);
-	const unsigned second_end = min(second_word.size(), limit);
-
-	for (;; ++first_i, ++second_i, first_error_mask >>= 1, second_error_mask >>= 1)
-	{
-		while ((first_error_mask & 1) && first_i < first_end)
-		{
-			first_error_mask >>= 1;
-			++first_i;
-		}
-
-		while ((second_error_mask & 1) && second_i < second_end)
-		{
-			second_error_mask >>= 1;
-			++second_i;
-		}
-
-		if (first_i == first_end && second_i == second_end)
-			return 0;
-		if (first_i == first_end && second_i < second_end)
-			return -1;
-		if (first_i < first_end && second_i == second_end)
-			return 1;
-
-		if (first_word[first_i] < second_word[second_i])
-			return -1;
-		if (first_word[first_i] > second_word[second_i])
-			return 1;
-	}
-}
-
 void BrassSpellingTableFastSS::merge_fragment_changes()
 {
 	unsigned index_max = 0;
@@ -173,6 +129,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 	vector<unsigned> wordlist_index_map(wordlist_map.size(), 0);
 	unordered_set<unsigned> wordlist_remove_set;
 
+	string key;
 	string word;
 	for (unsigned i = 0; i < wordlist_map.size(); ++i)
 	{
@@ -189,7 +146,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 			wordlist_remove_set.insert(index);
 			index_stack.push_back(index);
 
-			string key = string("WI") += index;
+			get_word_key(index, key);
 			del(word);
 			del(key);
 		}
@@ -204,7 +161,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 			else index = index_max++;
 			wordlist_index_map[i] = index;
 
-			string key = string("WI") += index;
+			get_word_key(index, key);
 			add(key, word);
 			databuffer.clear();
 			append_data_int(databuffer, index);
@@ -221,53 +178,115 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 		append_data_int(databuffer, index_stack[i]);
 	add("INDEXSTACK", databuffer);
 
-	string data;
-	vector<unsigned> full_prefix_vector;
+	TermIndexCompare term_index_compare(wordlist_map);
+	TermDataCompare term_data_compare(*this);
 
-	unsigned word_index;
-	unsigned error_mask;
+	string new_databuffer;
+	new_databuffer.reserve(databuffer.size() * 2);
+
+	string key_buffer;
+	string existing_word_buffer;
+	string merging_word_buffer;
 
 	map<string, vector<unsigned> >::iterator it;
 	for (it = termlist_deltas.begin(); it != termlist_deltas.end(); ++it)
 	{
-		unsigned source_count = 0;
+		vector<unsigned>& merging_data = it->second;
+		sort(merging_data.begin(), merging_data.end(), term_index_compare);
 
-		full_prefix_vector.clear();
-		if (get_exact_entry(it->first, data))
+		if (!get_exact_entry(it->first, databuffer))
+			databuffer.clear();
+
+		unsigned existing_data_length = databuffer.size() / sizeof(unsigned);
+		unsigned merging_data_length = merging_data.size();
+
+		if (merging_data_length == 0)
+			continue;
+
+		unsigned existing_i = 0;
+		unsigned merging_i = 0;
+		bool update_existing = true;
+		bool update_merging = true;
+
+		unsigned existing_value = 0;
+		unsigned existing_word_index = 0;
+		unsigned existing_error_mask = 0;
+
+		unsigned merging_value = 0;
+		unsigned merging_word_index = 0;
+		unsigned merging_error_mask = 0;
+
+		new_databuffer.clear();
+
+		while (existing_i < existing_data_length || merging_i < merging_data_length)
 		{
-			for (unsigned i = 0; i < data.size() / sizeof(unsigned); ++i)
+			bool existing_has_more = existing_i < existing_data_length;
+			bool merging_has_more = merging_i < merging_data_length;
+
+			if (existing_has_more && update_existing)
 			{
-				unsigned value = get_data_int(data, i);
-				unpack_term_index(value, word_index, error_mask);
-				if (wordlist_remove_set.count(word_index) == 0)
+				existing_value = get_data_int(databuffer, existing_i);
+				unpack_term_index(existing_value, existing_word_index, existing_error_mask);
+				get_word(existing_word_index, key_buffer, existing_word_buffer);
+				update_existing = false;
+			}
+
+			if (merging_has_more && update_merging)
+			{
+				merging_value = merging_data[merging_i];
+				unpack_term_index(merging_value, merging_word_index, merging_error_mask);
+				merging_word_index = wordlist_index_map[merging_word_index];
+				merging_value = pack_term_index(merging_word_index, merging_error_mask);
+				get_word(merging_word_index, key_buffer, merging_word_buffer);
+				update_merging = false;
+			}
+
+			if (existing_has_more && merging_has_more)
+			{
+				if (existing_value == merging_value)
 				{
-					full_prefix_vector.push_back(value);
-					++source_count;
+					++existing_i;
+					++merging_i;
+					update_existing = true;
+					update_merging = true;
+				}
+				else
+				{
+					int compare_result = compare_string((Utf8Iterator(existing_word_buffer)), Utf8Iterator(),
+							(Utf8Iterator(merging_word_buffer)), Utf8Iterator(), existing_error_mask,
+							merging_error_mask, numeric_limits<unsigned>::max());
+
+					if (compare_result < 0)
+					{
+						append_data_int(new_databuffer, existing_value);
+						++existing_i;
+						update_existing = true;
+					}
+					else
+					{
+						append_data_int(new_databuffer, merging_value);
+						++merging_i;
+						update_merging = true;
+					}
+				}
+			}
+			else
+			{
+				if (existing_has_more)
+				{
+					append_data_int(new_databuffer, existing_value);
+					++existing_i;
+					update_existing = true;
+				}
+				else if (merging_has_more)
+				{
+					append_data_int(new_databuffer, merging_value);
+					++merging_i;
+					update_merging = true;
 				}
 			}
 		}
-
-		vector<unsigned>& prefix_vector = it->second;
-		sort(prefix_vector.begin(), prefix_vector.end(), term_compare);
-		for (unsigned i = 0; i < prefix_vector.size(); ++i)
-		{
-			unpack_term_index(prefix_vector[i], word_index, error_mask);
-			if (wordlist_remove_set.count(word_index) == 0)
-				full_prefix_vector.push_back(pack_term_index(wordlist_index_map[word_index], error_mask));
-		}
-
-		inplace_merge(full_prefix_vector.begin(), full_prefix_vector.begin() + source_count, full_prefix_vector.end(),
-				TermDataCompare(*this));
-
-		vector<unsigned>::const_iterator set_it;
-
-		data.clear();
-		for (set_it = full_prefix_vector.begin(); set_it != full_prefix_vector.end(); ++set_it)
-		{
-			unsigned value = *set_it;
-			append_data_int(data, value);
-		}
-		add(it->first, data);
+		add(it->first, new_databuffer);
 	}
 	wordlist_map.clear();
 	termlist_deltas.clear();
@@ -325,8 +344,8 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 	unsigned current_index;
 	unsigned current_error_mask;
 
-	string current_word_buffer;
-	vector<unsigned> current_word;
+	string key;
+	string current_word;
 
 	while (count > 0)
 	{
@@ -334,15 +353,14 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 		unsigned step = count / 2;
 		current += step;
 
-		unsigned value = get_data_int(data, current);
-		unpack_term_index(value, current_index, current_error_mask);
+		unsigned current_value = get_data_int(data, current);
+		unpack_term_index(current_value, current_index, current_error_mask);
 
-		if (get_word(current_index, current_word_buffer))
-		{
-			current_word.assign((Utf8Iterator(current_word_buffer)), Utf8Iterator());
-		}
+		get_word(current_index, key, current_word);
 
-		int result = compare_string(current_word, word, current_error_mask, error_mask, LIMIT);
+		int result = compare_string((Utf8Iterator(current_word)), Utf8Iterator(), word.begin(), word.end(),
+				current_error_mask, error_mask, LIMIT);
+
 		if ((lower && result < 0) || (!lower && result <= 0))
 		{
 			start = ++current;
@@ -356,14 +374,18 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, string& data, string& prefix,
 		unsigned error_mask, bool update_prefix, unordered_set<unsigned>& result)
 {
-	bool prefix_exists = true;
+	bool prefix_exists;
 	if (update_prefix)
 	{
 		prefix.clear();
 		prefix.push_back('I');
 		get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
 		prefix_exists = get_exact_entry(prefix, data);
+
+		if (!prefix_exists)
+			data.clear();
 	}
+	else prefix_exists = !data.empty();
 
 	if (prefix_exists)
 	{
@@ -371,13 +393,14 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
 		unsigned lower = term_binary_search(data, word, error_mask, 0, length, true);
 		unsigned upper = term_binary_search(data, word, error_mask, lower, length, false);
 
+		unsigned current_index;
+		unsigned current_error_mask;
+
 		for (unsigned i = lower; i < upper; ++i)
 		{
-			unsigned value = get_data_int(data, i);
+			unsigned current_value = get_data_int(data, i);
 
-			unsigned current_index;
-			unsigned current_error_mask;
-			unpack_term_index(value, current_index, current_error_mask);
+			unpack_term_index(current_value, current_index, current_error_mask);
 
 			result.insert(current_index);
 		}
@@ -412,9 +435,11 @@ void BrassSpellingTableFastSS::populate_word(const string& word, unsigned max_di
 	result.push_back(new BrassSpellingFastSSTermList(result_vector, *this));
 }
 
-bool BrassSpellingTableFastSS::get_word(unsigned index, string& word) const
+bool BrassSpellingTableFastSS::get_word(unsigned index, string& key, string& word) const
 {
-	return get_exact_entry(string("WI") += index, word);
+	key.clear();
+	get_word_key(index, key);
+	return get_exact_entry(key, word);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -448,7 +473,7 @@ TermList *
 BrassSpellingFastSSTermList::next()
 {
 	if (index < words.size())
-		table.get_word(words[index], word);
+		table.get_word(words[index], key_buffer, word);
 
 	++index;
 	return NULL;
