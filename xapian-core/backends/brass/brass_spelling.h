@@ -32,68 +32,19 @@
 
 #include <string>
 
-namespace Brass
-{
-	struct fragment
-	{
-			string data;
-
-			// Default constructor.
-			fragment() :
-				data(4, 0)
-			{
-			}
-
-			// Allow implicit conversion.
-			fragment(char data_[4]) :
-				data(data_, 4)
-			{
-			}
-
-			fragment(const string& data_) :
-				data(data_)
-			{
-			}
-
-			char & operator[](unsigned i)
-			{
-				return data[i];
-			}
-
-			const char & operator[](unsigned i) const
-			{
-				return data[i];
-			}
-
-			operator std::string() const
-			{
-				return data;
-			}
-
-			bool operator<(const fragment &b) const
-			{
-				return data.compare(b.data) < 0;
-			}
-	};
-
-}
-
 class BrassSpellingTable : public BrassLazyTable
 {
 		void set_entry_wordfreq(const string& word, Xapian::termcount freq);
 		Xapian::termcount get_entry_wordfreq(const string& word) const;
 
 		std::map<std::string, Xapian::termcount> wordfreq_changes;
-		std::map<Brass::fragment, std::set<std::string> > termlist_deltas;
 
 	protected:
-		virtual void merge_fragment_changes();
+		virtual void merge_fragment_changes() = 0;
 
-		void toggle_fragment(Brass::fragment frag, const std::string & word);
+		virtual void toggle_word(const string& word) = 0;
 
-		virtual void toggle_word(const string& word);
-
-		virtual void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result);
+		virtual void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result) = 0;
 
 	public:
 		/** Create a new BrassSpellingTable object.
@@ -143,57 +94,10 @@ class BrassSpellingTable : public BrassLazyTable
 		{
 			// Discard batched-up changes.
 			wordfreq_changes.clear();
-			termlist_deltas.clear();
 
 			BrassTable::cancel();
 		}
 		// @}
-};
-
-/** The list of words containing a particular trigram. */
-class BrassSpellingTermList : public TermList
-{
-		/// The encoded data.
-		std::string data;
-
-		/// Position in the data.
-		unsigned p;
-
-		/// The current term.
-		std::string current_term;
-
-		/// Copying is not allowed.
-		BrassSpellingTermList(const BrassSpellingTermList &);
-
-		/// Assignment is not allowed.
-		void operator=(const BrassSpellingTermList &);
-
-	public:
-		/// Constructor.
-		BrassSpellingTermList(const std::string & data_) :
-			data(data_), p(0)
-		{
-		}
-
-		Xapian::termcount get_approx_size() const;
-
-		std::string get_termname() const;
-
-		Xapian::termcount get_wdf() const;
-
-		Xapian::doccount get_termfreq() const;
-
-		Xapian::termcount get_collection_freq() const;
-
-		TermList * next();
-
-		TermList * skip_to(const std::string & term);
-
-		bool at_end() const;
-
-		Xapian::termcount positionlist_count() const;
-
-		Xapian::PositionIterator positionlist_begin() const;
 };
 
 #endif // XAPIAN_INCLUDED_BRASS_SPELLING_H

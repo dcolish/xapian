@@ -166,5 +166,5 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 void BrassSpellingTableNew::populate_action(const string& str_buf, string& data, vector<TermList*>& result)
 {
 	if (get_exact_entry(str_buf, data))
-		result.push_back(new BrassSpellingTermList(data));
+		result.push_back(new BrassSpellingTermListNGram(data));
 }

@@ -23,12 +23,12 @@
 
 #include <xapian/types.h>
 
-#include "brass_spelling.h"
+#include "brass_spelling_ngram.h"
 
 #include <string>
 #include <vector>
 
-class BrassSpellingTableNew : public BrassSpellingTable
+class BrassSpellingTableNew : public BrassSpellingTableNGram
 {
 		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, std::string& str_buf,
 				std::string& data, std::vector<TermList*>& result);
@@ -42,7 +42,7 @@ class BrassSpellingTableNew : public BrassSpellingTable
 
 	public:
 		BrassSpellingTableNew(const std::string & dbdir, bool readonly) :
-			BrassSpellingTable(dbdir, readonly)
+			BrassSpellingTableNGram(dbdir, readonly)
 		{
 		}
 };
