@@ -32,8 +32,6 @@
 #include <string>
 #include <limits>
 
-#include <iostream>
-
 using namespace Brass;
 using namespace Xapian;
 using namespace Xapian::Unicode;
@@ -127,7 +125,6 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 			index_stack.push_back(get_data_int(databuffer, i));
 
 	vector<unsigned> wordlist_index_map(wordlist_map.size(), 0);
-	unordered_set<unsigned> wordlist_remove_set;
 
 	string key;
 	string word;
@@ -143,7 +140,6 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 		{
 			unsigned index = get_data_int(databuffer, 0);
 			wordlist_index_map[i] = index;
-			wordlist_remove_set.insert(index);
 			index_stack.push_back(index);
 
 			get_word_key(index, key);
@@ -179,7 +175,6 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 	add("INDEXSTACK", databuffer);
 
 	TermIndexCompare term_index_compare(wordlist_map);
-	TermDataCompare term_data_compare(*this);
 
 	string new_databuffer;
 	new_databuffer.reserve(databuffer.size() * 2);
