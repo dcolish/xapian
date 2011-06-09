@@ -37,28 +37,6 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
 		static const unsigned PREFIX_LENGTH = 4;
 
-		class TermDataCompare
-		{
-				const BrassSpellingTableFastSS& table;
-				std::string key_buffer;
-				std::string first_word_buffer;
-				std::string second_word_buffer;
-
-				unsigned first_word_index;
-				unsigned first_error_mask;
-
-				unsigned second_word_index;
-				unsigned second_error_mask;
-
-			public:
-				TermDataCompare(const BrassSpellingTableFastSS& table_) :
-					table(table_)
-				{
-				}
-
-				bool operator()(unsigned first_term, unsigned second_term);
-		};
-
 		class TermIndexCompare
 		{
 				std::vector<std::vector<unsigned> >& wordlist_map;
@@ -70,11 +48,6 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				unsigned second_error_mask;
 
 			public:
-				TermIndexCompare(const TermIndexCompare& other) :
-					wordlist_map(other.wordlist_map)
-				{
-				}
-
 				TermIndexCompare(std::vector<std::vector<unsigned> >& wordlist_map_) :
 					wordlist_map(wordlist_map_)
 				{
@@ -83,18 +56,33 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 				bool operator()(unsigned first_term, unsigned second_term);
 		};
 
+		//Check if index doesn't exceed the bound 2^(32 - LIMIT).
+		static unsigned check_index(unsigned index);
+
+		//Creates key for to access word with given index
 		static void get_word_key(unsigned index, string& key);
 
+		//Pack word index and error mask into a value
+		static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
+
+		//Unpack word index and error mask from a value
+		static void unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask);
+
+		//Get integer value from a string data at given index
 		static unsigned get_data_int(const string& data, unsigned index);
 
+		//Append integer value to a string data at the end
 		static void append_data_int(string& data, unsigned value);
 
+		//Binary search in a data for a given word and error mask
 		unsigned term_binary_search(const string& data, const std::vector<unsigned>& word, unsigned error_mask,
 				unsigned start, unsigned end, bool lower);
 
+		//Toggle term in database
 		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask,
 				bool update_prefix);
 
+		//Recursively call toggle_term with 0 .. max_distance errors.
 		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
 				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance);
 
@@ -111,9 +99,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		void get_term_prefix(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
 				unsigned prefix_length);
 
-		static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
-		static void unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask);
-
+		//Compare two strings using error mask (error mask contains one-bits at positions with errors)
 		template<typename FirstIt, typename SecondIt>
 		static int compare_string(FirstIt first_it, FirstIt first_end, SecondIt second_it, SecondIt second_end,
 				unsigned first_error_mask, unsigned second_error_mask, unsigned limit)

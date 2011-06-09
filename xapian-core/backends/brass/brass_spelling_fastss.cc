@@ -49,23 +49,19 @@ bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term,
 			first_error_mask, second_error_mask, numeric_limits<unsigned>::max()) < 0;
 }
 
-bool BrassSpellingTableFastSS::TermDataCompare::operator()(unsigned first_term, unsigned second_term)
-{
-	unpack_term_index(first_term, first_word_index, first_error_mask);
-	unpack_term_index(second_term, second_word_index, second_error_mask);
-
-	table.get_word(first_word_index, key_buffer, first_word_buffer);
-	table.get_word(second_word_index, key_buffer, second_word_buffer);
-
-	return compare_string((Utf8Iterator(first_word_buffer)), Utf8Iterator(), (Utf8Iterator(second_word_buffer)),
-			Utf8Iterator(), first_error_mask, second_error_mask, numeric_limits<unsigned>::max()) < 0;
-}
-
 void BrassSpellingTableFastSS::get_word_key(unsigned index, string& key)
 {
 	key.clear();
 	key.append("WI");
 	append_data_int(key, index);
+}
+
+unsigned BrassSpellingTableFastSS::check_index(unsigned index)
+{
+	const unsigned shift = sizeof(unsigned) * 8 - LIMIT;
+	if (index > (1 << shift) - 1)
+		throw Xapian::DatabaseModifiedError("Can't add new entry - index is too large");
+	return index;
 }
 
 unsigned BrassSpellingTableFastSS::pack_term_index(unsigned wordindex, unsigned error_mask)
@@ -116,16 +112,19 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 	unsigned index_max = 0;
 	vector<unsigned> index_stack;
 
+	//Load index value from which we should start assign new indexes (if index stack is empty)
 	string databuffer;
 	if (get_exact_entry("INDEXMAX", databuffer))
 		index_max = get_data_int(databuffer, 0);
 
+	//Load stack of free indexes which should be assigned to new words.
 	if (get_exact_entry("INDEXSTACK", databuffer))
 		for (unsigned i = 0; i < databuffer.size() / sizeof(unsigned); ++i)
 			index_stack.push_back(get_data_int(databuffer, i));
 
 	vector<unsigned> wordlist_index_map(wordlist_map.size(), 0);
 
+	//Merge word list
 	string key;
 	string word;
 	for (unsigned i = 0; i < wordlist_map.size(); ++i)
@@ -136,39 +135,43 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 		for (unsigned j = 0; j < word_utf.size(); ++j)
 			append_utf8(word, word_utf[j]);
 
-		if (get_exact_entry(word, databuffer))
+		//If new word already exists, we should remove it
+		if (get_exact_entry("WV" + word, databuffer))
 		{
 			unsigned index = get_data_int(databuffer, 0);
 			wordlist_index_map[i] = index;
 			index_stack.push_back(index);
 
 			get_word_key(index, key);
-			del(word);
+			del("WV" + word);
 			del(key);
 		}
 		else
 		{
+			//Else assign new index and add word to database.
 			unsigned index;
 			if (!index_stack.empty())
 			{
 				index = index_stack.back();
 				index_stack.pop_back();
 			}
-			else index = index_max++;
+			else index = check_index(index_max++);
 			wordlist_index_map[i] = index;
 
 			get_word_key(index, key);
 			add(key, word);
 			databuffer.clear();
 			append_data_int(databuffer, index);
-			add(word, databuffer);
+			add("WV" + word, databuffer);
 		}
 	}
 
+	//Store index_max value
 	databuffer.clear();
 	append_data_int(databuffer, index_max);
 	add("INDEXMAX", databuffer);
 
+	//Store index_stack value
 	databuffer.clear();
 	for (unsigned i = 0; i < index_stack.size(); ++i)
 		append_data_int(databuffer, index_stack[i]);
@@ -183,6 +186,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 	string existing_word_buffer;
 	string merging_word_buffer;
 
+	//Merge terms (for each prefix)
 	map<string, vector<unsigned> >::iterator it;
 	for (it = termlist_deltas.begin(); it != termlist_deltas.end(); ++it)
 	{
@@ -213,6 +217,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 
 		new_databuffer.clear();
 
+		//Merge terms as sorted lists.
 		while (existing_i < existing_data_length || merging_i < merging_data_length)
 		{
 			bool existing_has_more = existing_i < existing_data_length;
@@ -265,22 +270,20 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 					}
 				}
 			}
-			else
+			else if (existing_has_more) //Copy remaining existing data
 			{
-				if (existing_has_more)
-				{
-					append_data_int(new_databuffer, existing_value);
-					++existing_i;
-					update_existing = true;
-				}
-				else if (merging_has_more)
-				{
-					append_data_int(new_databuffer, merging_value);
-					++merging_i;
-					update_merging = true;
-				}
+				append_data_int(new_databuffer, existing_value);
+				++existing_i;
+				update_existing = true;
+			}
+			else if (merging_has_more) //Copy remaining merging data
+			{
+				append_data_int(new_databuffer, merging_value);
+				++merging_i;
+				update_merging = true;
 			}
 		}
+		//Store new term list in database
 		add(it->first, new_databuffer);
 	}
 	wordlist_map.clear();
@@ -411,7 +414,7 @@ void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& w
 	if (distance < max_distance)
 		for (unsigned i = start; i < min(word.size(), LIMIT); ++i)
 		{
-			unsigned current_error_mask = error_mask | (1 << i);
+			unsigned current_error_mask = error_mask | (1 << i); // generate error mask - place one-bits at "error" positions
 			populate_recursive_term(word, data, prefix, current_error_mask, i + 1, distance + 1, max_distance, result);
 		}
 }
