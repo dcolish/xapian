@@ -40,9 +40,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 {
 	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
-	const int n = 3;
-	const int end = int(word_utf.size()) - n + 1;
-	const char placeholder = 'H';
+	const int end = int(word_utf.size()) - NGRAM_SIZE + 1;
 
 	set<string> str_buf_set;
 
@@ -54,26 +52,26 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 	{
 		str_buf.clear();
 		//Store position of n-gram in string
-		str_buf.push_back(char(start + n));
+		str_buf.push_back(char(start + NGRAM_SIZE));
 
 		//If head, put placeholder as the first char
 		if (start >= 0)
 			append_utf8(str_buf, word_utf[start]);
-		else str_buf.push_back(placeholder);
+		else str_buf.push_back(PLACEHOLDER);
 
-		for (int i = 1; i < n - 1; ++i)
+		for (int i = 1; i < NGRAM_SIZE - 1; ++i)
 			append_utf8(str_buf, word_utf[start + i]);
 
 		//If tail, put placeholder as the last char
 		if (start < end)
-			append_utf8(str_buf, word_utf[start + n - 1]);
-		else str_buf.push_back(placeholder);
+			append_utf8(str_buf, word_utf[start + NGRAM_SIZE - 1]);
+		else str_buf.push_back(PLACEHOLDER);
 
 		if (str_buf_set.insert(str_buf).second)
 			toggle_fragment(str_buf, word);
 	}
 
-	if (word_utf.size() <= n + 1)
+	if (word_utf.size() <= NGRAM_SIZE + 1)
 	{
 		// We also generate 'bookends' for two, three, and four character
 		// terms so we can handle transposition of the middle two
@@ -83,7 +81,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 
 		str_buf.clear();
 		str_buf.push_back(1);
-		str_buf.append(n - 2, placeholder);
+		str_buf.append(NGRAM_SIZE - 2, PLACEHOLDER);
 
 		append_utf8(str_buf, word_utf[0]);
 		append_utf8(str_buf, word_utf[word_utf.size() - 1]);
@@ -95,9 +93,6 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 
 void BrassSpellingTableNew::populate_word(const string& word, unsigned max_distance, vector<TermList*>& result)
 {
-	const int n = 3;
-	const char placeholder = 'H';
-
 	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
 	string str_buf;
@@ -108,11 +103,11 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 	populate_ngram_word(word_utf, max_distance, str_buf, data, result);
 
 	//'Bookends'
-	if (word_utf.size() <= n + 1)
+	if (word_utf.size() <= NGRAM_SIZE + 1)
 	{
 		str_buf.clear();
 		str_buf.push_back(1);
-		str_buf.append(n - 2, placeholder);
+		str_buf.append(NGRAM_SIZE - 2, PLACEHOLDER);
 
 		append_utf8(str_buf, word_utf[0]);
 		append_utf8(str_buf, word_utf[word_utf.size() - 1]);
@@ -121,7 +116,7 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 	}
 
 	//Transpositions for short words.
-	if (int(word_utf.size()) <= n)
+	if (int(word_utf.size()) <= NGRAM_SIZE)
 	{
 		for (int i = 0; i < int(word_utf.size()) - 1; ++i)
 		{
@@ -135,9 +130,7 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf, unsigned max_distance,
 		string& str_buf, string& data, vector<TermList*>& result)
 {
-	const int n = 3;
-	const int end = int(word_utf.size()) - n + 1;
-	const char placeholder = 'H';
+	const int end = int(word_utf.size()) - NGRAM_SIZE + 1;
 
 	for (int start = -1; start <= end; ++start)
 	{
@@ -146,18 +139,18 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 
 		if (start >= 0)
 			append_utf8(str_buf, word_utf[start]);
-		else str_buf.push_back(placeholder);
+		else str_buf.push_back(PLACEHOLDER);
 
-		for (int i = 1; i < n - 1; ++i)
+		for (int i = 1; i < NGRAM_SIZE - 1; ++i)
 			append_utf8(str_buf, word_utf[start + i]);
 
 		if (start < end)
-			append_utf8(str_buf, word_utf[start + n - 1]);
-		else str_buf.push_back(placeholder);
+			append_utf8(str_buf, word_utf[start + NGRAM_SIZE - 1]);
+		else str_buf.push_back(PLACEHOLDER);
 
 		for (int i = max(start - int(max_distance), -1); i <= start + int(max_distance); ++i)
 		{
-			str_buf[0] = char(n + i);
+			str_buf[0] = char(NGRAM_SIZE + i);
 			populate_action(str_buf, data, result);
 		}
 	}

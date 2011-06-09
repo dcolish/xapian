@@ -30,6 +30,9 @@
 
 class BrassSpellingTableNew : public BrassSpellingTableNGram
 {
+		static const int NGRAM_SIZE = 3;
+		static const char PLACEHOLDER = '$';
+
 		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, std::string& str_buf,
 				std::string& data, std::vector<TermList*>& result);
 
