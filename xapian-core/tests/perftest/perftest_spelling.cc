@@ -21,7 +21,7 @@ DEFINE_TESTCASE(spelling, spelling)
 {
 	Xapian::WritableDatabase db = backendmanager->get_writable_database("dbw", string());
 
-	ifstream infile("dict.txt");
+	ifstream infile("../testdata/dict.txt");
 
 	if (!infile)
 	{
@@ -40,6 +40,8 @@ DEFINE_TESTCASE(spelling, spelling)
 	}
 
 	infile.close();
+	db.commit();
+	db.flush();
 
 	unsigned int runsize = 100;
 
