@@ -36,7 +36,7 @@ namespace Brass
 {
 	struct fragment
 	{
-			string data;
+			std::string data;
 
 			// Default constructor.
 			fragment() :
@@ -83,13 +83,13 @@ class BrassSpellingTableNGram : public BrassSpellingTable
 		std::map<Brass::fragment, std::set<std::string> > termlist_deltas;
 
 	protected:
-		virtual void merge_fragment_changes();
+		void merge_fragment_changes();
 
 		void toggle_fragment(Brass::fragment frag, const std::string & word);
 
-		virtual void toggle_word(const string& word);
+		void toggle_word(const std::string& word);
 
-		virtual void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result);
+		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
 
 	public:
 
