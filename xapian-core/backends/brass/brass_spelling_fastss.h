@@ -36,6 +36,11 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		static const unsigned MAX_DISTANCE = 2;
 		static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
 		static const unsigned PREFIX_LENGTH = 4;
+		static const char PREFIX_SIGNATURE = 'P';
+		static const char* WORD_INDEX_SIGNATURE;
+		static const char* WORD_VALUE_SIGNATURE;
+		static const char* INDEXMAX_SIGNATURE;
+		static const char* INDEXSTACK_SIGNATURE;
 
 		class TermIndexCompare
 		{
@@ -75,28 +80,28 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		static void append_data_int(string& data, unsigned value);
 
 		//Binary search in a data for a given word and error mask
-		unsigned term_binary_search(const string& data, const std::vector<unsigned>& word, unsigned error_mask,
+		unsigned term_binary_search(const std::string& data, const std::vector<unsigned>& word, unsigned error_mask,
 				unsigned start, unsigned end, bool lower);
 
 		//Toggle term in database
-		void toggle_term(const std::vector<unsigned>& word, string& prefix, unsigned index, unsigned error_mask,
+		void toggle_term(const std::vector<unsigned>& word, std::string& prefix, unsigned index, unsigned error_mask,
 				bool update_prefix);
 
 		//Recursively call toggle_term with 0 .. max_distance errors.
-		void toggle_recursive_term(const std::vector<unsigned>& word, string& prefix, unsigned index,
+		void toggle_recursive_term(const std::vector<unsigned>& word, std::string& prefix, unsigned index,
 				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance);
 
 		//Search for a word and fill result set
-		void populate_term(const std::vector<unsigned>& word, string& data, string& prefix, unsigned error_mask,
-				bool update_prefix, std::tr1::unordered_set<unsigned>& result);
+		void populate_term(const std::vector<unsigned>& word, std::string& data, std::string& prefix,
+				unsigned error_mask, bool update_prefix, std::tr1::unordered_set<unsigned>& result);
 
 		//Recursively search for a word with 0, 1, ..., max_distance errors.
-		void populate_recursive_term(const std::vector<unsigned>& word, string& data, string& prefix,
+		void populate_recursive_term(const std::vector<unsigned>& word, std::string& data, std::string& prefix,
 				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance, std::tr1::unordered_set<
 						unsigned>& result);
 
 		//Generate prefix of a word using given error mask.
-		void get_term_prefix(const std::vector<unsigned>& word, string& prefix, unsigned error_mask,
+		void get_term_prefix(const std::vector<unsigned>& word, std::string& prefix, unsigned error_mask,
 				unsigned prefix_length);
 
 		//Compare two strings using error mask (error mask contains one-bits at positions with errors)
@@ -142,23 +147,23 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 			}
 		}
 
-		std::vector<std::vector<unsigned> > wordlist_map;
-		std::map<string, std::vector<unsigned> > termlist_deltas;
+		std::vector<std::vector<unsigned> > wordlist_deltas;
+		std::map<std::string, std::vector<unsigned> > termlist_deltas;
 
 	protected:
 		void merge_fragment_changes();
 
-		void toggle_word(const string& word);
+		void toggle_word(const std::string& word);
 
-		void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result);
+		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
 
 	public:
 		BrassSpellingTableFastSS(const std::string & dbdir, bool readonly) :
-			BrassSpellingTable(dbdir, readonly), wordlist_map(), termlist_deltas()
+			BrassSpellingTable(dbdir, readonly), wordlist_deltas(), termlist_deltas()
 		{
 		}
 
-		bool get_word(unsigned index, string& key, string& word) const;
+		bool get_word(unsigned index, std::string& key, std::string& word) const;
 
 		/** Override methods of BrassSpellingTable.key
 		 *
@@ -168,7 +173,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable
 		 */
 		void cancel()
 		{
-			wordlist_map.clear();
+			wordlist_deltas.clear();
 			termlist_deltas.clear();
 			BrassSpellingTable::cancel();
 		}

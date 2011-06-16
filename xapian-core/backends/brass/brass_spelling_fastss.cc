@@ -37,6 +37,11 @@ using namespace Xapian;
 using namespace Xapian::Unicode;
 using namespace std;
 
+const char* BrassSpellingTableFastSS::WORD_INDEX_SIGNATURE = "WI";
+const char* BrassSpellingTableFastSS::WORD_VALUE_SIGNATURE = "WV";
+const char* BrassSpellingTableFastSS::INDEXMAX_SIGNATURE = "INDEXMAX";
+const char* BrassSpellingTableFastSS::INDEXSTACK_SIGNATURE = "INDEXSTACK";
+
 bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term, unsigned second_term)
 {
 	unpack_term_index(first_term, first_word_index, first_error_mask);
@@ -52,7 +57,7 @@ bool BrassSpellingTableFastSS::TermIndexCompare::operator()(unsigned first_term,
 void BrassSpellingTableFastSS::get_word_key(unsigned index, string& key)
 {
 	key.clear();
-	key.append("WI");
+	key.append(WORD_INDEX_SIGNATURE);
 	append_data_int(key, index);
 }
 
@@ -114,36 +119,36 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 
 	//Load index value from which we should start assign new indexes (if index stack is empty)
 	string databuffer;
-	if (get_exact_entry("INDEXMAX", databuffer))
+	if (get_exact_entry(INDEXMAX_SIGNATURE, databuffer))
 		index_max = get_data_int(databuffer, 0);
 
 	//Load stack of free indexes which should be assigned to new words.
-	if (get_exact_entry("INDEXSTACK", databuffer))
+	if (get_exact_entry(INDEXSTACK_SIGNATURE, databuffer))
 		for (unsigned i = 0; i < databuffer.size() / sizeof(unsigned); ++i)
 			index_stack.push_back(get_data_int(databuffer, i));
 
-	vector<unsigned> wordlist_index_map(wordlist_map.size(), 0);
+	vector<unsigned> wordlist_index_map(wordlist_deltas.size(), 0);
 
 	//Merge word list
 	string key;
 	string word;
-	for (unsigned i = 0; i < wordlist_map.size(); ++i)
+	for (unsigned i = 0; i < wordlist_deltas.size(); ++i)
 	{
-		const vector<unsigned>& word_utf = wordlist_map[i];
+		const vector<unsigned>& word_utf = wordlist_deltas[i];
 
 		word.clear();
 		for (unsigned j = 0; j < word_utf.size(); ++j)
 			append_utf8(word, word_utf[j]);
 
 		//If new word already exists, we should remove it
-		if (get_exact_entry("WV" + word, databuffer))
+		if (get_exact_entry(WORD_VALUE_SIGNATURE + word, databuffer))
 		{
 			unsigned index = get_data_int(databuffer, 0);
 			wordlist_index_map[i] = index;
 			index_stack.push_back(index);
 
 			get_word_key(index, key);
-			del("WV" + word);
+			del(WORD_VALUE_SIGNATURE + word);
 			del(key);
 		}
 		else
@@ -162,22 +167,22 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 			add(key, word);
 			databuffer.clear();
 			append_data_int(databuffer, index);
-			add("WV" + word, databuffer);
+			add(WORD_VALUE_SIGNATURE + word, databuffer);
 		}
 	}
 
 	//Store index_max value
 	databuffer.clear();
 	append_data_int(databuffer, index_max);
-	add("INDEXMAX", databuffer);
+	add(INDEXMAX_SIGNATURE, databuffer);
 
 	//Store index_stack value
 	databuffer.clear();
 	for (unsigned i = 0; i < index_stack.size(); ++i)
 		append_data_int(databuffer, index_stack[i]);
-	add("INDEXSTACK", databuffer);
+	add(INDEXSTACK_SIGNATURE, databuffer);
 
-	TermIndexCompare term_index_compare(wordlist_map);
+	TermIndexCompare term_index_compare(wordlist_deltas);
 
 	string new_databuffer;
 	new_databuffer.reserve(databuffer.size() * 2);
@@ -286,7 +291,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 		//Store new term list in database
 		add(it->first, new_databuffer);
 	}
-	wordlist_map.clear();
+	wordlist_deltas.clear();
 	termlist_deltas.clear();
 }
 
@@ -294,8 +299,8 @@ void BrassSpellingTableFastSS::toggle_word(const string& word)
 {
 	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
-	wordlist_map.push_back(word_utf);
-	unsigned index = wordlist_map.size() - 1;
+	wordlist_deltas.push_back(word_utf);
+	unsigned index = wordlist_deltas.size() - 1;
 
 	string prefix;
 	toggle_recursive_term(word_utf, prefix, index, 0, 0, 0, min(MAX_DISTANCE, word.size() / 2));
@@ -307,7 +312,7 @@ void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string&
 	if (update_prefix)
 	{
 		prefix.clear();
-		prefix.push_back('P');
+		prefix.push_back(PREFIX_SIGNATURE);
 		get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
 	}
 
@@ -376,7 +381,7 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
 	if (update_prefix)
 	{
 		prefix.clear();
-		prefix.push_back('P');
+		prefix.push_back(PREFIX_SIGNATURE);
 		get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
 		prefix_exists = get_exact_entry(prefix, data);
 

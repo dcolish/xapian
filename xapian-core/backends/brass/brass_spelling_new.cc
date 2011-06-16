@@ -51,6 +51,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 	for (int start = -1; start <= end; ++start)
 	{
 		str_buf.clear();
+		str_buf.push_back(NGRAM_SIGNATURE);
 		//Store position of n-gram in string
 		str_buf.push_back(char(start + NGRAM_SIZE));
 
@@ -80,6 +81,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 		// the middle of a two character word. We store first and last characters.
 
 		str_buf.clear();
+		str_buf.push_back(NGRAM_SIGNATURE);
 		str_buf.push_back(1);
 		str_buf.append(NGRAM_SIZE - 2, PLACEHOLDER);
 
@@ -106,6 +108,7 @@ void BrassSpellingTableNew::populate_word(const string& word, unsigned max_dista
 	if (word_utf.size() <= NGRAM_SIZE + 1)
 	{
 		str_buf.clear();
+		str_buf.push_back(NGRAM_SIGNATURE);
 		str_buf.push_back(1);
 		str_buf.append(NGRAM_SIZE - 2, PLACEHOLDER);
 
@@ -135,6 +138,7 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 	for (int start = -1; start <= end; ++start)
 	{
 		str_buf.clear();
+		str_buf.push_back(NGRAM_SIGNATURE);
 		str_buf.push_back(1);
 
 		if (start >= 0)
@@ -150,7 +154,7 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 
 		for (int i = max(start - int(max_distance), -1); i <= start + int(max_distance); ++i)
 		{
-			str_buf[0] = char(NGRAM_SIZE + i);
+			str_buf[1] = char(NGRAM_SIZE + i);
 			populate_action(str_buf, data, result);
 		}
 	}

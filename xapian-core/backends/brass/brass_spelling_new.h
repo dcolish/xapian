@@ -32,11 +32,12 @@ class BrassSpellingTableNew : public BrassSpellingTableNGram
 {
 		static const int NGRAM_SIZE = 3;
 		static const char PLACEHOLDER = '$';
+		static const char NGRAM_SIGNATURE = 'N';
 
 		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, std::string& str_buf,
 				std::string& data, std::vector<TermList*>& result);
 
-		void populate_action(const std::string& str_buf, string& data, std::vector<TermList*>& result);
+		void populate_action(const std::string& str_buf, std::string& data, std::vector<TermList*>& result);
 
 	protected:
 		void toggle_word(const std::string& word);
