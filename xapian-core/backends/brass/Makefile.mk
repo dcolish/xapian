@@ -22,6 +22,9 @@ noinst_HEADERS +=\
 	backends/brass/brass_record.h\
 	backends/brass/brass_replicate_internal.h\
 	backends/brass/brass_spelling.h\
+	backends/brass/brass_spelling_fastss.h\
+	backends/brass/brass_spelling_ngram.h\
+	backends/brass/brass_spelling_new.h\
 	backends/brass/brass_spellingwordslist.h\
 	backends/brass/brass_synonym.h\
 	backends/brass/brass_table.h\
@@ -48,6 +51,9 @@ lib_src +=\
 	backends/brass/brass_postlist.cc\
 	backends/brass/brass_record.cc\
 	backends/brass/brass_spelling.cc\
+	backends/brass/brass_spelling_fastss.cc\
+	backends/brass/brass_spelling_ngram.cc\
+	backends/brass/brass_spelling_new.cc\
 	backends/brass/brass_spellingwordslist.cc\
 	backends/brass/brass_synonym.cc\
 	backends/brass/brass_table.cc\
