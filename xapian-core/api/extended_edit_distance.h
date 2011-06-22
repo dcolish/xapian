@@ -61,17 +61,17 @@ class ExtendedEditDistance
 
 		inline double get_insert_cost(unsigned index, unsigned length, unsigned /*ch*/)
 		{
-			return 0.75 + 0.4 * get_index_cost(index, length);
+			return 0.85 + 0.4 * get_index_cost(index, length);
 		}
 
-		inline double get_delete_cost(unsigned index, unsigned length, unsigned ch)
+		inline double get_delete_cost(unsigned index, unsigned length, unsigned /*ch*/)
 		{
-			return get_insert_cost(index, length, ch);
+			return 0.75 + 0.4 * get_index_cost(index, length);
 		}
 
 		inline double get_replace_cost(unsigned index, unsigned length, unsigned /*first_ch*/, unsigned /*second_ch*/)
 		{
-			return 0.75 + 0.5 * get_index_cost(index, length);
+			return 0.75 + 0.35 * get_index_cost(index, length);
 		}
 
 		inline double get_transposition_cost(unsigned index, unsigned length, unsigned /*first_ch*/, unsigned /*second_ch*/)

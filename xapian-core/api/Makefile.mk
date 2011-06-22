@@ -1,6 +1,7 @@
 noinst_HEADERS +=\
 	api/documentvaluelist.h\
 	api/editdistance.h\
+	api/extended_edit_distance.h\
 	api/maptermlist.h
 
 EXTRA_DIST +=\
@@ -12,6 +13,7 @@ lib_src +=\
 	api/decvalwtsource.cc\
 	api/documentvaluelist.cc\
 	api/editdistance.cc\
+	api/extended_edit_distance.cc\
 	api/emptypostlist.cc\
 	api/error.cc\
 	api/errorhandler.cc\
