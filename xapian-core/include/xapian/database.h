@@ -349,6 +349,17 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	std::string get_spelling_suggestion(const std::string &word,
 					    unsigned max_edit_distance = 2) const;
 
+	/** Suggest a spelling correction for group of words.
+	 *
+	 *  @param word Potentially misspelled words.
+	 *  @param max_edit_distance	Only consider words which are at most
+	 *	@a max_edit_distance edits from @a word.  An edit is a
+	 *	character insertion, deletion, or the transposition of two
+	 *	adjacent characters (default is 2).
+	 */
+	std::vector<std::string> get_spelling_suggestion(const std::vector<std::string> &words,
+					    unsigned max_edit_distance = 2) const;
+
 	/** An iterator which returns all the spelling correction targets.
 	 *
 	 *  This returns all the words which are considered as targets for the
@@ -802,6 +813,9 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 	void add_spelling(const std::string & word,
 			  Xapian::termcount freqinc = 1) const;
 
+	void add_spelling(const std::string & first_word, const std::string & second_word,
+			  Xapian::termcount freqinc = 1) const;
+
 	/** Remove a word from the spelling dictionary.
 	 *
 	 *  The word's frequency is decreased, and if would become zero or less
@@ -812,6 +826,9 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 	 */
 	void remove_spelling(const std::string & word,
 			     Xapian::termcount freqdec = 1) const;
+
+	void remove_spelling(const std::string & first_word, const std::string & second_word,
+			  Xapian::termcount freqdec = 1) const;
 
 	/** Add a synonym for a term.
 	 *

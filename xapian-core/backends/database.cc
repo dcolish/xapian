@@ -259,6 +259,15 @@ Database::Internal::get_spelling_frequency(const string &) const
     return 0;
 }
 
+Xapian::doccount
+Database::Internal::get_spellings_frequency(const string& first_word, const string& second_word) const
+{
+    // Only implemented for some database backends - others will just not
+    // suggest spelling corrections (or not contribute to them in a multiple
+    // database situation).
+    return get_spelling_frequency(first_word) + get_spelling_frequency(second_word);
+}
+
 void
 Database::Internal::add_spelling(const string &, Xapian::termcount) const
 {
@@ -269,6 +278,18 @@ void
 Database::Internal::remove_spelling(const string &, Xapian::termcount) const
 {
     throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
+}
+
+void
+Database::Internal::add_spellings(const string &, const string &, Xapian::termcount) const
+{
+	throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
+}
+
+void
+Database::Internal::remove_spellings(const string &, const string &, Xapian::termcount) const
+{
+	throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
 }
 
 TermList *

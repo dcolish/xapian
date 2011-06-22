@@ -34,17 +34,23 @@
 
 class BrassSpellingTable : public BrassLazyTable
 {
-		void set_entry_wordfreq(const string& word, Xapian::termcount freq);
-		Xapian::termcount get_entry_wordfreq(const string& word) const;
+		static const char WORD_SIGNATURE = 'W';
+		static const char WORDS_SIGNATURE = 'M';
+
+		static string pack_words(const string& first_word, const string& second_word);
+
+		void set_entry_wordfreq(char prefix, const string& word, Xapian::termcount freq);
+		Xapian::termcount get_entry_wordfreq(char prefix, const string& word) const;
 
 		std::map<std::string, Xapian::termcount> wordfreq_changes;
+		std::map<std::string, Xapian::termcount> wordsfreq_changes;
 
 	protected:
 		virtual void merge_fragment_changes() = 0;
 
-		virtual void toggle_word(const string& word) = 0;
+		virtual void toggle_word(const std::string& word) = 0;
 
-		virtual void populate_word(const string& word, unsigned max_distance, std::vector<TermList*>& result) = 0;
+		virtual void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result) = 0;
 
 	public:
 		/** Create a new BrassSpellingTable object.
@@ -66,11 +72,17 @@ class BrassSpellingTable : public BrassLazyTable
 		void add_word(const std::string & word, Xapian::termcount freqinc);
 		void remove_word(const std::string & word, Xapian::termcount freqdec);
 
+		void add_words(const std::string& first_word, const std::string& second_word, Xapian::termcount freqinc);
+
+		void remove_words(const std::string& first_word, const std::string& second_word, Xapian::termcount freqdec);
+
 		TermList * open_termlist(const std::string & word);
 
 		TermList * open_termlist(const std::string & word, unsigned max_distance);
 
 		Xapian::doccount get_word_frequency(const std::string & word) const;
+
+		Xapian::doccount get_words_frequency(const std::string& first_word, const std::string& second_word) const;
 
 		/** Override methods of BrassTable.
 		 *
@@ -81,7 +93,7 @@ class BrassSpellingTable : public BrassLazyTable
 
 		bool is_modified() const
 		{
-			return !wordfreq_changes.empty() || BrassTable::is_modified();
+			return !wordfreq_changes.empty() || !wordsfreq_changes.empty() || BrassTable::is_modified();
 		}
 
 		void flush_db()
@@ -94,6 +106,7 @@ class BrassSpellingTable : public BrassLazyTable
 		{
 			// Discard batched-up changes.
 			wordfreq_changes.clear();
+			wordsfreq_changes.clear();
 
 			BrassTable::cancel();
 		}

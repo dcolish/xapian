@@ -984,6 +984,12 @@ BrassDatabase::get_spelling_frequency(const string & word) const
     return spelling_table.get_word_frequency(word);
 }
 
+Xapian::doccount
+BrassDatabase::get_spellings_frequency(const string& first_word, const string& second_word) const
+{
+	return spelling_table.get_words_frequency(first_word, second_word);
+}
+
 TermList *
 BrassDatabase::open_synonym_termlist(const string & term) const
 {
@@ -1547,6 +1553,18 @@ BrassWritableDatabase::remove_spelling(const string & word,
 				       Xapian::termcount freqdec) const
 {
     spelling_table.remove_word(word, freqdec);
+}
+
+void
+BrassWritableDatabase::add_spellings(const string & first_word, const string & second_word, Xapian::termcount freqinc) const
+{
+	spelling_table.add_words(first_word, second_word, freqinc);
+}
+
+void
+BrassWritableDatabase::remove_spellings(const string & first_word, const string & second_word, Xapian::termcount freqdec) const
+{
+	spelling_table.remove_words(first_word, second_word, freqdec);
 }
 
 TermList *

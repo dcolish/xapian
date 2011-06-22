@@ -22,6 +22,7 @@
 
 #include <xapian/error.h>
 #include <xapian/types.h>
+#include <xapian/unordered_set.h>
 
 #include "expandweight.h"
 #include "brass_spelling.h"
@@ -48,9 +49,15 @@ void BrassSpellingTable::merge_changes()
 	map<string, Xapian::termcount>::const_iterator j;
 	for (j = wordfreq_changes.begin(); j != wordfreq_changes.end(); ++j)
 	{
-		set_entry_wordfreq(j->first, j->second);
+		set_entry_wordfreq(WORD_SIGNATURE, j->first, j->second);
 	}
 	wordfreq_changes.clear();
+
+	for (j = wordsfreq_changes.begin(); j != wordsfreq_changes.end(); ++j)
+	{
+		set_entry_wordfreq(WORDS_SIGNATURE, j->first, j->second);
+	}
+	wordsfreq_changes.clear();
 }
 
 void BrassSpellingTable::add_word(const string & word, Xapian::termcount freqinc)
@@ -73,7 +80,7 @@ void BrassSpellingTable::add_word(const string & word, Xapian::termcount freqinc
 	}
 	else
 	{
-		Xapian::termcount freq = get_entry_wordfreq(word);
+		Xapian::termcount freq = get_entry_wordfreq(WORD_SIGNATURE, word);
 		if (freq != 0)
 		{
 			wordfreq_changes[word] = freq + freqinc;
@@ -109,7 +116,7 @@ void BrassSpellingTable::remove_word(const string & word, Xapian::termcount freq
 	}
 	else
 	{
-		Xapian::termcount freq = get_entry_wordfreq(word);
+		Xapian::termcount freq = get_entry_wordfreq(WORD_SIGNATURE, word);
 		if (freq == 0)
 			return;
 
@@ -127,7 +134,56 @@ void BrassSpellingTable::remove_word(const string & word, Xapian::termcount freq
 	toggle_word(word);
 }
 
-TermList *
+string BrassSpellingTable::pack_words(const string& first_word, const string& second_word)
+{
+	hash<const string&> hasher;
+
+	string value;
+	unsigned first_hash = hasher(first_word);
+	unsigned second_hash = hasher(second_word);
+
+	if (first_hash > second_hash)
+		swap(first_hash, second_hash);
+
+	pack_uint_last(value, first_hash);
+	pack_uint_last(value, second_hash);
+
+	return value;
+}
+
+void BrassSpellingTable::add_words(const string& first_word, const string& second_word, Xapian::termcount freqinc)
+{
+	if (second_word.empty())
+		return add_word(first_word, freqinc);
+
+	if (first_word.empty())
+		return add_word(second_word, freqinc);
+
+	string word = pack_words(first_word, second_word);
+
+	map<string, Xapian::termcount>::iterator i = wordsfreq_changes.find(word);
+	if (i == wordsfreq_changes.end())
+	{
+		Xapian::termcount freq = get_entry_wordfreq(WORDS_SIGNATURE, word);
+		wordsfreq_changes[word] = freq + freqinc;
+	}
+	else i->second += freqinc;
+}
+
+void BrassSpellingTable::remove_words(const string& first_word, const string& second_word, Xapian::termcount freqdec)
+{
+	string word = pack_words(first_word, second_word);
+
+	map<string, Xapian::termcount>::iterator i = wordfreq_changes.find(word);
+	if (i == wordfreq_changes.end())
+	{
+		Xapian::termcount freq = get_entry_wordfreq(WORDS_SIGNATURE, word);
+		wordfreq_changes[word] = freq - min(freqdec, freq);
+	}
+	else i->second -= min(freqdec, i->second);
+}
+
+TermList*
 BrassSpellingTable::open_termlist(const string & word)
 {
 	return open_termlist(word, word.size());
@@ -211,27 +267,42 @@ Xapian::doccount BrassSpellingTable::get_word_frequency(const string & word) con
 		// Modified frequency for word:
 		return i->second;
 	}
-	return get_entry_wordfreq(word);
+	return get_entry_wordfreq(WORD_SIGNATURE, word);
 }
 
-void BrassSpellingTable::set_entry_wordfreq(const string& word, Xapian::termcount freq)
+Xapian::doccount BrassSpellingTable::get_words_frequency(const std::string& first_word, const std::string& second_word) const
 {
-	string key = "W" + word;
+	if (second_word.empty())
+		return get_word_frequency(first_word);
+	if (first_word.empty())
+		return get_word_frequency(second_word);
+
+	string word = pack_words(first_word, second_word);
+
+	map<string, Xapian::termcount>::const_iterator i = wordsfreq_changes.find(word);
+	if (i != wordsfreq_changes.end())
+	{
+		// Modified frequency for word:
+		return i->second;
+	}
+	return get_entry_wordfreq(WORDS_SIGNATURE, word);
+}
+
+void BrassSpellingTable::set_entry_wordfreq(char prefix, const string& word, Xapian::termcount freq)
+{
+	string key = prefix + word;
 	if (freq != 0)
 	{
 		string tag;
 		pack_uint_last(tag, freq);
 		add(key, tag);
 	}
-	else
-	{
-		del(key);
-	}
+	else del(key);
 }
 
-Xapian::termcount BrassSpellingTable::get_entry_wordfreq(const string& word) const
+Xapian::termcount BrassSpellingTable::get_entry_wordfreq(char prefix, const string& word) const
 {
-	string key = "W" + word;
+	string key = prefix + word;
 	string data;
 	if (get_exact_entry(key, data))
 	{

@@ -30,7 +30,7 @@
 #include "brass_positionlist.h"
 #include "brass_postlist.h"
 #include "brass_record.h"
-#include "brass_spelling_new.h"
+#include "brass_spelling_fastss.h"
 #include "brass_synonym.h"
 #include "brass_termlisttable.h"
 #include "brass_values.h"
@@ -38,8 +38,6 @@
 #include "../flint_lock.h"
 #include "brass_types.h"
 #include "valuestats.h"
-
-#include "brass_spelling_fastss.h"
 
 #include <map>
 
@@ -279,6 +277,7 @@ class BrassDatabase : public Xapian::Database::Internal {
 	TermList * open_spelling_termlist_max(const string & word, unsigned max_distance) const;
 	TermList * open_spelling_wordlist() const;
 	Xapian::doccount get_spelling_frequency(const string & word) const;
+	Xapian::doccount get_spellings_frequency(const string & first_word, const string & second_word) const;
 
 	TermList * open_synonym_termlist(const string & term) const;
 	TermList * open_synonym_keylist(const string & prefix) const;
@@ -391,6 +390,10 @@ class BrassWritableDatabase : public BrassDatabase {
 
 	void add_spelling(const string & word, Xapian::termcount freqinc) const;
 	void remove_spelling(const string & word, Xapian::termcount freqdec) const;
+
+	void add_spellings(const string & first_word, const string & second_word, Xapian::termcount freqinc) const;
+	void remove_spellings(const string & first_word, const string & second_word, Xapian::termcount freqdec) const;
+
 	TermList * open_spelling_wordlist() const;
 
 	TermList * open_synonym_keylist(const string & prefix) const;

@@ -321,6 +321,9 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	/** Return the number of times @a word was added as a spelling. */
 	virtual Xapian::doccount get_spelling_frequency(const string & word) const;
 
+	/** Return the number of times @a pair of words were added as a spelling. */
+	virtual Xapian::doccount get_spellings_frequency(const string & first_word, const string & second_word) const;
+
 	/** Add a word to the spelling dictionary.
 	 *
 	 *  If the word is already present, its frequency is increased.
@@ -330,6 +333,8 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	 */
 	virtual void add_spelling(const string & word,
 				  Xapian::termcount freqinc) const;
+
+	virtual void add_spellings(const string & first_word, const string & second_word, Xapian::termcount freqinc) const;
 
 	/** Remove a word from the spelling dictionary.
 	 *
@@ -341,6 +346,8 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	 */
 	virtual void remove_spelling(const string & word,
 				     Xapian::termcount freqdec) const;
+
+	virtual void remove_spellings(const string & first_word, const string & second_word, Xapian::termcount freqdec) const;
 
 	/** Open a termlist returning synonyms for a term.
 	 *
