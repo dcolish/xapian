@@ -814,7 +814,10 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 			  Xapian::termcount freqinc = 1) const;
 
 	void add_spelling(const std::string & first_word, const std::string & second_word,
-			  Xapian::termcount freqinc = 1) const;
+	                  Xapian::termcount freqinc = 1) const;
+
+	void add_spelling(const std::string & first_word, const std::string & second_word,
+	                  const std::string & third_word, Xapian::termcount freqinc = 1) const;
 
 	/** Remove a word from the spelling dictionary.
 	 *

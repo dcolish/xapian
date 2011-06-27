@@ -2,6 +2,8 @@ noinst_HEADERS +=\
 	api/documentvaluelist.h\
 	api/editdistance.h\
 	api/extended_edit_distance.h\
+	api/spelling_corrector.h\
+	api/spelling_splitter.h\
 	api/maptermlist.h
 
 EXTRA_DIST +=\
@@ -14,6 +16,8 @@ lib_src +=\
 	api/documentvaluelist.cc\
 	api/editdistance.cc\
 	api/extended_edit_distance.cc\
+	api/spelling_corrector.cc\
+	api/spelling_splitter.cc\
 	api/emptypostlist.cc\
 	api/error.cc\
 	api/errorhandler.cc\

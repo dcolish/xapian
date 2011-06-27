@@ -23,6 +23,7 @@
 
 #include <config.h>
 
+#include <time.h>
 #include "autoptr.h"
 
 #include <xapian/error.h>
@@ -52,8 +53,8 @@
 
 #include <xapian/unordered_map.h>
 
-
-#include <iostream>
+#include "spelling_corrector.h"
+#include "spelling_splitter.h"
 
 using namespace std;
 
@@ -670,350 +671,28 @@ Database::get_spelling_suggestion(const string &word,
     RETURN(result);
 }
 
-static unsigned
-request_internal(const vector< const Database::Internal* >& internal, const string& first_word, const string& second_word)
-{
-	unsigned freq = 0;
-
-	for (size_t i = 0; i < internal.size(); ++i)
-		freq += internal[i]->get_spellings_frequency(first_word, second_word);
-
-	if (freq > 0) return freq * 2;
-
-	for (size_t i = 0; i < internal.size(); ++i)
-		freq += internal[i]->get_spelling_frequency(first_word) + internal[i]->get_spelling_frequency(second_word);
-
-	if (freq > 0) freq = max(freq / 32, 1u);
-
-	return freq;
-}
-
-static void
-get_top_spelling_corrections(const vector< const Database::Internal* >& internal, const string& word, unsigned max_edit_distance, unsigned top, vector<string>& result)
-{
-	AutoPtr<TermList> merger;
-	for (size_t i = 0; i < internal.size(); ++i)
-	{
-		TermList* term_list = internal[i]->open_spelling_termlist_max(word, max_edit_distance);
-		if (term_list != 0)
-		{
-			if (merger.get() != 0)
-			{
-				merger.reset(new OrTermList(merger.release(), term_list));
-			}
-			else merger.reset(term_list);
-		}
-	}
-
-	if (merger.get() == 0) return;
-
-	vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
-	vector<unsigned> term_utf;
-	multimap<double, string> top_spelling;
-
-	ExtendedEditDistance edit_distance;
-
-	while (true)
-	{
-		TermList* return_term_list = merger->next();
-		if (return_term_list != 0) merger.reset(return_term_list);
-		if (merger->at_end()) break;
-
-		string term = merger->get_termname();
-		term_utf.assign((Utf8Iterator(term)), Utf8Iterator());
-
-		unsigned distance = edit_distance_unsigned(&term_utf[0], int(term_utf.size()), &word_utf[0], int(word_utf.size()), max_edit_distance);
-
-	    if (distance <= max_edit_distance)
-	    {
-	    	double distance_precise = edit_distance.edit_distance(&term_utf[0], term_utf.size(), &word_utf[0], word_utf.size(), distance);
-
-	    	top_spelling.insert(make_pair(distance_precise, term));
-
-	    	if (top_spelling.size() > top)
-	    		top_spelling.erase(--top_spelling.end());
-	    }
-	}
-
-	result.clear();
-	result.reserve(top_spelling.size());
-	for (multimap<double, string>::const_iterator it = top_spelling.begin(); it != top_spelling.end(); ++it)
-		result.push_back(it->second);
-}
-
-static void
-recursive_spelling_corrections(const vector< const Database::Internal* >& internal, const vector< vector<string> >& words, unsigned word_index, vector<unsigned>& spelling_word, unsigned word_freq, vector<unsigned>& max_spelling_word, unsigned& max_word_freq)
-{
-	if (word_index != words.size())
-	{
-		for (unsigned i = 0; i < words[word_index].size(); ++i)
-		{
-			spelling_word[word_index] = i;
-
-			if (word_index > 1)
-				word_freq += request_internal(internal, words[word_index - 1][spelling_word[word_index - 1]], words[word_index][i]);
-
-			recursive_spelling_corrections(internal, words, word_index + 1, spelling_word, word_freq, max_spelling_word, max_word_freq);
-		}
-	}
-	else if (word_freq > max_word_freq)
-	{
-		max_word_freq = word_freq;
-		max_spelling_word = spelling_word;
-	}
-}
-
-static unsigned
-get_spelling_corrected(const vector< Xapian::Internal::RefCntPtr<Database::Internal> >& internal_ref, const vector< string >& words, unsigned max_edit_distance, vector<string>& result)
-{
-	vector< const Database::Internal* > internal;
-	for (unsigned i = 0; i < internal_ref.size(); ++i)
-		internal.push_back(internal_ref[i].get());
-
-	vector< vector<string> > word_corrections(words.size());
-	for (unsigned i = 0; i < words.size(); ++i)
-		get_top_spelling_corrections(internal, words[i], max_edit_distance, 5, word_corrections[i]);
-
-	unsigned max_word_freq = 0;
-	vector<unsigned> max_spelling_word;
-
-	vector<unsigned> temp_spelling_word;
-	recursive_spelling_corrections(internal, word_corrections, 0, temp_spelling_word, 0, max_spelling_word, max_word_freq);
-
-	if (max_word_freq > 0)
-	{
-		result.clear();
-		result.reserve(word_corrections.size());
-		for (unsigned i = 0; i < word_corrections.size(); ++i)
-			result.push_back(word_corrections[i][max_spelling_word[i]]);
-	}
-	return max_word_freq;
-}
-
-//static unsigned
-//request(const string& first_word, const string& second_word)
-//{
-//	cout << "WORDS: " << first_word << "_" << second_word << endl;
-//
-//	if ((first_word == "мама" && second_word == "мыла") || ((first_word == "мыла" && second_word == "раму"))) return 1000;
-//	return 1;
-//}
-
-struct word_splitter_data
-{
-	typedef pair< pair<unsigned, unsigned>, pair<unsigned, unsigned> > key;
-
-	vector< const Database::Internal* > internal;
-
-	unsigned n;
-	unsigned max_word_freq;
-	vector<unsigned> max_word_stack;
-
-	unsigned word_count;
-	vector<unsigned> word_starts;
-	vector<unsigned> word_lengths;
-	vector<unsigned> word_stack;
-	vector<unsigned> word_utf_map;
-	vector<pair<unsigned, unsigned> > word_range;
-	map< key, unsigned > word_map;
-
-	string allword;
-	string first_string;
-	string second_string;
-};
-
-static unsigned
-request_pair(word_splitter_data& data)
-{
-	data.first_string.clear();
-	data.second_string.clear();
-
-	word_splitter_data::key word_key;
-
-	if (data.word_range.size() > 0)
-	{
-		word_key.first = data.word_range[0];
-
-		if (data.word_range.size() > 1)
-			word_key.second = data.word_range[1];
-	}
-
-	map< word_splitter_data::key , unsigned>::iterator it = data.word_map.find(word_key);
-	if (it == data.word_map.end())
-	{
-		if (data.word_range.size() > 0)
-		{
-			unsigned first_start_index = data.word_utf_map[word_key.first.first];
-			unsigned first_end_index = data.word_utf_map[word_key.first.second];
-			data.first_string.assign(data.allword, first_start_index, first_end_index - first_start_index);
-
-			if (data.word_range.size() > 1)
-			{
-				unsigned second_start_index = data.word_utf_map[word_key.second.first];
-				unsigned second_end_index = data.word_utf_map[word_key.second.second];
-				data.second_string.assign(data.allword, second_start_index, second_end_index - second_start_index);
-			}
-		}
-
-		unsigned value = request_internal(data.internal, data.first_string, data.second_string);
-		it = data.word_map.insert(make_pair(word_key, value)).first;
-	}
-	return it->second;
-}
-
-static void
-generate_word_splitter_result(const word_splitter_data& data, vector<string>& result)
-{
-	if (data.max_word_freq > 0)
-	{
-		result.clear();
-		result.reserve(data.max_word_stack.size() - 1);
-		string word;
-		for (unsigned i = 1; i < data.max_word_stack.size(); ++i)
-		{
-			unsigned start_index = data.word_utf_map[data.max_word_stack[i - 1]];
-			unsigned end_index = data.word_utf_map[data.max_word_stack[i]];
-
-			word.assign(data.allword, start_index, end_index - start_index);
-			result.push_back(word);
-		}
-	}
-}
-
-static void
-recursive_word_splits(word_splitter_data& data, unsigned word_index, unsigned word_offset, unsigned word_freq, unsigned k, unsigned split_start);
-
-static void
-recursive_word_splitter(word_splitter_data& data, unsigned word_index, unsigned word_offset, unsigned word_freq);
-
-static void
-recursive_word_splits(word_splitter_data& data, unsigned word_index, unsigned word_offset, unsigned word_freq, unsigned k, unsigned split_start)
-{
-	unsigned word_start = data.word_starts[word_index];
-	unsigned word_length = data.word_lengths[word_index];
-	bool last_word = word_index == data.word_count - 1;
-
-	if (!last_word)
-		recursive_word_splitter(data, word_index + 1, word_offset, word_freq);
-
-	data.word_stack.push_back(word_start + word_length);
-	recursive_word_splitter(data, word_index + 1, word_offset, word_freq);
-	data.word_stack.pop_back();
-
-	if (k != 0)
-	{
-		for (unsigned i = split_start; i < word_length; ++i)
-		{
-			data.word_stack.push_back(word_start + i);
-			recursive_word_splits(data, word_index, word_offset, word_freq, k - 1, i + 1);
-			data.word_stack.pop_back();
-		}
-	}
-}
-
-static void
-recursive_word_splitter(word_splitter_data& data, unsigned word_index, unsigned word_offset, unsigned word_freq)
-{
-	if (word_index == data.word_count && data.word_stack.size() <= data.n)
-	{
-		data.word_range.clear();
-		for (unsigned i = 1; i < data.word_stack.size(); ++i)
-		{
-			unsigned start_index = data.word_stack[i - 1];
-			unsigned end_index = data.word_stack[i];
-
-			data.word_range.push_back(make_pair(start_index, end_index));
-		}
-		word_freq += request_pair(data);
-	}
-
-	while (data.word_stack.size() > word_offset + data.n)
-	{
-		data.word_range.clear();
-		for (unsigned i = 1; i <= data.n; ++i)
-		{
-			unsigned start_index = data.word_stack[word_offset + i - 1];
-			unsigned end_index = data.word_stack[word_offset + i];
-
-			data.word_range.push_back(make_pair(start_index, end_index));
-		}
-		word_freq += request_pair(data);
-
-		++word_offset;
-	}
-
-	if (word_index == data.word_count)
-	{
-		if (word_freq > data.max_word_freq)
-		{
-			data.max_word_freq = word_freq;
-			data.max_word_stack = data.word_stack;
-		}
-	}
-	else recursive_word_splits(data, word_index, word_offset, word_freq, min(data.word_lengths[word_index] / 4, 3u), 1);
-}
-
-static unsigned
-get_spelling_splitted(const vector< Xapian::Internal::RefCntPtr<Database::Internal> >& internal, const vector<string>& words, vector<string>& result)
-{
-	word_splitter_data data;
-
-	for (unsigned i = 0; i < internal.size(); ++i)
-		data.internal.push_back(internal[i].get());
-
-	unsigned word_start = 0;
-	unsigned byte_start = 0;
-	for (unsigned i = 0; i < words.size(); ++i)
-	{
-		unsigned word_length = 0;
-
-		Utf8Iterator word_begin(words[i]);
-		Utf8Iterator word_end;
-
-		for (Utf8Iterator word_it = word_begin; word_it != word_end; ++word_it)
-		{
-			unsigned byte_i = word_it.raw() - word_begin.raw();
-			data.word_utf_map.push_back(byte_start + byte_i);
-			++word_length;
-		}
-
-		data.word_starts.push_back(word_start);
-		word_start += word_length;
-
-		data.word_lengths.push_back(word_length);
-		data.allword.append(words[i]);
-
-		byte_start += words[i].size();
-	}
-	data.word_utf_map.push_back(byte_start);
-
-	data.n = 2;
-	data.word_count = words.size();
-
-	data.max_word_freq = 0;
-
-	data.word_stack.push_back(0);
-	recursive_word_splitter(data, 0, 0, 0);
-
-	generate_word_splitter_result(data, result);
-
-	return data.max_word_freq;
-}
 
 vector<string>
 Database::get_spelling_suggestion(const vector<string>& words, unsigned max_edit_distance) const
 {
-	vector<string> result_spelling;
-	unsigned spelling_freq = get_spelling_corrected(internal, words, max_edit_distance, result_spelling);
+    LOGCALL(API, string, "Database::get_spelling_suggestion", words | max_edit_distance);
 
-	vector<string> result_splitter;
-	unsigned splitter_freq = get_spelling_splitted(internal, words, result_splitter);
+    SpellingCorrector spelling_corrector(internal);
 
-	if (spelling_freq == 0 && splitter_freq == 0) return words;
+    vector<string> result_spelling;
+    unsigned spelling_freq = spelling_corrector.get_spelling_corrected(words, max_edit_distance, result_spelling);
 
-	if (spelling_freq > splitter_freq)
-		return result_spelling;
-	return result_splitter;
+    SpellingSplitter spelling_splitter(internal);
+
+    vector<string> result_splitter;
+    unsigned splitter_freq = spelling_splitter.get_spelling_splitted(words, result_splitter);
+
+    if (spelling_freq == 0 && splitter_freq == 0) return words;
+
+    if (spelling_freq > splitter_freq)
+	return result_spelling;
+
+    return result_splitter;
 }
 
 TermIterator
@@ -1235,11 +914,20 @@ WritableDatabase::add_spelling(const std::string & word,
 
 void
 WritableDatabase::add_spelling(const std::string & first_word, const std::string & second_word,
-			       Xapian::termcount freqinc) const
+                               Xapian::termcount freqinc) const
 {
     LOGCALL_VOID(API, "WritableDatabase::add_spelling", first_word | second_word | freqinc);
     if (internal.size() != 1) only_one_subdatabase_allowed();
+
     internal[0]->add_spellings(first_word, second_word, freqinc);
+}
+
+void
+WritableDatabase::add_spelling(const std::string & first_word, const std::string & second_word,
+                               const std::string & third_word, Xapian::termcount freqinc) const
+{
+    add_spelling(first_word, second_word, freqinc * 2);
+    add_spelling(first_word, third_word, freqinc);
 }
 
 void

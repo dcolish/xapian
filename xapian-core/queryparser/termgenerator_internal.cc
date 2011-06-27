@@ -130,6 +130,9 @@ TermGenerator::Internal::index_text(Utf8Iterator itor, termcount weight,
 
     if (!stopper) stop_mode = STOPWORDS_NONE;
 
+    string last_term;
+    string last_last_term;
+
     while (true) {
 	// Advance to the start of the next term.
 	unsigned ch;
@@ -216,7 +219,15 @@ endofterm:
 	} else {
 	    doc.add_term(prefix + term, weight);
 	}
-	if ((flags & FLAG_SPELLING) && prefix.empty()) db.add_spelling(term);
+	if ((flags & FLAG_SPELLING) && prefix.empty()) {
+	    db.add_spelling(term);
+
+	    if (!last_term.empty() && !last_last_term.empty())
+		db.add_spelling(last_last_term, last_term, term);
+
+	    last_last_term = last_term;
+	    last_term = term;
+	}
 
 	if (!stemmer.internal.get()) continue;
 
