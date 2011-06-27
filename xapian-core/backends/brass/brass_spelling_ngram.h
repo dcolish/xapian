@@ -32,123 +32,121 @@
 
 #include <string>
 
-namespace Brass
-{
-	struct fragment
-	{
-			std::string data;
+namespace Brass {
 
-			// Default constructor.
-			fragment() :
-				data(4, 0)
-			{
-			}
+struct fragment {
+    std::string data;
 
-			// Allow implicit conversion.
-			fragment(char data_[4]) :
-				data(data_, 4)
-			{
-			}
+    // Default constructor.
+    fragment() :
+	data(4, 0)
+    {
+    }
 
-			fragment(const string& data_) :
-				data(data_)
-			{
-			}
+    // Allow implicit conversion.
+    fragment(char data_[4]) :
+	data(data_, 4)
+    {
+    }
 
-			char & operator[](unsigned i)
-			{
-				return data[i];
-			}
+    fragment(const string& data_) :
+	data(data_)
+    {
+    }
 
-			const char & operator[](unsigned i) const
-			{
-				return data[i];
-			}
+    char & operator[](unsigned i)
+    {
+	return data[i];
+    }
 
-			operator std::string() const
-			{
-				return data;
-			}
+    const char & operator[](unsigned i) const
+    {
+	return data[i];
+    }
 
-			bool operator<(const fragment &b) const
-			{
-				return data.compare(b.data) < 0;
-			}
-	};
+    operator std::string() const
+    {
+	return data;
+    }
+
+    bool operator<(const fragment &b) const
+    {
+	return data.compare(b.data) < 0;
+    }
+};
 
 }
 
-class BrassSpellingTableNGram : public BrassSpellingTable
-{
-		std::map<Brass::fragment, std::set<std::string> > termlist_deltas;
+class BrassSpellingTableNGram : public BrassSpellingTable {
+    std::map<Brass::fragment, std::set<std::string> > termlist_deltas;
 
-	protected:
-		void merge_fragment_changes();
+protected:
+    void merge_fragment_changes();
 
-		void toggle_fragment(Brass::fragment frag, const std::string & word);
+    void toggle_fragment(Brass::fragment frag, const std::string & word);
 
-		void toggle_word(const std::string& word);
+    void toggle_word(const std::string& word);
 
-		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
+    void populate_word(const std::string& word, unsigned max_distance,
+		       std::vector<TermList*>& result);
 
-	public:
+public:
 
-		BrassSpellingTableNGram(const std::string & dbdir, bool readonly) :
-			BrassSpellingTable(dbdir, readonly)
-		{
-		}
+    BrassSpellingTableNGram(const std::string & dbdir, bool readonly) :
+	BrassSpellingTable(dbdir, readonly)
+    {
+    }
 
-		void cancel()
-		{
-			termlist_deltas.clear();
-			BrassSpellingTable::cancel();
-		}
+    void cancel()
+    {
+	termlist_deltas.clear();
+	BrassSpellingTable::cancel();
+    }
 };
 
 /** The list of words containing a particular trigram. */
-class BrassSpellingTermListNGram : public TermList
-{
-		/// The encoded data.
-		std::string data;
+class BrassSpellingTermListNGram : public TermList {
+    /// The encoded data.
+    std::string data;
 
-		/// Position in the data.
-		unsigned p;
+    /// Position in the data.
+    unsigned p;
 
-		/// The current term.
-		std::string current_term;
+    /// The current term.
+    std::string current_term;
 
-		/// Copying is not allowed.
-		BrassSpellingTermListNGram(const BrassSpellingTermListNGram &);
+    /// Copying is not allowed.
+    BrassSpellingTermListNGram(const BrassSpellingTermListNGram &);
 
-		/// Assignment is not allowed.
-		void operator=(const BrassSpellingTermListNGram &);
+    /// Assignment is not allowed.
+    void operator=(const BrassSpellingTermListNGram &);
 
-	public:
-		/// Constructor.
-		BrassSpellingTermListNGram(const std::string & data_) :
-			data(data_), p(0)
-		{
-		}
+public:
+    /// Constructor.
+    BrassSpellingTermListNGram(const std::string & data_) :
+	data(data_), p(0)
+    {
+    }
 
-		Xapian::termcount get_approx_size() const;
+    Xapian::termcount get_approx_size() const;
 
-		std::string get_termname() const;
+    std::string get_termname() const;
 
-		Xapian::termcount get_wdf() const;
+    Xapian::termcount get_wdf() const;
 
-		Xapian::doccount get_termfreq() const;
+    Xapian::doccount get_termfreq() const;
 
-		Xapian::termcount get_collection_freq() const;
+    Xapian::termcount get_collection_freq() const;
 
-		TermList * next();
+    TermList * next();
 
-		TermList * skip_to(const std::string & term);
+    TermList * skip_to(const std::string & term);
 
-		bool at_end() const;
+    bool at_end() const;
 
-		Xapian::termcount positionlist_count() const;
+    Xapian::termcount positionlist_count() const;
 
-		Xapian::PositionIterator positionlist_begin() const;
+    Xapian::PositionIterator positionlist_begin() const;
 };
 
 #endif // XAPIAN_INCLUDED_BRASS_SPELLING_NGRAM_H

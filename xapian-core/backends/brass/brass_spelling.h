@@ -32,85 +32,95 @@
 
 #include <string>
 
-class BrassSpellingTable : public BrassLazyTable
-{
-		static const char WORD_SIGNATURE = 'W';
-		static const char WORDS_SIGNATURE = 'M';
+class BrassSpellingTable : public BrassLazyTable {
+    static const char WORD_SIGNATURE = 'W';
+    static const char WORDS_SIGNATURE = 'M';
 
-		static string pack_words(const string& first_word, const string& second_word);
+    static string pack_words(const string& first_word,
+			     const string& second_word);
 
-		void set_entry_wordfreq(char prefix, const string& word, Xapian::termcount freq);
-		Xapian::termcount get_entry_wordfreq(char prefix, const string& word) const;
+    void set_entry_wordfreq(char prefix, const string& word,
+			    Xapian::termcount freq);
 
-		std::map<std::string, Xapian::termcount> wordfreq_changes;
-		std::map<std::string, Xapian::termcount> wordsfreq_changes;
+    Xapian::termcount get_entry_wordfreq(char prefix, const string& word) const;
 
-	protected:
-		virtual void merge_fragment_changes() = 0;
+    std::map<std::string, Xapian::termcount> wordfreq_changes;
+    std::map<std::string, Xapian::termcount> wordsfreq_changes;
 
-		virtual void toggle_word(const std::string& word) = 0;
+protected:
+    virtual void merge_fragment_changes() = 0;
 
-		virtual void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result) = 0;
+    virtual void toggle_word(const std::string& word) = 0;
 
-	public:
-		/** Create a new BrassSpellingTable object.
-		 *
-		 *  This method does not create or open the table on disk - you
-		 *  must call the create() or open() methods respectively!
-		 *
-		 *  @param dbdir		The directory the brass database is stored in.
-		 *  @param readonly		true if we're opening read-only, else false.
-		 */
-		BrassSpellingTable(const std::string & dbdir, bool readonly) :
-			BrassLazyTable("spelling", dbdir + "/spelling.", readonly, Z_DEFAULT_STRATEGY)
-		{
-		}
+    virtual void populate_word(const std::string& word, unsigned max_distance,
+			       std::vector<TermList*>& result) = 0;
 
-		// Merge in batched-up changes.
-		void merge_changes();
+public:
+    /** Create a new BrassSpellingTable object.
+     *
+     *  This method does not create or open the table on disk - you
+     *  must call the create() or open() methods respectively!
+     *
+     *  @param dbdir		The directory the brass database is stored in.
+     *  @param readonly		true if we're opening read-only, else false.
+     */
+    BrassSpellingTable(const std::string & dbdir, bool readonly) :
+	BrassLazyTable("spelling", dbdir + "/spelling.", readonly,
+		       Z_DEFAULT_STRATEGY)
+    {
+    }
 
-		void add_word(const std::string & word, Xapian::termcount freqinc);
-		void remove_word(const std::string & word, Xapian::termcount freqdec);
+    // Merge in batched-up changes.
+    void merge_changes();
 
-		void add_words(const std::string& first_word, const std::string& second_word, Xapian::termcount freqinc);
+    void add_word(const std::string & word, Xapian::termcount freqinc);
+    void remove_word(const std::string & word, Xapian::termcount freqdec);
 
-		void remove_words(const std::string& first_word, const std::string& second_word, Xapian::termcount freqdec);
+    void add_words(const std::string& first_word,
+		   const std::string& second_word, Xapian::termcount freqinc);
 
-		TermList * open_termlist(const std::string & word);
+    void
+	    remove_words(const std::string& first_word,
+			 const std::string& second_word,
+			 Xapian::termcount freqdec);
 
-		TermList * open_termlist(const std::string & word, unsigned max_distance);
+    TermList * open_termlist(const std::string & word);
 
-		Xapian::doccount get_word_frequency(const std::string & word) const;
+    TermList * open_termlist(const std::string & word, unsigned max_distance);
 
-		Xapian::doccount get_words_frequency(const std::string& first_word, const std::string& second_word) const;
+    Xapian::doccount get_word_frequency(const std::string & word) const;
 
-		/** Override methods of BrassTable.
-		 *
-		 *  NB: these aren't virtual, but we always call them on the subclass in
-		 *  cases where it matters.
-		 *  @{
-		 */
+    Xapian::doccount get_words_frequency(const std::string& first_word,
+					 const std::string& second_word) const;
 
-		bool is_modified() const
-		{
-			return !wordfreq_changes.empty() || !wordsfreq_changes.empty() || BrassTable::is_modified();
-		}
+    /** Override methods of BrassTable.
+     *
+     *  NB: these aren't virtual, but we always call them on the subclass in
+     *  cases where it matters.
+     *  @{
+     */
 
-		void flush_db()
-		{
-			merge_changes();
-			BrassTable::flush_db();
-		}
+    bool is_modified() const
+    {
+	return !wordfreq_changes.empty() || !wordsfreq_changes.empty()
+		|| BrassTable::is_modified();
+    }
 
-		void cancel()
-		{
-			// Discard batched-up changes.
-			wordfreq_changes.clear();
-			wordsfreq_changes.clear();
+    void flush_db()
+    {
+	merge_changes();
+	BrassTable::flush_db();
+    }
 
-			BrassTable::cancel();
-		}
-		// @}
+    void cancel()
+    {
+	// Discard batched-up changes.
+	wordfreq_changes.clear();
+	wordsfreq_changes.clear();
+
+	BrassTable::cancel();
+    }
+    // @}
 };
 
 #endif // XAPIAN_INCLUDED_BRASS_SPELLING_H

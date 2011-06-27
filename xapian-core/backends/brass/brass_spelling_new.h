@@ -28,27 +28,29 @@
 #include <string>
 #include <vector>
 
-class BrassSpellingTableNew : public BrassSpellingTableNGram
-{
-		static const int NGRAM_SIZE = 3;
-		static const char PLACEHOLDER = '$';
-		static const char NGRAM_SIGNATURE = 'N';
+class BrassSpellingTableNew : public BrassSpellingTableNGram {
+    static const int NGRAM_SIZE = 3;
+    static const char PLACEHOLDER = '$';
+    static const char NGRAM_SIGNATURE = 'N';
 
-		void populate_ngram_word(const std::vector<unsigned>& word, unsigned max_distance, std::string& str_buf,
-				std::string& data, std::vector<TermList*>& result);
+    void populate_ngram_word(const std::vector<unsigned>& word,
+			     unsigned max_distance, std::string& str_buf,
+			     std::string& data, std::vector<TermList*>& result);
 
-		void populate_action(const std::string& str_buf, std::string& data, std::vector<TermList*>& result);
+    void populate_action(const std::string& str_buf, std::string& data,
+			 std::vector<TermList*>& result);
 
-	protected:
-		void toggle_word(const std::string& word);
+protected:
+    void toggle_word(const std::string& word);
 
-		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
+    void populate_word(const std::string& word, unsigned max_distance,
+		       std::vector<TermList*>& result);
 
-	public:
-		BrassSpellingTableNew(const std::string & dbdir, bool readonly) :
-			BrassSpellingTableNGram(dbdir, readonly)
-		{
-		}
+public:
+    BrassSpellingTableNew(const std::string & dbdir, bool readonly) :
+	BrassSpellingTableNGram(dbdir, readonly)
+    {
+    }
 };
 
 #endif // XAPIAN_INCLUDED_BRASS_SPELLING_NEW_H

@@ -31,188 +31,200 @@
 
 #include <string>
 
-class BrassSpellingTableFastSS : public BrassSpellingTable
-{
-		static const unsigned MAX_DISTANCE = 2;
-		static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
-		static const unsigned PREFIX_LENGTH = 4;
-		static const char PREFIX_SIGNATURE = 'P';
-		static const char* WORD_INDEX_SIGNATURE;
-		static const char* WORD_VALUE_SIGNATURE;
-		static const char* INDEXMAX_SIGNATURE;
-		static const char* INDEXSTACK_SIGNATURE;
+class BrassSpellingTableFastSS : public BrassSpellingTable {
 
-		class TermIndexCompare
-		{
-				std::vector<std::vector<unsigned> >& wordlist_map;
+    static const unsigned MAX_DISTANCE = 2;
+    static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
+    static const unsigned PREFIX_LENGTH = 4;
+    static const char PREFIX_SIGNATURE = 'P';
+    static const char* WORD_INDEX_SIGNATURE;
+    static const char* WORD_VALUE_SIGNATURE;
+    static const char* INDEXMAX_SIGNATURE;
+    static const char* INDEXSTACK_SIGNATURE;
 
-				unsigned first_word_index;
-				unsigned first_error_mask;
+    class TermIndexCompare {
+	std::vector<std::vector<unsigned> >& wordlist_map;
 
-				unsigned second_word_index;
-				unsigned second_error_mask;
+	unsigned first_word_index;
+	unsigned first_error_mask;
 
-			public:
-				TermIndexCompare(std::vector<std::vector<unsigned> >& wordlist_map_) :
-					wordlist_map(wordlist_map_)
-				{
-				}
+	unsigned second_word_index;
+	unsigned second_error_mask;
 
-				bool operator()(unsigned first_term, unsigned second_term);
-		};
+    public:
+	TermIndexCompare(std::vector<std::vector<unsigned> >& wordlist_map_) :
+	    wordlist_map(wordlist_map_)
+	{
+	}
 
-		//Check if index doesn't exceed the bound 2^(32 - LIMIT).
-		static unsigned check_index(unsigned index);
+	bool operator()(unsigned first_term, unsigned second_term);
+    };
 
-		//Creates key for to access word with given index
-		static void get_word_key(unsigned index, string& key);
+    //Check if index doesn't exceed the bound 2^(32 - LIMIT).
+    static unsigned check_index(unsigned index);
 
-		//Pack word index and error mask into a value
-		static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
+    //Creates key for to access word with given index
+    static void get_word_key(unsigned index, string& key);
 
-		//Unpack word index and error mask from a value
-		static void unpack_term_index(unsigned termindex, unsigned& wordindex, unsigned& error_mask);
+    //Pack word index and error mask into a value
+    static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
 
-		//Get integer value from a string data at given index
-		static unsigned get_data_int(const string& data, unsigned index);
+    //Unpack word index and error mask from a value
+    static void unpack_term_index(unsigned termindex, unsigned& wordindex,
+				  unsigned& error_mask);
 
-		//Append integer value to a string data at the end
-		static void append_data_int(string& data, unsigned value);
+    //Get integer value from a string data at given index
+    static unsigned get_data_int(const string& data, unsigned index);
 
-		//Binary search in a data for a given word and error mask
-		unsigned term_binary_search(const std::string& data, const std::vector<unsigned>& word, unsigned error_mask,
-				unsigned start, unsigned end, bool lower);
+    //Append integer value to a string data at the end
+    static void append_data_int(string& data, unsigned value);
 
-		//Toggle term in database
-		void toggle_term(const std::vector<unsigned>& word, std::string& prefix, unsigned index, unsigned error_mask,
-				bool update_prefix);
+    //Binary search in a data for a given word and error mask
+    unsigned term_binary_search(const std::string& data, const std::vector<
+	    unsigned>& word, unsigned error_mask, unsigned start, unsigned end,
+				bool lower);
 
-		//Recursively call toggle_term with 0 .. max_distance errors.
-		void toggle_recursive_term(const std::vector<unsigned>& word, std::string& prefix, unsigned index,
-				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance);
+    //Toggle term in database
+    void toggle_term(const std::vector<unsigned>& word, std::string& prefix,
+		     unsigned index, unsigned error_mask, bool update_prefix);
 
-		//Search for a word and fill result set
-		void populate_term(const std::vector<unsigned>& word, std::string& data, std::string& prefix,
-				unsigned error_mask, bool update_prefix, std::tr1::unordered_set<unsigned>& result);
+    //Recursively call toggle_term with 0 .. max_distance errors.
+    void toggle_recursive_term(const std::vector<unsigned>& word,
+			       std::string& prefix, unsigned index,
+			       unsigned error_mask, unsigned start,
+			       unsigned distance, unsigned max_distance);
 
-		//Recursively search for a word with 0, 1, ..., max_distance errors.
-		void populate_recursive_term(const std::vector<unsigned>& word, std::string& data, std::string& prefix,
-				unsigned error_mask, unsigned start, unsigned distance, unsigned max_distance, std::tr1::unordered_set<
-						unsigned>& result);
+    //Search for a word and fill result set
+    void populate_term(const std::vector<unsigned>& word, std::string& data,
+		       std::string& prefix, unsigned error_mask,
+		       bool update_prefix,
+		       std::tr1::unordered_set<unsigned>& result);
 
-		//Generate prefix of a word using given error mask.
-		void get_term_prefix(const std::vector<unsigned>& word, std::string& prefix, unsigned error_mask,
-				unsigned prefix_length);
+    //Recursively search for a word with 0, 1, ..., max_distance errors.
+    void populate_recursive_term(const std::vector<unsigned>& word,
+				 std::string& data, std::string& prefix,
+				 unsigned error_mask, unsigned start,
+				 unsigned distance, unsigned max_distance,
+				 std::tr1::unordered_set<unsigned>& result);
 
-		//Compare two strings using error mask (error mask contains one-bits at positions with errors)
-		template<typename FirstIt, typename SecondIt>
-		static int compare_string(FirstIt first_it, FirstIt first_end, SecondIt second_it, SecondIt second_end,
-				unsigned first_error_mask, unsigned second_error_mask, unsigned limit)
-		{
-			unsigned first_i = 0;
-			unsigned second_i = 0;
+    //Generate prefix of a word using given error mask.
+    void get_term_prefix(const std::vector<unsigned>& word,
+			 std::string& prefix, unsigned error_mask,
+			 unsigned prefix_length);
 
-			for (;; ++first_it, ++second_it, ++first_i, ++second_i, first_error_mask >>= 1, second_error_mask >>= 1)
-			{
-				bool first_at_end = false;
-				while (!(first_at_end = (first_i == limit || first_it == first_end)) && (first_error_mask & 1))
-				{
-					first_error_mask >>= 1;
-					++first_i;
-					++first_it;
-				}
+    //Compare two strings using error mask (error mask contains one-bits at positions with errors)
+    template<typename FirstIt, typename SecondIt>
+    static int compare_string(FirstIt first_it, FirstIt first_end,
+			      SecondIt second_it, SecondIt second_end,
+			      unsigned first_error_mask,
+			      unsigned second_error_mask, unsigned limit)
+    {
+	unsigned first_i = 0;
+	unsigned second_i = 0;
 
-				bool second_at_end = false;
-				while (!(second_at_end = (second_i == limit || second_it == second_end)) && (second_error_mask & 1))
-				{
-					second_error_mask >>= 1;
-					++second_i;
-					++second_it;
-				}
+	for (;; ++first_it, ++second_it, ++first_i, ++second_i, first_error_mask
+		>>= 1, second_error_mask >>= 1) {
+	    bool first_at_end = false;
+	    while (!(first_at_end = (first_i == limit || first_it == first_end))
+		    && (first_error_mask & 1)) {
+		first_error_mask >>= 1;
+		++first_i;
+		++first_it;
+	    }
 
-				if (first_at_end && second_at_end)
-					return 0;
+	    bool second_at_end = false;
+	    while (!(second_at_end = (second_i == limit || second_it
+		    == second_end)) && (second_error_mask & 1)) {
+		second_error_mask >>= 1;
+		++second_i;
+		++second_it;
+	    }
 
-				if (first_at_end && !second_at_end)
-					return -1;
+	    if (first_at_end && second_at_end)
+		return 0;
 
-				if (!first_at_end && second_at_end)
-					return 1;
+	    if (first_at_end && !second_at_end)
+		return -1;
 
-				if (*first_it < *second_it)
-					return -1;
+	    if (!first_at_end && second_at_end)
+		return 1;
 
-				if (*first_it > *second_it)
-					return 1;
-			}
-		}
+	    if (*first_it < *second_it)
+		return -1;
 
-		std::vector<std::vector<unsigned> > wordlist_deltas;
-		std::map<std::string, std::vector<unsigned> > termlist_deltas;
+	    if (*first_it > *second_it)
+		return 1;
+	}
+    }
 
-	protected:
-		void merge_fragment_changes();
+    std::vector<std::vector<unsigned> > wordlist_deltas;
+    std::map<std::string, std::vector<unsigned> > termlist_deltas;
 
-		void toggle_word(const std::string& word);
+protected:
+    void merge_fragment_changes();
 
-		void populate_word(const std::string& word, unsigned max_distance, std::vector<TermList*>& result);
+    void toggle_word(const std::string& word);
 
-	public:
-		BrassSpellingTableFastSS(const std::string & dbdir, bool readonly) :
-			BrassSpellingTable(dbdir, readonly), wordlist_deltas(), termlist_deltas()
-		{
-		}
+    void populate_word(const std::string& word, unsigned max_distance,
+		       std::vector<TermList*>& result);
 
-		bool get_word(unsigned index, std::string& key, std::string& word) const;
+public:
+    BrassSpellingTableFastSS(const std::string & dbdir, bool readonly) :
+	BrassSpellingTable(dbdir, readonly), wordlist_deltas(),
+		termlist_deltas()
+    {
+    }
 
-		/** Override methods of BrassSpellingTable.key
-		 *
-		 *  NB: these aren't virtual, but we always call them on the subclass in
-		 *  cases where it matters.
-		 *  @{
-		 */
-		void cancel()
-		{
-			wordlist_deltas.clear();
-			termlist_deltas.clear();
-			BrassSpellingTable::cancel();
-		}
-		// @}
+    bool get_word(unsigned index, std::string& key, std::string& word) const;
+
+    /** Override methods of BrassSpellingTable.key
+     *
+     *  NB: these aren't virtual, but we always call them on the subclass in
+     *  cases where it matters.
+     *  @{
+     */
+    void cancel()
+    {
+	wordlist_deltas.clear();
+	termlist_deltas.clear();
+	BrassSpellingTable::cancel();
+    }
+    // @}
 };
 
-class BrassSpellingFastSSTermList : public TermList
-{
-		const BrassSpellingTableFastSS& table;
-		std::vector<unsigned> words;
-		std::string word;
-		std::string key_buffer;
-		unsigned index;
+class BrassSpellingFastSSTermList : public TermList {
+    const BrassSpellingTableFastSS& table;
+    std::vector<unsigned> words;
+    std::string word;
+    std::string key_buffer;
+    unsigned index;
 
-	public:
-		BrassSpellingFastSSTermList(const std::vector<unsigned>& words_, const BrassSpellingTableFastSS& table_) :
-			table(table_), words(words_), index(0)
-		{
-		}
+public:
+    BrassSpellingFastSSTermList(const std::vector<unsigned>& words_,
+				const BrassSpellingTableFastSS& table_) :
+	table(table_), words(words_), index(0)
+    {
+    }
 
-		Xapian::termcount get_approx_size() const;
+    Xapian::termcount get_approx_size() const;
 
-		std::string get_termname() const;
+    std::string get_termname() const;
 
-		Xapian::termcount get_wdf() const;
+    Xapian::termcount get_wdf() const;
 
-		Xapian::doccount get_termfreq() const;
+    Xapian::doccount get_termfreq() const;
 
-		Xapian::termcount get_collection_freq() const;
+    Xapian::termcount get_collection_freq() const;
 
-		TermList * next();
+    TermList * next();
 
-		TermList * skip_to(const std::string & term);
+    TermList * skip_to(const std::string & term);
 
-		bool at_end() const;
+    bool at_end() const;
 
-		Xapian::termcount positionlist_count() const;
+    Xapian::termcount positionlist_count() const;
 
-		Xapian::PositionIterator positionlist_begin() const;
+    Xapian::PositionIterator positionlist_begin() const;
 };
 
 #endif // XAPIAN_INCLUDED_BRASS_SPELLING_FASTSS_H
