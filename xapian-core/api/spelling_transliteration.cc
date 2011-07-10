@@ -34,6 +34,12 @@ SpellingTransliteration::SpellingTransliteration(const std::string& language_nam
 {
 }
 
+bool
+SpellingTransliteration::is_default(unsigned ch) const
+{
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
 void
 SpellingTransliteration::add_char_mapping(unsigned lang_char, const char* sequence)
 {
@@ -46,9 +52,11 @@ SpellingTransliteration::get_transliteration(const std::string& word, std::strin
     result.clear();
     for (Utf8Iterator it(word); it != Utf8Iterator(); ++it) {
 	unordered_map<unsigned, const char*>::const_iterator char_it = char_map.find(Unicode::tolower(*it));
-	if (char_it == char_map.end()) return false;
+	if (char_it == char_map.end()) {
+	    if (!is_default(*it)) return false;
 
-	result.append(char_it->second);
+	    result.push_back(*it);
+	} else result.append(char_it->second);
     }
     return true;
 }

@@ -35,6 +35,8 @@ class SpellingTransliteration {
     std::string language_name;
     std::string language_code;
 
+    bool is_default(unsigned ch) const;
+
 protected:
     void add_char_mapping(unsigned lang_char, const char* sequence);
 
