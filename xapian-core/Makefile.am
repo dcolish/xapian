@@ -102,7 +102,7 @@ coverage-check:
 	## Don't run under valgrind even if configure was run by hand.
 	$(MAKE) $(AM_MAKEFLAGS) check VALGRIND=
 	rm -f xapian-core.lcov
-	for d in api backends bin common examples expand include languages \
+	for d in api backends bin common examples expand include languages spelling \
 	    matcher net queryparser tests unicode weight ; do \
 	    rm -f tests/$$d ; \
 	    ln -s ../$$d tests/$$d ; \
@@ -150,6 +150,7 @@ include examples/Makefile.mk
 include expand/Makefile.mk
 include include/Makefile.mk
 include languages/Makefile.mk
+include spelling/Makefile.mk
 include matcher/Makefile.mk
 include net/Makefile.mk
 include queryparser/Makefile.mk

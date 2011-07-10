@@ -1,17 +1,5 @@
 noinst_HEADERS +=\
 	api/documentvaluelist.h\
-	api/editdistance.h\
-	api/extended_edit_distance.h\
-	api/spelling_base.h\
-	api/spelling_corrector.h\
-	api/spelling_splitter.h\
-	api/spelling_keyboard.h\
-	api/spelling_keyboard_layouts.h\
-	api/spelling_phonetic.h\
-	api/spelling_phonetic_dmsoundex.h\
-	api/spelling_phonetic_metaphone.h\
-	api/spelling_transliteration.h\
-	api/spelling_transliteration_alphabets.h \
 	api/maptermlist.h
 
 EXTRA_DIST +=\
@@ -22,15 +10,6 @@ lib_src +=\
 	api/compactor.cc\
 	api/decvalwtsource.cc\
 	api/documentvaluelist.cc\
-	api/editdistance.cc\
-	api/extended_edit_distance.cc\
-	api/spelling_base.cc\
-	api/spelling_corrector.cc\
-	api/spelling_splitter.cc\
-	api/spelling_keyboard.cc\
-	api/spelling_phonetic_dmsoundex.cc\
-	api/spelling_phonetic_metaphone.cc\
-	api/spelling_transliteration.cc\
 	api/emptypostlist.cc\
 	api/error.cc\
 	api/errorhandler.cc\
