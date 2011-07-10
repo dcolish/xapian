@@ -766,15 +766,15 @@ WritableDatabase::add_spelling(const std::string & first_word, const std::string
     LOGCALL_VOID(API, "WritableDatabase::add_spelling", first_word | second_word | freqinc);
     if (internal.size() != 1) only_one_subdatabase_allowed();
 
-    internal[0]->add_spellings(first_word, second_word, freqinc * 2);
+    internal[0]->add_spellings(first_word, second_word, freqinc);
 }
 
 void
 WritableDatabase::add_spelling(const std::string & first_word, const std::string & second_word,
                                const std::string & third_word, Xapian::termcount freqinc) const
 {
-    add_spelling(first_word, second_word, freqinc * 2);
-    add_spelling(first_word, third_word, freqinc);
+    add_spelling(first_word, second_word, freqinc);
+    add_spelling(first_word, third_word, max(freqinc / 2, Xapian::termcount(1)));
 }
 
 void
