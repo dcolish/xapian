@@ -25,24 +25,28 @@
 #include <string>
 
 #include <xapian/unordered_map.h>
+#include <xapian/unordered_set.h>
 
 /**
  * Base class for a word keyboard layout convertion.
  */
 class SpellingKeyboard {
 
-    class KeyDistance {
+    class DefaultKeyboard {
 
+	std::unordered_set<unsigned> default_set;
 	std::unordered_map<unsigned, std::pair<double, double> > distance_map;
 	double max_distance;
 
     public:
-	KeyDistance();
+	DefaultKeyboard();
+
+	bool is_default(unsigned ch) const;
 
 	double get_key_proximity(unsigned first_ch, unsigned second_ch) const;
     };
 
-    static KeyDistance key_distance;
+    static DefaultKeyboard default_keyboard;
 
     std::unordered_map<unsigned, unsigned> to_char_map;
     std::unordered_map<unsigned, unsigned> from_char_map;
@@ -50,13 +54,13 @@ class SpellingKeyboard {
     std::string language_name;
     std::string language_code;
 
-protected:
-
-    void add_char_mapping(unsigned lang_char, unsigned default_char);
 
     bool convert_layout(const std::string& word,
                         const std::unordered_map<unsigned, unsigned>& char_map,
 			std::string& result) const;
+
+protected:
+    void add_char_mapping(unsigned lang_char, unsigned default_char);
 
 public:
     SpellingKeyboard(const std::string& language_name_, const std::string& language_code_);

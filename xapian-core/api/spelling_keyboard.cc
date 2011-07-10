@@ -29,10 +29,108 @@
 using namespace std;
 using namespace Xapian;
 
-SpellingKeyboard::KeyDistance SpellingKeyboard::key_distance;
+SpellingKeyboard::DefaultKeyboard SpellingKeyboard::default_keyboard;
 
-SpellingKeyboard::KeyDistance::KeyDistance() : max_distance(0.0)
+SpellingKeyboard::DefaultKeyboard::DefaultKeyboard() : max_distance(0.0)
 {
+    default_set.insert(0x0060);
+    default_set.insert('1');
+    default_set.insert('2');
+    default_set.insert('3');
+    default_set.insert('4');
+    default_set.insert('5');
+    default_set.insert('6');
+    default_set.insert('7');
+    default_set.insert('8');
+    default_set.insert('9');
+    default_set.insert('0');
+    default_set.insert(0x002d);
+    default_set.insert(0x003d);
+    default_set.insert('q');
+    default_set.insert('w');
+    default_set.insert('e');
+    default_set.insert('r');
+    default_set.insert('t');
+    default_set.insert('y');
+    default_set.insert('u');
+    default_set.insert('i');
+    default_set.insert('o');
+    default_set.insert('p');
+    default_set.insert(0x005b);
+    default_set.insert(0x005d);
+    default_set.insert(0x005c);
+    default_set.insert('a');
+    default_set.insert('s');
+    default_set.insert('d');
+    default_set.insert('f');
+    default_set.insert('g');
+    default_set.insert('h');
+    default_set.insert('j');
+    default_set.insert('k');
+    default_set.insert('l');
+    default_set.insert(0x003b);
+    default_set.insert(0x0027);
+    default_set.insert('z');
+    default_set.insert('x');
+    default_set.insert('c');
+    default_set.insert('v');
+    default_set.insert('b');
+    default_set.insert('n');
+    default_set.insert('m');
+    default_set.insert(0x002c);
+    default_set.insert(0x002e);
+    default_set.insert(0x002f);
+    default_set.insert(0x007c);
+
+    default_set.insert(0x007e);
+    default_set.insert(0x0021);
+    default_set.insert(0x0040);
+    default_set.insert(0x0023);
+    default_set.insert(0x0024);
+    default_set.insert(0x0025);
+    default_set.insert(0x005e);
+    default_set.insert(0x0026);
+    default_set.insert(0x002a);
+    default_set.insert(0x0028);
+    default_set.insert(0x0029);
+    default_set.insert(0x005f);
+    default_set.insert(0x002b);
+    default_set.insert('Q');
+    default_set.insert('W');
+    default_set.insert('E');
+    default_set.insert('R');
+    default_set.insert('T');
+    default_set.insert('Y');
+    default_set.insert('U');
+    default_set.insert('I');
+    default_set.insert('O');
+    default_set.insert('P');
+    default_set.insert(0x007b);
+    default_set.insert(0x007d);
+    default_set.insert(0x007c);
+    default_set.insert('A');
+    default_set.insert('S');
+    default_set.insert('D');
+    default_set.insert('F');
+    default_set.insert('G');
+    default_set.insert('H');
+    default_set.insert('J');
+    default_set.insert('K');
+    default_set.insert('L');
+    default_set.insert(0x003a);
+    default_set.insert(0x0022);
+    default_set.insert('Z');
+    default_set.insert('X');
+    default_set.insert('C');
+    default_set.insert('V');
+    default_set.insert('B');
+    default_set.insert('N');
+    default_set.insert('M');
+    default_set.insert(0x003c);
+    default_set.insert(0x003e);
+    default_set.insert(0x003f);
+    default_set.insert(0x007c);
+
     distance_map.insert(make_pair(0x0060, make_pair(0.0, 0.0)));
     distance_map.insert(make_pair('1', make_pair(0.0, 1.0)));
     distance_map.insert(make_pair('2', make_pair(0.0, 2.0)));
@@ -141,8 +239,14 @@ SpellingKeyboard::KeyDistance::KeyDistance() : max_distance(0.0)
     }
 }
 
+bool
+SpellingKeyboard::DefaultKeyboard::is_default(unsigned ch) const
+{
+    return default_set.find(ch) != default_set.end();
+}
+
 double
-SpellingKeyboard::KeyDistance::get_key_proximity(unsigned first_ch, unsigned second_ch) const
+SpellingKeyboard::DefaultKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
 {
     unordered_map<unsigned, pair<double, double> >::const_iterator first_it = distance_map.find(first_ch);
     unordered_map<unsigned, pair<double, double> >::const_iterator second_it = distance_map.find(second_ch);
@@ -174,7 +278,6 @@ SpellingKeyboard::convert_layout(const string& word,
                                       const unordered_map<unsigned, unsigned>& char_map,
 				      string& result) const
 {
-    bool converted = false;
     result.clear();
 
     for (Utf8Iterator it(word); it != Utf8Iterator(); ++it) {
@@ -183,11 +286,12 @@ SpellingKeyboard::convert_layout(const string& word,
 
 	if (char_it != char_map.end()) {
 	    ch = char_it->second;
-	    converted = true;
 	}
+	else if (!default_keyboard.is_default(ch)) return false;
+
 	Unicode::append_utf8(result, ch);
     }
-    return converted;
+    return true;
 }
 
 bool
@@ -208,10 +312,15 @@ SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
     unordered_map<unsigned, unsigned>::const_iterator first_it = from_char_map.find(first_ch);
     unordered_map<unsigned, unsigned>::const_iterator second_it = from_char_map.find(second_ch);
 
-    if (first_it != from_char_map.end()) first_ch = first_it->second;
-    if (second_it != from_char_map.end()) second_ch = second_it->second;
+    if (first_it != from_char_map.end())
+	first_ch = first_it->second;
+    else if (!default_keyboard.is_default(first_ch)) return 0.0;
 
-    return key_distance.get_key_proximity(first_ch, second_ch);
+    if (second_it != from_char_map.end())
+	second_ch = second_it->second;
+    else if (!default_keyboard.is_default(second_ch)) return 0.0;
+
+    return default_keyboard.get_key_proximity(first_ch, second_ch);
 }
 
 const string&
