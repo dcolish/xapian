@@ -24,10 +24,14 @@
 #include <vector>
 #include <string>
 #include "database.h"
+#include "spelling_base.h"
 
-class SpellingCorrector {
+class SpellingCorrector : public SpellingBase {
+
     static const unsigned LIMIT_CORRECTIONS = 5;
+    static const unsigned MAX_GAP = 1;
 
+    //Key for states memorisation
     struct word_spelling_key {
 	unsigned first_word_index;
 	unsigned first_spelling_index;
@@ -36,51 +40,37 @@ class SpellingCorrector {
 
 	bool operator<(const word_spelling_key& other) const
 	{
-	    return first_word_index < other.first_word_index
-		    || (first_word_index == other.first_word_index
-			    && (first_spelling_index
-				    < other.first_spelling_index
-				    || (first_spelling_index
-					    == other.first_spelling_index
-					    && (second_word_index
-						    < other.second_word_index
-						    || (second_word_index
-							    == other.second_word_index
-							    && (second_spelling_index
-								    < other.second_spelling_index))))));
+	    return first_word_index < other.first_word_index || (first_word_index == other.first_word_index && (
+		   first_spelling_index < other.first_spelling_index || (first_spelling_index == other.first_spelling_index && (
+		   second_word_index < other.second_word_index || (second_word_index == other.second_word_index && (
+		   second_spelling_index < other.second_spelling_index))))));
 	}
     };
 
-    unsigned request_internal(const std::string& first_word,
-			      const std::string& second_word);
-
-    void get_top_spelling_corrections(const std::string& word,
-				      unsigned max_edit_distance, unsigned top,
+    void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq,
 				      std::vector<std::string>& result);
 
-    unsigned
-    get_spelling_freq(const std::vector<std::vector<std::string> >& words,
-		      const std::vector<unsigned>& word_spelling, std::map<
-			      word_spelling_key, unsigned>& freq_map,
-		      unsigned first_index, unsigned second_index);
+    unsigned get_spelling_freq(const std::vector<std::vector<std::string> >& words,
+			       const std::vector<unsigned>& word_spelling,
+			       std::map<word_spelling_key, unsigned>& freq_map, unsigned first_index,
+			       unsigned second_index);
 
-    void
-	    recursive_spelling_corrections(const std::vector<std::vector<
-		    std::string> >& words, unsigned word_index, std::vector<
-		    unsigned>& word_spelling, unsigned word_freq, std::map<
-		    word_spelling_key, unsigned>& freq_map, std::vector<
-		    unsigned>& max_spelling_word, unsigned& max_word_freq);
+    void recursive_spelling_corrections(const std::vector<std::vector<std::string> >& words, unsigned word_index,
+					std::vector<unsigned>& word_spelling, unsigned word_freq, std::map<
+						word_spelling_key, unsigned>& freq_map,
+					std::vector<unsigned>& max_spelling_word, unsigned& max_word_freq);
 
-    const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >
-	    & internal;
+    unsigned max_edit_distance;
 
 public:
-    SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<
-	    Xapian::Database::Internal> >& internal_);
+    SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
+                      unsigned max_edit_distance_) : SpellingBase(internal_), max_edit_distance(max_edit_distance_)
+    {
+    }
 
-    unsigned get_spelling_corrected(const std::vector<std::string>& words,
-				    unsigned max_edit_distance, std::vector<
-					    std::string>& result);
+    unsigned get_spelling(const std::string& words, std::string& result);
+
+    unsigned get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result);
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_CORRECTOR_H

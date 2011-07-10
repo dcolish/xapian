@@ -505,187 +505,34 @@ Database::get_description() const
     return "Database()";
 }
 
-// We sum the character frequency histogram absolute differences to compute a
-// lower bound on the edit distance.  Rather than counting each Unicode code
-// point uniquely, we use an array with VEC_SIZE elements and tally code points
-// modulo VEC_SIZE which can only reduce the bound we calculate.
-//
-// There will be a trade-off between how good the bound is and how large and
-// array is used (a larger array takes more time to clear and sum over).  The
-// value 64 is somewhat arbitrary - it works as well as 128 for the testsuite
-// but that may not reflect real world performance.  FIXME: profile and tune.
-
-#define VEC_SIZE 64
-
-static int
-freq_edit_lower_bound(const vector<unsigned> & a, const vector<unsigned> & b)
-{
-    int vec[VEC_SIZE];
-    memset(vec, 0, sizeof(vec));
-    vector<unsigned>::const_iterator i;
-    for (i = a.begin(); i != a.end(); ++i) {
-	++vec[(*i) % VEC_SIZE];
-    }
-    for (i = b.begin(); i != b.end(); ++i) {
-	--vec[(*i) % VEC_SIZE];
-    }
-    unsigned int total = 0;
-    for (size_t j = 0; j < VEC_SIZE; ++j) {
-	total += abs(vec[j]);
-    }
-    // Each insertion or deletion adds at most 1 to total.  Each transposition
-    // doesn't change it at all.  But each substitution can change it by 2 so
-    // we need to divide it by 2.  Rounding up is OK, since the odd change must
-    // be due to an actual edit.
-    return (total + 1) / 2;
-}
-
-// Word must have a trigram score at least this close to the best score seen
-// so far.
-#define TRIGRAM_SCORE_THRESHOLD 2
-
 string
 Database::get_spelling_suggestion(const string &word,
 				  unsigned max_edit_distance) const
 {
     LOGCALL(API, string, "Database::get_spelling_suggestion", word | max_edit_distance);
-    if (word.size() <= 1) return string();
-    AutoPtr<TermList> merger;
-    for (size_t i = 0; i < internal.size(); ++i) {
-	TermList * tl = internal[i]->open_spelling_termlist_max(word, max_edit_distance);
-	LOGLINE(SPELLING, "Sub db " << i << " tl = " << (void*)tl);
-	if (tl) {
-	    if (merger.get()) {
-		merger.reset(new OrTermList(merger.release(), tl));
-	    } else {
-		merger.reset(tl);
-	    }
-	}
-    }
-    if (!merger.get()) RETURN(string());
 
-    // Convert word to UTF-32.
-#if ! defined __SUNPRO_CC || __SUNPRO_CC - 0 >= 0x580
-    // Extra brackets needed to avoid this being misparsed as a function
-    // prototype.
-    vector<unsigned> utf32_word((Utf8Iterator(word)), Utf8Iterator());
-#else
-    // Older versions of Sun's C++ compiler need this workaround, but 5.8
-    // doesn't.  Unsure of the exact version it was fixed in.
-    vector<unsigned> utf32_word;
-    for (Utf8Iterator sunpro_it(word); sunpro_it != Utf8Iterator(); ++sunpro_it) {
-	utf32_word.push_back(*sunpro_it);
-    }
-#endif
+    SpellingCorrector spelling_corrector(internal, max_edit_distance);
 
-    vector<unsigned> utf32_term;
-
-    ExtendedEditDistance edit_distance;
-
-    Xapian::termcount best = 1;
     string result;
-    int edist_best = max_edit_distance;
-    double precise_edist_best = max_edit_distance;
-    Xapian::doccount freq_best = 0;
-    Xapian::doccount freq_exact = 0;
-    while (true) {
-	TermList *ret = merger->next();
-	if (ret) merger.reset(ret);
-
-	if (merger->at_end()) break;
-
-	string term = merger->get_termname();
-	Xapian::termcount score = merger->get_wdf();
-
-	LOGLINE(SPELLING, "Term \"" << term << "\" ngram score " << score);
-	if (score + TRIGRAM_SCORE_THRESHOLD >= best) {
-	    if (score > best) best = score;
-
-	    // There's no point considering a word where the difference
-	    // in length is greater than the smallest number of edits we've
-	    // found so far.
-
-	    // First check the length of the encoded UTF-8 version of term.
-	    // Each UTF-32 character is 1-4 bytes in UTF-8.
-	    if (abs(long(term.size()) - long(word.size())) > edist_best * 4) {
-		LOGLINE(SPELLING, "Lengths much too different");
-		continue;
-	    }
-
-	    // Now convert to UTF-32, and compare the true lengths more
-	    // strictly.
-	    utf32_term.assign(Utf8Iterator(term), Utf8Iterator());
-
-	    if (abs(long(utf32_term.size()) - long(utf32_word.size()))
-		    > edist_best) {
-		LOGLINE(SPELLING, "Lengths too different");
-		continue;
-	    }
-
-	    if (freq_edit_lower_bound(utf32_term, utf32_word) > edist_best) {
-		LOGLINE(SPELLING, "Rejected by character frequency test");
-		continue;
-	    }
-
-	    int edist = edit_distance_unsigned(&utf32_term[0],
-					       int(utf32_term.size()),
-					       &utf32_word[0],
-					       int(utf32_word.size()),
-					       edist_best);
-
-	    LOGLINE(SPELLING, "Edit distance " << edist);
-
-	    if (edist <= edist_best) {
-		Xapian::doccount freq = 0;
-		for (size_t j = 0; j < internal.size(); ++j)
-		    freq += internal[j]->get_spelling_frequency(term);
-
-		LOGLINE(SPELLING, "Freq " << freq << " best " << freq_best);
-		// Even if we have an exact match, there may be a much more
-		// frequent potential correction which will still be
-		// interesting.
-		if (edist == 0) {
-		    freq_exact = freq;
-		    continue;
-		}
-
-		double precise_edist = edit_distance.edit_distance(&utf32_term[0],
-									utf32_term.size(),
-									&utf32_word[0],
-									utf32_word.size(),
-									edist_best);
-
-		if (edist < edist_best || precise_edist < precise_edist_best || freq > freq_best) {
-		    LOGLINE(SPELLING, "Best so far: \"" << term <<
-				      "\" edist " << edist << " freq " << freq);
-		    result = term;
-		    edist_best = edist;
-		    precise_edist_best = precise_edist;
-		    freq_best = freq;
-		}
-	    }
-	}
-    }
-    if (freq_best < freq_exact)
-	RETURN(string());
-    RETURN(result);
+    spelling_corrector.get_spelling(word, result);
+    return result;
 }
 
 
 vector<string>
 Database::get_spelling_suggestion(const vector<string>& words, unsigned max_edit_distance) const
 {
-    LOGCALL(API, string, "Database::get_spelling_suggestion", words | max_edit_distance);
+    LOGCALL(API, string, "Database::get_spelling_suggestion", max_edit_distance);
 
-    SpellingCorrector spelling_corrector(internal);
+    SpellingCorrector spelling_corrector(internal, max_edit_distance);
 
     vector<string> result_spelling;
-    unsigned spelling_freq = spelling_corrector.get_spelling_corrected(words, max_edit_distance, result_spelling);
+    unsigned spelling_freq = spelling_corrector.get_spelling(words, result_spelling);
 
     SpellingSplitter spelling_splitter(internal);
 
     vector<string> result_splitter;
-    unsigned splitter_freq = spelling_splitter.get_spelling_splitted(words, result_splitter);
+    unsigned splitter_freq = spelling_splitter.get_spelling(words, result_splitter);
 
     if (spelling_freq == 0 && splitter_freq == 0) return words;
 
@@ -919,7 +766,7 @@ WritableDatabase::add_spelling(const std::string & first_word, const std::string
     LOGCALL_VOID(API, "WritableDatabase::add_spelling", first_word | second_word | freqinc);
     if (internal.size() != 1) only_one_subdatabase_allowed();
 
-    internal[0]->add_spellings(first_word, second_word, freqinc);
+    internal[0]->add_spellings(first_word, second_word, freqinc * 2);
 }
 
 void

@@ -30,31 +30,10 @@
 using namespace std;
 using namespace Xapian;
 
-SpellingSplitter::SpellingSplitter(const std::vector<Internal::RefCntPtr<Database::Internal> >& internal_) :
-    internal(internal_)
-{
-}
-
-unsigned SpellingSplitter::request_internal(const string& first_word, const string& second_word)
-{
-    unsigned freq = 0;
-
-    for (size_t i = 0; i < internal.size(); ++i)
-	freq += internal[i]->get_spellings_frequency(first_word, second_word);
-
-    if (freq > 0) return freq * 2;
-
-    for (size_t i = 0; i < internal.size(); ++i)
-	freq += internal[i]->get_spelling_frequency(first_word) + internal[i]->get_spelling_frequency(second_word);
-
-    if (freq > 0) return max(freq / 32, 1u);
-    return 0;
-}
-
 unsigned
 SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_temp& temp)
 {
-    word_splitter_temp::key word_key;
+    word_splitter_temp::word_freq_key word_key;
 
     if (temp.word_range.size() > 0) {
 	word_key.first = temp.word_range[0];
@@ -65,9 +44,9 @@ SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_tem
     temp.first_string.clear();
     temp.second_string.clear();
 
-    map<word_splitter_temp::key, unsigned>::const_iterator it = temp.word_map.find(word_key);
+    map<word_splitter_temp::word_freq_key, unsigned>::const_iterator it = temp.word_freq_map.find(word_key);
 
-    if (it == temp.word_map.end()) {
+    if (it == temp.word_freq_map.end()) {
 	if (temp.word_range.size() > 0) {
 	    unsigned first_start_i = data.word_utf_map[word_key.first.first];
 	    unsigned first_end_i = data.word_utf_map[word_key.first.second];
@@ -82,7 +61,7 @@ SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_tem
 	    }
 	}
 	unsigned value = request_internal(temp.first_string, temp.second_string);
-	it = temp.word_map.insert(make_pair(word_key, value)).first;
+	it = temp.word_freq_map.insert(make_pair(word_key, value)).first;
     }
 
     return it->second;
@@ -240,7 +219,14 @@ SpellingSplitter::recursive_word_splitter(const word_splitter_data& data,
 }
 
 unsigned
-SpellingSplitter::get_spelling_splitted(const vector<string>& words, vector<string>& result)
+SpellingSplitter::get_spelling(const string& word, string& result)
+{
+    result = word;
+    return request_internal(word);
+}
+
+unsigned
+SpellingSplitter::get_spelling(const vector<string>& words, vector<string>& result)
 {
     word_splitter_data data;
 

@@ -23,6 +23,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cmath>
 #include <xapian/unicode.h>
 
 #include "database.h"
@@ -35,37 +36,9 @@
 using namespace std;
 using namespace Xapian;
 
-SpellingCorrector::SpellingCorrector(const std::vector<
-	Xapian::Internal::RefCntPtr<Database::Internal> >& internal_) :
-    internal(internal_)
-{
-}
-
-unsigned SpellingCorrector::request_internal(const string& first_word,
-					     const string& second_word)
-{
-    unsigned freq = 0;
-
-    for (size_t i = 0; i < internal.size(); ++i)
-	freq += internal[i]->get_spellings_frequency(first_word, second_word);
-
-    if (freq > 0)
-	return freq * 2;
-
-    for (size_t i = 0; i < internal.size(); ++i)
-	freq += internal[i]->get_spelling_frequency(first_word)
-		+ internal[i]->get_spelling_frequency(second_word);
-
-    if (freq > 0)
-	return max(freq / 32, 1u);
-    return 0;
-}
-
-void SpellingCorrector::get_top_spelling_corrections(
-						     const string& word,
-						     unsigned max_edit_distance,
-						     unsigned top, vector<
-							     string>& result)
+void SpellingCorrector::get_top_spelling_corrections(const string& word,
+						     unsigned top, bool use_freq,
+						     vector<string>& result)
 {
     AutoPtr<TermList> merger;
     for (size_t i = 0; i < internal.size(); ++i)
@@ -81,8 +54,7 @@ void SpellingCorrector::get_top_spelling_corrections(
 	}
     }
 
-    if (merger.get() == 0)
-    return;
+    if (merger.get() == 0) return;
 
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
     vector<unsigned> term_utf;
@@ -94,9 +66,9 @@ void SpellingCorrector::get_top_spelling_corrections(
     {
 	TermList* return_term_list = merger->next();
 	if (return_term_list != 0)
-	merger.reset(return_term_list);
+	    merger.reset(return_term_list);
 	if (merger->at_end())
-	break;
+	    break;
 
 	string term = merger->get_termname();
 	term_utf.assign((Utf8Iterator(term)), Utf8Iterator());
@@ -105,31 +77,34 @@ void SpellingCorrector::get_top_spelling_corrections(
 	    continue;
 
 	unsigned distance = edit_distance_unsigned(&term_utf[0], int(term_utf.size()), &word_utf[0],
-		int(word_utf.size()), max_edit_distance);
+	                                           int(word_utf.size()), max_edit_distance);
 
 	if (distance <= max_edit_distance)
 	{
 	    double distance_precise = edit_distance.edit_distance(&term_utf[0], term_utf.size(), &word_utf[0],
-		    word_utf.size(), distance);
+	                                                          word_utf.size(), distance);
+
+	    if (use_freq)
+		distance_precise /= log(request_internal(term));
 
 	    top_spelling.insert(make_pair(distance_precise, term));
 
 	    if (top_spelling.size() > top)
-	    top_spelling.erase(--top_spelling.end());
+		top_spelling.erase(--top_spelling.end());
 	}
     }
 
     result.clear();
     result.reserve(top_spelling.size());
-    for (multimap<double, string>::const_iterator it = top_spelling.begin(); it != top_spelling.end(); ++it)
-    result.push_back(it->second);
+    multimap<double, string>::const_iterator it;
+    for (it = top_spelling.begin(); it != top_spelling.end(); ++it)
+	result.push_back(it->second);
 
     if (result.empty())
-    result.push_back(word);
+	result.push_back(word);
 }
 
-unsigned SpellingCorrector::get_spelling_freq(
-					      const vector<vector<string> >& words,
+unsigned SpellingCorrector::get_spelling_freq(const vector<vector<string> >& words,
 					      const vector<unsigned>& word_spelling,
 					      map<word_spelling_key, unsigned>& freq_map,
 					      unsigned first_index,
@@ -143,40 +118,31 @@ unsigned SpellingCorrector::get_spelling_freq(
 
     map<word_spelling_key, unsigned>::const_iterator it = freq_map.find(key);
     if (it == freq_map.end()) {
-	unsigned
-		freq =
-			request_internal(
-					 words[first_index][word_spelling[first_index]],
+	unsigned freq = request_internal(words[first_index][word_spelling[first_index]],
 					 words[second_index][word_spelling[second_index]]);
 	it = freq_map.insert(make_pair(key, freq)).first;
     }
     return it->second;
 }
 
-void SpellingCorrector::recursive_spelling_corrections(
-						       const vector<vector<
-							       string> >& words,
+void SpellingCorrector::recursive_spelling_corrections(const vector<vector<string> >&
+										   words,
 						       unsigned word_index,
 						       vector<unsigned>& word_spelling,
 						       unsigned word_freq,
-						       map<word_spelling_key,
-							       unsigned>& freq_map,
+						       map<word_spelling_key, unsigned>& freq_map,
 						       vector<unsigned>& max_spelling_word,
 						       unsigned& max_word_freq)
 {
     if (word_index < words.size()) {
-	for (unsigned spelling_index = 0; spelling_index
-		< words[word_index].size(); ++spelling_index) {
-	    word_spelling[word_index] = spelling_index;
+	for (unsigned i = 0; i < words[word_index].size(); ++i) {
+	    word_spelling[word_index] = i;
 
-	    if (word_index > 0) {
+	    for (unsigned gap = 0; gap < min(word_index, MAX_GAP + 1); ++gap) {
 		word_freq += get_spelling_freq(words, word_spelling, freq_map,
-					       word_index - 1, word_index);
-		if (word_index > 1)
-		    word_freq += get_spelling_freq(words, word_spelling,
-						   freq_map, word_index - 2,
-						   word_index);
+		                               word_index - gap - 1, word_index);
 	    }
+
 	    recursive_spelling_corrections(words, word_index + 1,
 					   word_spelling, word_freq, freq_map,
 					   max_spelling_word, max_word_freq);
@@ -187,14 +153,37 @@ void SpellingCorrector::recursive_spelling_corrections(
     }
 }
 
-unsigned SpellingCorrector::get_spelling_corrected(const vector<string>& words,
-						   unsigned max_edit_distance,
-						   vector<string>& result)
+unsigned
+SpellingCorrector::get_spelling(const string& word, string& result)
+{
+    result.clear();
+    vector<string> result_vector;
+    get_top_spelling_corrections(word, 2, true, result_vector);
+
+    if (result_vector.empty()) return 0;
+
+    bool found_exact = (result_vector[0] == word);
+    if (found_exact) {
+	if (result_vector.size() <= 1) return 0;
+
+	unsigned word_freq = request_internal(word);
+	unsigned result_freq = request_internal(result_vector[1]);
+	if (result_freq < word_freq) return word_freq;
+
+	result = result_vector[1];
+
+    } else result = result_vector[0];
+
+    return request_internal(result);
+}
+
+unsigned
+SpellingCorrector::get_spelling(const vector<string>& words,
+                                vector<string>& result)
 {
     vector<vector<string> > word_corrections(words.size());
     for (unsigned i = 0; i < words.size(); ++i)
-	get_top_spelling_corrections(words[i], max_edit_distance,
-				     LIMIT_CORRECTIONS, word_corrections[i]);
+	get_top_spelling_corrections(words[i], LIMIT_CORRECTIONS, false, word_corrections[i]);
 
     unsigned max_word_freq = 0;
     vector<unsigned> max_spelling_word(words.size(), 0);
