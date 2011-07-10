@@ -25,8 +25,8 @@
  */
 
 #include <config.h>
-#include <cctype>
 #include <algorithm>
+#include <xapian/unicode.h>
 
 #include "spelling_phonetic_metaphone.h"
 
@@ -39,29 +39,33 @@ const char MetaphoneSpellingPhonetic::alpha[] = { VOWEL, NOGHF, VAR_SOUND, NOGHF
 						  VAR_SOUND, 0, SAME, VAR_SOUND, VAR_SOUND,
 						  VOWEL, 0, 0, 0, FRONT_VOWEL, 0 };
 
-char MetaphoneSpellingPhonetic::at(const std::string& word, int index)
+char
+MetaphoneSpellingPhonetic::at(const std::string& word, int index)
 {
     if (index < 0 || index >= int(word.size())) return 0;
-
     return word[index];
 }
 
-bool MetaphoneSpellingPhonetic::is(char ch, Flag flag)
+bool
+MetaphoneSpellingPhonetic::is(char ch, Flag flag)
 {
     return alpha[ch - 'A'] & flag;
 }
 
-void MetaphoneSpellingPhonetic::get_phonetic(const string& input, vector<string>& result)
+bool
+MetaphoneSpellingPhonetic::get_phonetic(const string& input, vector<string>& result)
 {
     string key;
-    string word = input;
-    transform(word.begin(), word.end(), word.begin(), (int(*)(int))std::toupper);
+    string word = Xapian::Unicode::toupper(input);
+
+    for (unsigned i = 0; i < word.length(); ++i)
+	if (word[i] < 'A' || word[i] > 'Z') return false;
 
     result.clear();
 
     if (word.length() <= 1) {
 	result.push_back(word);
-	return;
+	return true;
     }
 
     if (((word[0] == 'P' || word[0] == 'K' || word[0] == 'G') && word[1] == 'N') ||
@@ -208,4 +212,5 @@ void MetaphoneSpellingPhonetic::get_phonetic(const string& input, vector<string>
 	}
     }
     result.push_back(key);
+    return true;
 }

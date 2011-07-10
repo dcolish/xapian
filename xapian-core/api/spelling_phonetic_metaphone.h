@@ -35,13 +35,13 @@ class MetaphoneSpellingPhonetic : public SpellingPhonetic {
 	NOGHF = 16
     };
 
-    static const char alpha['Z' - 'A' + 1];
+    static const char alpha[];
 
     static char at(const std::string& word, int index);
     static bool is(char ch, Flag flag);
 
 public:
-    void get_phonetic(const std::string& input, std::vector<std::string>& result);
+    bool get_phonetic(const std::string& input, std::vector<std::string>& result);
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_METAPHONE_H

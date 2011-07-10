@@ -20,7 +20,7 @@
 
 #include <config.h>
 #include <algorithm>
-#include <cctype>
+#include <xapian/unicode.h>
 
 #include "spelling_phonetic_dmsoundex.h"
 
@@ -146,8 +146,9 @@ DMSoundexSpellingPhonetic::DMSoundexSpellingPhonetic() : max_entry_length(0)
 
 }
 
-void DMSoundexSpellingPhonetic::add_entry(const char* str, bool vowel, const char* first, const char* before,
-					  const char* other, const char* alternate)
+void
+DMSoundexSpellingPhonetic::add_entry(const char* str, bool vowel, const char* first, const char* before,
+				     const char* other, const char* alternate)
 {
     Entry entry;
     entry.vowel = vowel;
@@ -161,7 +162,8 @@ void DMSoundexSpellingPhonetic::add_entry(const char* str, bool vowel, const cha
     max_entry_length = max(key.length(), max_entry_length);
 }
 
-unsigned DMSoundexSpellingPhonetic::find_entry(const string& word, unsigned offset, Entry& entry, string& buffer) const
+unsigned
+DMSoundexSpellingPhonetic::find_entry(const string& word, unsigned offset, Entry& entry, string& buffer) const
 {
     buffer.clear();
 
@@ -179,30 +181,31 @@ unsigned DMSoundexSpellingPhonetic::find_entry(const string& word, unsigned offs
     return entry_length;
 }
 
-const char* DMSoundexSpellingPhonetic::get_entry_value(const std::vector<Entry>& entries, unsigned index, const Entry& entry)
+const char*
+DMSoundexSpellingPhonetic::get_entry_value(const std::vector<Entry>& entries, unsigned index, const Entry& entry)
 {
     if (index < entries.size() && entries[index + 1].vowel)
 	return entry.before;
     return entry.other;
 }
 
-void DMSoundexSpellingPhonetic::get_phonetic(const string& input, vector<string>& result)
+bool
+DMSoundexSpellingPhonetic::get_phonetic(const string& input, vector<string>& result)
 {
     vector<Entry> entries;
+
+    string word = Xapian::Unicode::tolower(input);
 
     string temp_string;
     Entry temp_entry;
 
     result.clear();
 
-    string word = input;
-    transform(word.begin(), word.end(), word.begin(), (int(*)(int))std::tolower);
-
     unsigned offset = 0;
     while (offset < word.length())
     {
 	unsigned entry_length = find_entry(word, offset, temp_entry, temp_string);
-	if (entry_length == 0) return;
+	if (entry_length == 0) return false;
 	entries.push_back(temp_entry);
 	offset += entry_length;
     }
@@ -236,4 +239,5 @@ void DMSoundexSpellingPhonetic::get_phonetic(const string& input, vector<string>
 	string& key = result[i];
 	key.resize(unique(key.begin(), key.end()) - key.begin());
     }
+    return true;
 }

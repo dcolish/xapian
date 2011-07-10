@@ -50,7 +50,7 @@ class DMSoundexSpellingPhonetic : public SpellingPhonetic {
 public:
     DMSoundexSpellingPhonetic();
 
-    void get_phonetic(const std::string& input, std::vector<std::string>& result);
+    bool get_phonetic(const std::string& input, std::vector<std::string>& result);
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_DMSOUNDEX_H
