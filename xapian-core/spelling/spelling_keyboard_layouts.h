@@ -22,6 +22,7 @@
 #define XAPIAN_INCLUDED_SPELLING_KEYBOARD_LAYOUTS_H
 
 #include <string>
+#include <vector>
 
 #include "spelling_keyboard.h"
 
@@ -286,5 +287,54 @@ public:
 	add_char_mapping(0x061f, 0x003f);
     }
 };
+
+class SpellingKeyboardFactory
+{
+    const static SpellingKeyboardFactory factory;
+
+    const SpellingKeyboard* default_layout;
+    std::vector<const SpellingKeyboard*> layout_list;
+
+    SpellingKeyboardFactory()
+    {
+	default_layout = new EnglishSpellingKeyboard;
+	layout_list.push_back(new RussianSpellingKeyboard);
+	layout_list.push_back(new FrenchSpellingKeyboard);
+	layout_list.push_back(new SpainSpellingKeyboard);
+	layout_list.push_back(new ArabicSpellingKeyboard);
+    }
+
+    ~SpellingKeyboardFactory()
+    {
+	delete default_layout;
+
+	for(unsigned i = 0; i < layout_list.size(); ++i)
+	    delete layout_list[i];
+    }
+
+public:
+    static const SpellingKeyboard* get_default_layout()
+    {
+	return factory.default_layout;
+    }
+
+    static const vector<const SpellingKeyboard*>& get_layouts()
+    {
+	return factory.layout_list;
+    }
+
+    static const SpellingKeyboard* get_layout(const std::string& name)
+    {
+	for (unsigned i = 0; i < factory.layout_list.size(); ++i) {
+	    const SpellingKeyboard* layout = factory.layout_list[i];
+
+	    if (layout->get_lang_name() == name ||
+		layout->get_lang_code() == name) return layout;
+	}
+	return NULL;
+    }
+};
+
+const SpellingKeyboardFactory SpellingKeyboardFactory::factory;
 
 #endif // XAPIAN_INCLUDED_SPELLING_KEYBOARD_LAYOUTS_H
