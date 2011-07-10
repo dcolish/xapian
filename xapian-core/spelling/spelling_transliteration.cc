@@ -62,13 +62,13 @@ SpellingTransliteration::get_transliteration(const std::string& word, std::strin
 }
 
 const std::string&
-SpellingTransliteration::get_language_name() const
+SpellingTransliteration::get_lang_name() const
 {
     return language_name;
 }
 
 const std::string&
-SpellingTransliteration::get_language_code() const
+SpellingTransliteration::get_lang_code() const
 {
     return language_code;
 }

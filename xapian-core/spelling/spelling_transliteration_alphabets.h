@@ -76,4 +76,50 @@ public:
     }
 };
 
+class SpellingTransliterationFactory
+{
+    const static SpellingTransliterationFactory factory;
+
+    const SpellingTransliteration* default_transliteration;
+    std::vector<const SpellingTransliteration*> transliteration_list;
+
+    SpellingTransliterationFactory()
+    {
+	default_transliteration = new EnglishSpellingTransliteration;
+	transliteration_list.push_back(new RussianSpellingTransliteration);
+    }
+
+    ~SpellingTransliterationFactory()
+    {
+	delete default_transliteration;
+
+	for(unsigned i = 0; i < transliteration_list.size(); ++i)
+	    delete transliteration_list[i];
+    }
+
+public:
+    static const SpellingTransliteration* get_default_transliteration()
+    {
+	return factory.default_transliteration;
+    }
+
+    static const vector<const SpellingTransliteration*>& get_transliterations()
+    {
+	return factory.transliteration_list;
+    }
+
+    static const SpellingTransliteration* get_transliteration(const std::string& name)
+    {
+	for (unsigned i = 0; i < factory.transliteration_list.size(); ++i) {
+	    const SpellingTransliteration* transliteration = factory.transliteration_list[i];
+
+	    if (transliteration->get_lang_name() == name ||
+		transliteration->get_lang_code() == name) return transliteration;
+	}
+	return NULL;
+    }
+};
+
+const SpellingTransliterationFactory SpellingTransliterationFactory::factory;
+
 #endif // XAPIAN_INCLUDED_SPELLING_TRANSLITERATION_ALPHABETS_H

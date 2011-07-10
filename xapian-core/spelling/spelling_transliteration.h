@@ -45,9 +45,9 @@ public:
 
     bool get_transliteration(const std::string& word, std::string& result) const;
 
-    const std::string& get_language_name() const;
+    const std::string& get_lang_name() const;
 
-    const std::string& get_language_code() const;
+    const std::string& get_lang_code() const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_TRANSLITERATION_H
