@@ -60,7 +60,7 @@ void SpellingCorrector::get_top_spelling_corrections(const string& word,
     vector<unsigned> term_utf;
     multimap<double, string> top_spelling;
 
-    ExtendedEditDistance edit_distance;
+    ExtendedEditDistance edit_distance(keyboard_layout);
 
     while (true)
     {

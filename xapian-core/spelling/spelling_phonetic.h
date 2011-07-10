@@ -33,7 +33,7 @@ public:
     virtual ~SpellingPhonetic() { }
 
     //Generate phonetic codes for a given word.
-    virtual bool get_phonetic(const std::string& input, std::vector<std::string>& result) = 0;
+    virtual bool get_phonetic(const std::string& input, std::vector<std::string>& result) const = 0;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_H

@@ -53,7 +53,7 @@ MetaphoneSpellingPhonetic::is(char ch, Flag flag)
 }
 
 bool
-MetaphoneSpellingPhonetic::get_phonetic(const string& input, vector<string>& result)
+MetaphoneSpellingPhonetic::get_phonetic(const string& input, vector<string>& result) const
 {
     string key;
     string word = Xapian::Unicode::toupper(input);

@@ -45,12 +45,12 @@ class DMSoundexSpellingPhonetic : public SpellingPhonetic {
 
     unsigned find_entry(const std::string& word, unsigned offset, Entry& entry, std::string& buffer) const;
 
-    const char* get_entry_value(const std::vector<Entry>& entries, unsigned index, const Entry& entry);
+    const char* get_entry_value(const std::vector<Entry>& entries, unsigned index, const Entry& entry) const;
 
 public:
     DMSoundexSpellingPhonetic();
 
-    bool get_phonetic(const std::string& input, std::vector<std::string>& result);
+    bool get_phonetic(const std::string& input, std::vector<std::string>& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_DMSOUNDEX_H

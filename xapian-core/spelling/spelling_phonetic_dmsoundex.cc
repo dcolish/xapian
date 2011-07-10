@@ -182,7 +182,7 @@ DMSoundexSpellingPhonetic::find_entry(const string& word, unsigned offset, Entry
 }
 
 const char*
-DMSoundexSpellingPhonetic::get_entry_value(const std::vector<Entry>& entries, unsigned index, const Entry& entry)
+DMSoundexSpellingPhonetic::get_entry_value(const std::vector<Entry>& entries, unsigned index, const Entry& entry) const
 {
     if (index < entries.size() && entries[index + 1].vowel)
 	return entry.before;
@@ -190,7 +190,7 @@ DMSoundexSpellingPhonetic::get_entry_value(const std::vector<Entry>& entries, un
 }
 
 bool
-DMSoundexSpellingPhonetic::get_phonetic(const string& input, vector<string>& result)
+DMSoundexSpellingPhonetic::get_phonetic(const string& input, vector<string>& result) const
 {
     vector<Entry> entries;
 

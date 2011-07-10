@@ -41,7 +41,7 @@ class MetaphoneSpellingPhonetic : public SpellingPhonetic {
     static bool is(char ch, Flag flag);
 
 public:
-    bool get_phonetic(const std::string& input, std::vector<std::string>& result);
+    bool get_phonetic(const std::string& input, std::vector<std::string>& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_METAPHONE_H

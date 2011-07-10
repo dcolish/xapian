@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include "database.h"
+#include "spelling_keyboard.h"
 #include "spelling_base.h"
 
 class SpellingCorrector : public SpellingBase {
@@ -47,6 +48,9 @@ class SpellingCorrector : public SpellingBase {
 	}
     };
 
+    unsigned max_edit_distance;
+    const SpellingKeyboard* keyboard_layout;
+
     void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq,
 				      std::vector<std::string>& result);
 
@@ -60,11 +64,11 @@ class SpellingCorrector : public SpellingBase {
 						word_spelling_key, unsigned>& freq_map,
 					std::vector<unsigned>& max_spelling_word, unsigned& max_word_freq);
 
-    unsigned max_edit_distance;
-
 public:
     SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
-                      unsigned max_edit_distance_) : SpellingBase(internal_), max_edit_distance(max_edit_distance_)
+                      unsigned max_edit_distance_, const SpellingKeyboard* keyboard_layout_ = NULL) :
+                	  SpellingBase(internal_), max_edit_distance(max_edit_distance_),
+                	  keyboard_layout(keyboard_layout_)
     {
     }
 
