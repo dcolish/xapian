@@ -40,8 +40,8 @@
 #include "multialltermslist.h"
 #include "multivaluelist.h"
 #include "database.h"
-#include "editdistance.h"
-#include "extended_edit_distance.h"
+#include "../spelling/editdistance.h"
+#include "../spelling/extended_edit_distance.h"
 #include "ortermlist.h"
 #include "noreturn.h"
 
@@ -53,8 +53,8 @@
 
 #include <xapian/unordered_map.h>
 
-#include "spelling_corrector.h"
-#include "spelling_splitter.h"
+#include "../spelling/spelling_corrector.h"
+#include "../spelling/spelling_splitter.h"
 
 using namespace std;
 
