@@ -1,0 +1,5 @@
+<Directory>spelling</Directory>
+
+<Description>
+Spelling classes: fuzzy match, phonetic, splitter, keyboard layouts, transliteration.
+</Description>
