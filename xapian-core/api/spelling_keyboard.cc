@@ -141,28 +141,36 @@ SpellingKeyboard::KeyDistance::KeyDistance() : max_distance(0.0)
     }
 }
 
-double SpellingKeyboard::KeyDistance::get_key_proximity(unsigned a, unsigned b) const
+double
+SpellingKeyboard::KeyDistance::get_key_proximity(unsigned first_ch, unsigned second_ch) const
 {
-    unordered_map<unsigned, pair<double, double> >::const_iterator a_it = distance_map.find(a);
-    unordered_map<unsigned, pair<double, double> >::const_iterator b_it = distance_map.find(b);
+    unordered_map<unsigned, pair<double, double> >::const_iterator first_it = distance_map.find(first_ch);
+    unordered_map<unsigned, pair<double, double> >::const_iterator second_it = distance_map.find(second_ch);
 
-    if (a_it == distance_map.end() || b_it == distance_map.end()) return 0.0;
+    if (first_it == distance_map.end() || second_it == distance_map.end()) return 0.0;
 
-    double dx = a_it->second.first - b_it->second.first;
-    double dy = a_it->second.second - b_it->second.second;
+    double dx = first_it->second.first - second_it->second.first;
+    double dy = first_it->second.second - second_it->second.second;
 
     return 1 - sqrt(dx * dx + dy * dy) / max_distance;
 }
 
-void SpellingKeyboard::copy_map(const unordered_map<unsigned, unsigned>& source, unordered_map<unsigned, unsigned>& dest)
+SpellingKeyboard::SpellingKeyboard(const std::string& language_name_,
+                                   const std::string& language_code_) :
+                                   language_name(language_name_),
+                                   language_code(language_code_)
 {
-    dest.clear();
-    unordered_map<unsigned, unsigned>::const_iterator it;
-    for (it = source.begin(); it != source.end(); ++it)
-	dest.insert(make_pair(it->second, it->first));
 }
 
-bool SpellingKeyboard::convert_layout(const string& word,
+void
+SpellingKeyboard::add_char_mapping(unsigned lang_char, unsigned default_char)
+{
+    from_char_map.insert(make_pair(lang_char, default_char));
+    to_char_map.insert(make_pair(default_char, lang_char));
+}
+
+bool
+SpellingKeyboard::convert_layout(const string& word,
                                       const unordered_map<unsigned, unsigned>& char_map,
 				      string& result) const
 {
@@ -182,17 +190,20 @@ bool SpellingKeyboard::convert_layout(const string& word,
     return converted;
 }
 
-bool SpellingKeyboard::convert_to_layout(const string& word, string& result) const
+bool
+SpellingKeyboard::convert_to_layout(const string& word, string& result) const
 {
     return convert_layout(word, to_char_map, result);
 }
 
-bool SpellingKeyboard::convert_from_layout(const string& word, string& result) const
+bool
+SpellingKeyboard::convert_from_layout(const string& word, string& result) const
 {
     return convert_layout(word, from_char_map, result);
 }
 
-double SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
+double
+SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
 {
     unordered_map<unsigned, unsigned>::const_iterator first_it = from_char_map.find(first_ch);
     unordered_map<unsigned, unsigned>::const_iterator second_it = from_char_map.find(second_ch);
@@ -201,4 +212,16 @@ double SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch
     if (second_it != from_char_map.end()) second_ch = second_it->second;
 
     return key_distance.get_key_proximity(first_ch, second_ch);
+}
+
+const string&
+SpellingKeyboard::get_lang_name() const
+{
+    return language_name;
+}
+
+const string&
+SpellingKeyboard::get_lang_code() const
+{
+    return language_code;
 }

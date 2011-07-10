@@ -39,28 +39,37 @@ class SpellingKeyboard {
     public:
 	KeyDistance();
 
-	double get_key_proximity(unsigned a, unsigned b) const;
+	double get_key_proximity(unsigned first_ch, unsigned second_ch) const;
     };
 
-protected:
     static KeyDistance key_distance;
 
     std::unordered_map<unsigned, unsigned> to_char_map;
     std::unordered_map<unsigned, unsigned> from_char_map;
 
-    void copy_map(const std::unordered_map<unsigned, unsigned>& source,
-                  std::unordered_map<unsigned, unsigned>& dest);
+    std::string language_name;
+    std::string language_code;
+
+protected:
+
+    void add_char_mapping(unsigned lang_char, unsigned default_char);
 
     bool convert_layout(const std::string& word,
                         const std::unordered_map<unsigned, unsigned>& char_map,
 			std::string& result) const;
 
 public:
+    SpellingKeyboard(const std::string& language_name_, const std::string& language_code_);
+
     bool convert_to_layout(const std::string& word, std::string& result) const;
 
     bool convert_from_layout(const std::string& word, std::string& result) const;
 
     double get_key_proximity(unsigned first_ch, unsigned second_ch) const;
+
+    const std::string& get_lang_name() const;
+
+    const std::string& get_lang_code() const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_KEYBOARD_H

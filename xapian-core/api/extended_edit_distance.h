@@ -46,47 +46,73 @@
  */
 
 #include <string>
+#include "spelling_keyboard.h"
 
 class ExtendedEditDistance
 {
-		double* current_row;
-		double* previous_row;
-		double* transposition_row;
-		unsigned row_capacity;
+    double* current_row;
+    double* previous_row;
+    double* transposition_row;
+    unsigned row_capacity;
 
-		inline double get_index_cost(unsigned index, unsigned length)
-		{
-			return std::max(1.0 - double(std::min(index, length - 1)) / double(std::max(length - 1, 1u)), 0.0);
-		}
+    const SpellingKeyboard* keyboard_layout;
 
-		inline double get_insert_cost(unsigned index, unsigned length, unsigned /*ch*/)
-		{
-			return 0.85 + 0.4 * get_index_cost(index, length);
-		}
+    //Cost of position of a letter in a word
+    inline double get_index_cost(unsigned index, unsigned length)
+    {
+	return std::max(1.0 - double(std::min(index, length - 1)) / double(std::max(length - 1, 1u)), 0.0);
+    }
 
-		inline double get_delete_cost(unsigned index, unsigned length, unsigned /*ch*/)
-		{
-			return 0.75 + 0.4 * get_index_cost(index, length);
-		}
+    //Cost of proximity of keys on a keyboard
+    inline double get_keyboard_cost(unsigned first_ch, unsigned second_ch)
+    {
+	double proximity = 0.0;
+	if (keyboard_layout != NULL)
+	    proximity = keyboard_layout->get_key_proximity(first_ch, second_ch);
 
-		inline double get_replace_cost(unsigned index, unsigned length, unsigned /*first_ch*/, unsigned /*second_ch*/)
-		{
-			return 0.75 + 0.35 * get_index_cost(index, length);
-		}
+	return proximity > 0.9 ? proximity : 0.0;
+    }
 
-		inline double get_transposition_cost(unsigned index, unsigned length, unsigned /*first_ch*/, unsigned /*second_ch*/)
-		{
-			return 0.75 + 0.25 * get_index_cost(index, length);
-		}
+    //Insertion cost
+    inline double get_insert_cost(unsigned index, unsigned length, unsigned /*ch*/)
+    {
+	return 0.85 + 0.4 * get_index_cost(index, length);
+    }
 
-	public:
-		ExtendedEditDistance() :
-			current_row(NULL), previous_row(NULL), transposition_row(NULL), row_capacity(0)
-		{
-		}
+    //Deletion cost
+    inline double get_delete_cost(unsigned index, unsigned length, unsigned /*ch*/)
+    {
+	return 0.75 + 0.4 * get_index_cost(index, length);
+    }
 
-		double edit_distance(const unsigned* first_word, unsigned first_length, const unsigned* second_word,
-				unsigned second_length, unsigned max_distance);
+    //Substitution cost
+    inline double get_replace_cost(unsigned index, unsigned length, unsigned first_ch, unsigned second_ch)
+    {
+	return 0.75 + 0.35 * get_index_cost(index, length) - get_keyboard_cost(first_ch, second_ch) * 0.25;
+    }
+
+    //Transposition cost
+    inline double get_transposition_cost(unsigned index, unsigned length, unsigned /*first_ch*/, unsigned /*second_ch*/)
+    {
+	return 0.75 + 0.25 * get_index_cost(index, length);
+    }
+
+public:
+    ExtendedEditDistance(const SpellingKeyboard* keyboard_layout_ = NULL) :
+	current_row(NULL), previous_row(NULL), transposition_row(NULL), row_capacity(0),
+	keyboard_layout(keyboard_layout_)
+    {
+    }
+
+    ~ExtendedEditDistance()
+    {
+	delete[] current_row;
+	delete[] previous_row;
+	delete[] transposition_row;
+    }
+
+    double edit_distance(const unsigned* first_word, unsigned first_length, const unsigned* second_word,
+                         unsigned second_length, unsigned max_distance);
 };
 
 #endif // XAPIAN_INCLUDED_EXTENDED_EDIT_DISTANCE_H
