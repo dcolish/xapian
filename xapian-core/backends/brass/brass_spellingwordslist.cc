@@ -45,7 +45,7 @@ BrassSpellingWordsList::get_termname() const
     Assert(!at_end());
     Assert(!cursor->current_key.empty());
     Assert(cursor->current_key[0] == 'W');
-    RETURN(cursor->current_key.substr(1));
+    RETURN(cursor->current_key.substr(1 + BrassSpellingTable::PREFIX_GROUP_LENGTH));
 }
 
 Xapian::doccount
