@@ -64,7 +64,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
     static unsigned check_index(unsigned index);
 
     //Creates key for to access word with given index
-    static void get_word_key(unsigned index, string& key);
+    static void get_word_key(unsigned index, std::string& key);
 
     //Pack word index and error mask into a value
     static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
@@ -74,38 +74,42 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 				  unsigned& error_mask);
 
     //Get integer value from a string data at given index
-    static unsigned get_data_int(const string& data, unsigned index);
+    static unsigned get_data_int(const std::string& data, unsigned index);
 
     //Append integer value to a string data at the end
-    static void append_data_int(string& data, unsigned value);
+    static void append_data_int(std::string& data, unsigned value);
 
     //Binary search in a data for a given word and error mask
-    unsigned term_binary_search(const std::string& data, const std::vector<
-	    unsigned>& word, unsigned error_mask, unsigned start, unsigned end,
+    unsigned term_binary_search(const std::string& data,
+                                const std::vector<unsigned>& word,
+                                unsigned error_mask,
+                                unsigned start, unsigned end,
 				bool lower);
 
     //Toggle term in database
     void toggle_term(const std::vector<unsigned>& word, std::string& prefix,
-		     unsigned index, unsigned error_mask, bool update_prefix);
+                     unsigned prefix_group, unsigned index, unsigned error_mask,
+                     bool update_prefix);
 
     //Recursively call toggle_term with 0 .. max_distance errors.
     void toggle_recursive_term(const std::vector<unsigned>& word,
-			       std::string& prefix, unsigned index,
-			       unsigned error_mask, unsigned start,
+			       std::string& prefix, unsigned prefix_group,
+			       unsigned index, unsigned error_mask, unsigned start,
 			       unsigned distance, unsigned max_distance);
 
     //Search for a word and fill result set
     void populate_term(const std::vector<unsigned>& word, std::string& data,
-		       std::string& prefix, unsigned error_mask,
-		       bool update_prefix,
-		       std::tr1::unordered_set<unsigned>& result);
+		       std::string& prefix, unsigned prefix_group,
+		       unsigned error_mask, bool update_prefix,
+		       std::unordered_set<unsigned>& result);
 
     //Recursively search for a word with 0, 1, ..., max_distance errors.
     void populate_recursive_term(const std::vector<unsigned>& word,
 				 std::string& data, std::string& prefix,
+				 unsigned prefix_group,
 				 unsigned error_mask, unsigned start,
 				 unsigned distance, unsigned max_distance,
-				 std::tr1::unordered_set<unsigned>& result);
+				 std::unordered_set<unsigned>& result);
 
     //Generate prefix of a word using given error mask.
     void get_term_prefix(const std::vector<unsigned>& word,
@@ -163,9 +167,9 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 protected:
     void merge_fragment_changes();
 
-    void toggle_word(const std::string& word);
+    void toggle_word(const std::string& word, const std::string& prefix_group);
 
-    void populate_word(const std::string& word, unsigned max_distance,
+    void populate_word(const std::string& word, const std::string& prefix_group, unsigned max_distance,
 		       std::vector<TermList*>& result);
 
 public:

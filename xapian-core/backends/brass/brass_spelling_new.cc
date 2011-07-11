@@ -36,11 +36,13 @@ using namespace Xapian;
 using namespace Unicode;
 using namespace std;
 
-void BrassSpellingTableNew::toggle_word(const string& word)
+void BrassSpellingTableNew::toggle_word(const string& word, const string& prefix)
 {
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
     const int end = int(word_utf.size()) - NGRAM_SIZE + 1;
+
+    const unsigned prefix_group = get_spelling_group(prefix);
 
     set<string> str_buf_set;
 
@@ -53,6 +55,8 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 	str_buf.push_back(NGRAM_SIGNATURE);
 	//Store position of n-gram in string
 	str_buf.push_back(char(start + NGRAM_SIZE));
+	//Append prefix group
+	append_prefix_group(str_buf, prefix_group);
 
 	//If head, put placeholder as the first char
 	if (start >= 0)
@@ -83,6 +87,7 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 	str_buf.clear();
 	str_buf.push_back(NGRAM_SIGNATURE);
 	str_buf.push_back(1);
+	append_prefix_group(str_buf, prefix_group);
 	str_buf.append(NGRAM_SIZE - 2, PLACEHOLDER);
 
 	append_utf8(str_buf, word_utf[0]);
@@ -94,23 +99,27 @@ void BrassSpellingTableNew::toggle_word(const string& word)
 }
 
 void BrassSpellingTableNew::populate_word(const string& word,
-					  unsigned max_distance, vector<
-						  TermList*>& result)
+                                          const string& prefix,
+					  unsigned max_distance,
+					  vector<TermList*>& result)
 {
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
+
+    const unsigned prefix_group = get_spelling_group(prefix);
 
     string str_buf;
     str_buf.reserve(word_utf.size() * sizeof(unsigned));
 
     string data;
 
-    populate_ngram_word(word_utf, max_distance, str_buf, data, result);
+    populate_ngram_word(word_utf, prefix_group, max_distance, str_buf, data, result);
 
     //'Bookends'
     if (word_utf.size() <= NGRAM_SIZE + 1) {
 	str_buf.clear();
 	str_buf.push_back(NGRAM_SIGNATURE);
 	str_buf.push_back(1);
+	append_prefix_group(str_buf, prefix_group);
 	str_buf.append(NGRAM_SIZE - 2, PLACEHOLDER);
 
 	append_utf8(str_buf, word_utf[0]);
@@ -123,13 +132,14 @@ void BrassSpellingTableNew::populate_word(const string& word,
     if (int(word_utf.size()) <= NGRAM_SIZE) {
 	for (int i = 0; i < int(word_utf.size()) - 1; ++i) {
 	    swap(word_utf[i], word_utf[i + 1]);
-	    populate_ngram_word(word_utf, max_distance, str_buf, data, result);
+	    populate_ngram_word(word_utf, prefix_group, max_distance, str_buf, data, result);
 	    swap(word_utf[i], word_utf[i + 1]);
 	}
     }
 }
 
 void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf,
+                                                unsigned prefix_group,
 						unsigned max_distance,
 						string& str_buf, string& data,
 						vector<TermList*>& result)
@@ -140,6 +150,7 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 	str_buf.clear();
 	str_buf.push_back(NGRAM_SIGNATURE);
 	str_buf.push_back(1);
+	append_prefix_group(str_buf, prefix_group);
 
 	if (start >= 0)
 	    append_utf8(str_buf, word_utf[start]);

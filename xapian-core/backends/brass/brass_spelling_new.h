@@ -34,6 +34,7 @@ class BrassSpellingTableNew : public BrassSpellingTableNGram {
     static const char NGRAM_SIGNATURE = 'N';
 
     void populate_ngram_word(const std::vector<unsigned>& word,
+                             unsigned prefix_group,
 			     unsigned max_distance, std::string& str_buf,
 			     std::string& data, std::vector<TermList*>& result);
 
@@ -41,10 +42,10 @@ class BrassSpellingTableNew : public BrassSpellingTableNGram {
 			 std::vector<TermList*>& result);
 
 protected:
-    void toggle_word(const std::string& word);
+    void toggle_word(const std::string& word, const std::string& prefix);
 
-    void populate_word(const std::string& word, unsigned max_distance,
-		       std::vector<TermList*>& result);
+    void populate_word(const std::string& word, const std::string& prefix,
+                       unsigned max_distance, std::vector<TermList*>& result);
 
 public:
     BrassSpellingTableNew(const std::string & dbdir, bool readonly) :

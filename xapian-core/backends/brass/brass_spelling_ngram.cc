@@ -113,7 +113,7 @@ void BrassSpellingTableNGram::merge_fragment_changes()
     termlist_deltas.clear();
 }
 
-void BrassSpellingTableNGram::toggle_word(const string& word)
+void BrassSpellingTableNGram::toggle_word(const string& word, const string&)
 {
     fragment buf;
 
@@ -154,7 +154,7 @@ void BrassSpellingTableNGram::toggle_word(const string& word)
     }
 }
 
-void BrassSpellingTableNGram::populate_word(const string& word, unsigned,
+void BrassSpellingTableNGram::populate_word(const string& word, const string&, unsigned,
 					    vector<TermList*>& result)
 {
     string data;

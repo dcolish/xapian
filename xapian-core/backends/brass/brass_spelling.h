@@ -35,27 +35,36 @@
 class BrassSpellingTable : public BrassLazyTable {
     static const char WORD_SIGNATURE = 'W';
     static const char WORDS_SIGNATURE = 'M';
+    static const char SPELLING_SIGNATURE = 'S';
+    static const char* GROUPMAX_SIGNATURE;
 
-    static string pack_words(const string& first_word,
-			     const string& second_word);
+    std::string pack_words(const std::string& prefix,
+                           const std::string& first_word,
+                           const std::string& second_word) const;
 
-    void set_entry_wordfreq(char prefix, const string& word,
+    void set_entry_wordfreq(char prefix, const std::string& word,
 			    Xapian::termcount freq);
 
-    Xapian::termcount get_entry_wordfreq(char prefix, const string& word) const;
+    Xapian::termcount get_entry_wordfreq(char prefix, const std::string& word) const;
 
     std::map<std::string, Xapian::termcount> wordfreq_changes;
     std::map<std::string, Xapian::termcount> wordsfreq_changes;
 
 protected:
+    static void append_prefix_group(std::string& data, unsigned value);
+
+    unsigned get_spelling_group(const std::string& prefix) const;
+
     virtual void merge_fragment_changes() = 0;
 
-    virtual void toggle_word(const std::string& word) = 0;
+    virtual void toggle_word(const std::string& word, const std::string& prefix_group) = 0;
 
-    virtual void populate_word(const std::string& word, unsigned max_distance,
+    virtual void populate_word(const std::string& word, const std::string& prefix_group, unsigned max_distance,
 			       std::vector<TermList*>& result) = 0;
 
 public:
+    static const unsigned PREFIX_GROUP_LENGTH = sizeof(unsigned);
+
     /** Create a new BrassSpellingTable object.
      *
      *  This method does not create or open the table on disk - you
@@ -73,25 +82,33 @@ public:
     // Merge in batched-up changes.
     void merge_changes();
 
-    void add_word(const std::string & word, Xapian::termcount freqinc);
-    void remove_word(const std::string & word, Xapian::termcount freqdec);
+    void add_word(const std::string & word, Xapian::termcount freqinc,
+		  const std::string& prefix = string());
+
+    void remove_word(const std::string & word, Xapian::termcount freqdec,
+                     const std::string& prefix = string());
 
     void add_words(const std::string& first_word,
-		   const std::string& second_word, Xapian::termcount freqinc);
+		   const std::string& second_word, Xapian::termcount freqinc,
+		   const std::string& prefix = string());
 
-    void
-	    remove_words(const std::string& first_word,
-			 const std::string& second_word,
-			 Xapian::termcount freqdec);
+    void remove_words(const std::string& first_word,
+                      const std::string& second_word, Xapian::termcount freqdec,
+                      const std::string& prefix = string());
 
-    TermList * open_termlist(const std::string & word);
+    TermList * open_termlist(const std::string & word, const std::string& prefix = string());
 
-    TermList * open_termlist(const std::string & word, unsigned max_distance);
+    TermList * open_termlist(const std::string & word, unsigned max_distance, const std::string& prefix = string());
 
-    Xapian::doccount get_word_frequency(const std::string & word) const;
+    Xapian::doccount get_word_frequency(const std::string& word, const std::string& prefix = string()) const;
 
     Xapian::doccount get_words_frequency(const std::string& first_word,
-					 const std::string& second_word) const;
+					 const std::string& second_word,
+					 const std::string& prefix = string()) const;
+
+    void enable_spelling(const std::string& prefix, const std::string& group_prefix);
+
+    void disable_spelling(const std::string& prefix);
 
     /** Override methods of BrassTable.
      *

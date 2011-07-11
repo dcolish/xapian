@@ -37,8 +37,8 @@ using namespace Xapian;
 using namespace Xapian::Unicode;
 using namespace std;
 
-const char* BrassSpellingTableFastSS::WORD_INDEX_SIGNATURE = "WI";
-const char* BrassSpellingTableFastSS::WORD_VALUE_SIGNATURE = "WV";
+const char* BrassSpellingTableFastSS::WORD_INDEX_SIGNATURE = "IW";
+const char* BrassSpellingTableFastSS::WORD_VALUE_SIGNATURE = "IV";
 const char* BrassSpellingTableFastSS::INDEXMAX_SIGNATURE = "INDEXMAX";
 const char* BrassSpellingTableFastSS::INDEXSTACK_SIGNATURE = "INDEXSTACK";
 
@@ -119,12 +119,13 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 
     //Load index value from which we should start assign new indexes (if index stack is empty)
     string databuffer;
-    if (get_exact_entry(INDEXMAX_SIGNATURE, databuffer)) index_max = get_data_int(databuffer, 0);
+    if (get_exact_entry(INDEXMAX_SIGNATURE, databuffer))
+	index_max = get_data_int(databuffer, 0);
 
     //Load stack of free indexes which should be assigned to new words.
-    if (get_exact_entry(INDEXSTACK_SIGNATURE, databuffer)) for (unsigned i = 0; i < databuffer.size()
-	    / sizeof(unsigned); ++i)
-	index_stack.push_back(get_data_int(databuffer, i));
+    if (get_exact_entry(INDEXSTACK_SIGNATURE, databuffer))
+	for (unsigned i = 0; i < databuffer.size() / sizeof(unsigned); ++i)
+	    index_stack.push_back(get_data_int(databuffer, i));
 
     vector<unsigned> wordlist_index_map(wordlist_deltas.size(), 0);
 
@@ -274,7 +275,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
     termlist_deltas.clear();
 }
 
-void BrassSpellingTableFastSS::toggle_word(const string& word)
+void BrassSpellingTableFastSS::toggle_word(const string& word, const string& prefix_group)
 {
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
@@ -282,15 +283,18 @@ void BrassSpellingTableFastSS::toggle_word(const string& word)
     unsigned index = wordlist_deltas.size() - 1;
 
     string prefix;
-    toggle_recursive_term(word_utf, prefix, index, 0, 0, 0, min(MAX_DISTANCE, word.size() / 2));
+    toggle_recursive_term(word_utf, prefix, get_spelling_group(prefix_group),
+                          index, 0, 0, 0, min(MAX_DISTANCE, word.size() / 2));
 }
 
-void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string& prefix, unsigned index,
+void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string& prefix,
+                                           unsigned prefix_group, unsigned index,
 					   unsigned error_mask, bool update_prefix)
 {
     if (update_prefix) {
 	prefix.clear();
 	prefix.push_back(PREFIX_SIGNATURE);
+	append_data_int(prefix, prefix_group);
 	get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
     }
 
@@ -302,16 +306,16 @@ void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string&
     it->second.push_back(pack_term_index(index, error_mask));
 }
 
-void BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& word, string& prefix, unsigned index,
-						     unsigned error_mask, unsigned start, unsigned distance,
-						     unsigned max_distance)
+void BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& word, string& prefix,
+                                                     unsigned prefix_group, unsigned index, unsigned error_mask,
+                                                     unsigned start, unsigned distance, unsigned max_distance)
 {
     bool update_prefix = start <= PREFIX_LENGTH + distance;
-    toggle_term(word, prefix, index, error_mask, update_prefix);
+    toggle_term(word, prefix, prefix_group, index, error_mask, update_prefix);
 
     if (distance < max_distance) for (unsigned i = start; i < min(word.size(), LIMIT); ++i) {
 	unsigned current_error_mask = error_mask | (1 << i);
-	toggle_recursive_term(word, prefix, index, current_error_mask, i + 1, distance + 1, max_distance);
+	toggle_recursive_term(word, prefix, prefix_group, index, current_error_mask, i + 1, distance + 1, max_distance);
     }
 }
 
@@ -348,12 +352,14 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 }
 
 void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, string& data, string& prefix,
-					     unsigned error_mask, bool update_prefix, unordered_set<unsigned>& result)
+                                             unsigned prefix_group, unsigned error_mask,
+                                             bool update_prefix, unordered_set<unsigned>& result)
 {
     bool prefix_exists;
     if (update_prefix) {
 	prefix.clear();
 	prefix.push_back(PREFIX_SIGNATURE);
+	append_data_int(prefix, prefix_group);
 	get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
 	prefix_exists = get_exact_entry(prefix, data);
 
@@ -379,26 +385,28 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
 }
 
 void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& word, string& data, string& prefix,
-						       unsigned error_mask, unsigned start, unsigned distance,
+                                                       unsigned prefix_group, unsigned error_mask,
+                                                       unsigned start, unsigned distance,
 						       unsigned max_distance, unordered_set<unsigned>& result)
 {
     bool update_prefix = start <= PREFIX_LENGTH + distance;
-    populate_term(word, data, prefix, error_mask, update_prefix, result);
+    populate_term(word, data, prefix, prefix_group, error_mask, update_prefix, result);
 
     if (distance < max_distance) for (unsigned i = start; i < min(word.size(), LIMIT); ++i) {
 	unsigned current_error_mask = error_mask | (1 << i); // generate error mask - place one-bits at "error" positions
-	populate_recursive_term(word, data, prefix, current_error_mask, i + 1, distance + 1, max_distance, result);
+	populate_recursive_term(word, data, prefix, prefix_group, current_error_mask, i + 1, distance + 1, max_distance, result);
     }
 }
 
-void BrassSpellingTableFastSS::populate_word(const string& word, unsigned max_distance, vector<TermList*>& result)
+void BrassSpellingTableFastSS::populate_word(const string& word, const string& prefix_group, unsigned max_distance, vector<TermList*>& result)
 {
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
     string prefix;
     string data;
     unordered_set<unsigned> result_set;
-    populate_recursive_term(word_utf, data, prefix, 0, 0, 0, min(min(max_distance, MAX_DISTANCE), word.size() / 2),
+    populate_recursive_term(word_utf, data, prefix, get_spelling_group(prefix_group),
+                            0, 0, 0, min(min(max_distance, MAX_DISTANCE), word.size() / 2),
 			    result_set);
 
     vector<unsigned> result_vector(result_set.begin(), result_set.end());
