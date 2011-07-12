@@ -38,11 +38,12 @@ using namespace std;
 
 void BrassSpellingTableNew::toggle_word(const string& word, const string& prefix)
 {
+    const unsigned prefix_group = get_spelling_group(prefix);
+    if (prefix_group == PREFIX_DISABLED) return;
+
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
     const int end = int(word_utf.size()) - NGRAM_SIZE + 1;
-
-    const unsigned prefix_group = get_spelling_group(prefix);
 
     set<string> str_buf_set;
 
@@ -103,9 +104,12 @@ void BrassSpellingTableNew::populate_word(const string& word,
 					  unsigned max_distance,
 					  vector<TermList*>& result)
 {
-    vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
+    result.clear();
 
     const unsigned prefix_group = get_spelling_group(prefix);
+    if (prefix_group == PREFIX_DISABLED) return;
+
+    vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
     string str_buf;
     str_buf.reserve(word_utf.size() * sizeof(unsigned));
