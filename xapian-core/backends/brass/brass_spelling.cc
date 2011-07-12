@@ -301,7 +301,8 @@ void BrassSpellingTable::enable_spelling(const string& prefix, const string& gro
     string data;
     pack_uint_last(data, 0u);
 
-    if (!group_prefix.empty() && !get_exact_entry(SPELLING_SIGNATURE + group_prefix, data)) {
+    if (!group_prefix.empty() &&
+	(prefix == group_prefix || !get_exact_entry(SPELLING_SIGNATURE + group_prefix, data))) {
 	unsigned group = 1;
 
 	if (get_exact_entry(GROUPMAX_SIGNATURE, data)) {
@@ -326,6 +327,8 @@ void BrassSpellingTable::disable_spelling(const string& prefix)
 
 bool BrassSpellingTable::is_spelling_enabled(const string& prefix) const
 {
+    if (prefix.empty()) return true;
+
     string tag;
     return get_exact_entry(SPELLING_SIGNATURE + prefix, tag);
 }

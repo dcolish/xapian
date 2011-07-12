@@ -219,13 +219,13 @@ endofterm:
 	} else {
 	    doc.add_term(prefix + term, weight);
 	}
-	if ((flags & FLAG_SPELLING) && prefix.empty()) {
-	    db.add_spelling(term);
+	if (flags & FLAG_SPELLING) {
+	    db.add_spelling(term, 1, prefix);
 
 	    if (!last_term.empty()){
 		if (!last_last_term.empty())
-		    db.add_spelling(term, last_term, last_last_term);
-		else db.add_spelling(term, last_term);
+		    db.add_spelling(term, last_term, last_last_term, 1, prefix);
+		else db.add_spelling(term, last_term, 1, prefix);
 	    }
 
 	    last_last_term = last_term;

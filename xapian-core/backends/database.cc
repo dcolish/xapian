@@ -362,9 +362,9 @@ Database::Internal::disable_spelling(const std::string&) const
 }
 
 bool
-Database::Internal::is_spelling_enabled(const std::string&) const
+Database::Internal::is_spelling_enabled(const std::string& prefix) const
 {
-    return false;
+    return prefix.empty();
 }
 
 TermList *

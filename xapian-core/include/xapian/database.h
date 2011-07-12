@@ -349,13 +349,22 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	std::string get_spelling_suggestion(const std::string &word,
 					    unsigned max_edit_distance = 2) const;
 
+	/** Suggest a spelling correction.
+	 *
+	 *  @param word			The potentially misspelled word.
+	 *  @param prefix		The prefix.
+	 *  @param max_edit_distance	Only consider words which are at most
+	 *	@a max_edit_distance edits from @a word.  An edit is a
+	 *	character insertion, deletion, or the transposition of two
+	 *	adjacent characters (default is 2).
+	 */
 	std::string get_spelling_suggestion(const std::string &word,
 	                                    const std::string &prefix,
 					    unsigned max_edit_distance = 2) const;
 
 	/** Suggest a spelling correction for group of words.
 	 *
-	 *  @param word Potentially misspelled words.
+	 *  @param words 		The potentially misspelled sequence of words.
 	 *  @param max_edit_distance	Only consider words which are at most
 	 *	@a max_edit_distance edits from @a word.  An edit is a
 	 *	character insertion, deletion, or the transposition of two
@@ -364,10 +373,24 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	std::vector<std::string> get_spelling_suggestion(const std::vector<std::string> &words,
 	                                                 unsigned max_edit_distance = 2) const;
 
+	/** Suggest a spelling correction for group of words.
+	 *
+	 *  @param words 		The potentially misspelled sequence of words.
+	 *  @param prefix 		The prefix.
+	 *  @param max_edit_distance	Only consider words which are at most
+	 *	@a max_edit_distance edits from @a word.  An edit is a
+	 *	character insertion, deletion, or the transposition of two
+	 *	adjacent characters (default is 2).
+	 */
 	std::vector<std::string> get_spelling_suggestion(const std::vector<std::string> &words,
 	                                                 const std::string &prefix,
 	                                                 unsigned max_edit_distance = 2) const;
 
+	/**
+	 * Check if the spelling correction is enabled for the given prefix
+	 *
+	 * @param prefix	The prefix.
+	 */
 	bool is_spelling_enabled(const std::string& prefix) const;
 
 	/** An iterator which returns all the spelling correction targets.
@@ -376,6 +399,8 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	 *  spelling correction algorithm.  The frequency of each word is
 	 *  available as the term frequency of each entry in the returned
 	 *  iterator.
+	 *
+	 *  @param prefix	The prefix (default is empty)
 	 */
 	Xapian::TermIterator spellings_begin(const std::string & prefix = std::string()) const;
 
@@ -819,14 +844,34 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 	 *
 	 *  @param word	    The word to add.
 	 *  @param freqinc  How much to increase its frequency by (default 1).
+	 *  @param prefix   The prefix (default is empty).
 	 */
 	void add_spelling(const std::string & word,
 			  Xapian::termcount freqinc = 1,
 			  const std::string & prefix = std::string()) const;
 
+	/** Add a word pair to the spelling dictionary.
+	 *
+	 *  If the word pair is already present, its frequency is increased.
+	 *
+	 *  @param first_word	    First word of the pair to add.
+	 *  @param second_word	    Second word of the pair to add.
+	 *  @param freqinc  	    How much to increase its frequency by (default 1).
+	 *  @param prefix   	    The prefix (default is empty).
+	 */
 	void add_spelling(const std::string & first_word, const std::string & second_word,
 	                  Xapian::termcount freqinc = 1, const std::string & prefix = std::string()) const;
 
+	/** Add a word triple to the spelling dictionary.
+	 *
+	 *  If the word triple is already present, its frequency is increased.
+	 *
+	 *  @param first_word	    First word of the triple to add.
+	 *  @param second_word	    Second word of the triple to add.
+	 *  @param third_word	    Third word of the triple to add.
+	 *  @param freqinc  	    How much to increase its frequency by (default 1).
+	 *  @param prefix   	    The prefix (default is empty).
+	 */
 	void add_spelling(const std::string & first_word, const std::string & second_word,
 	                  const std::string & third_word, Xapian::termcount freqinc = 1,
 	                  const std::string & prefix = std::string()) const;
@@ -838,20 +883,53 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 	 *
 	 *  @param word	    The word to remove.
 	 *  @param freqdec  How much to decrease its frequency by (default 1).
+	 *  @param prefix   The prefix (default is empty).
 	 */
 	void remove_spelling(const std::string & word,
 			     Xapian::termcount freqdec = 1,
 			     const std::string & prefix = std::string()) const;
 
+	/** Remove a word pair from the spelling dictionary.
+	 *
+	 *  The word pair's frequency is decreased, and if would become zero or less
+	 *  then the word pair is removed completely.
+	 *
+	 *  @param first_word	    First word of the pair to remove.
+	 *  @param second_word	    Second word of the pair to remove.
+	 *  @param freqdec  	    How much to decrease its frequency by (default 1).
+	 *  @param prefix   	    The prefix (default is empty).
+	 */
 	void remove_spelling(const std::string & first_word, const std::string & second_word,
 	                     Xapian::termcount freqdec = 1, const std::string & prefix = std::string()) const;
 
+	/** Remove a word triple from the spelling dictionary.
+	 *
+	 *  The word triple's frequency is decreased, and if would become zero or less
+	 *  then the word triple is removed completely.
+	 *
+	 *  @param first_word	    First word of the triple to remove.
+	 *  @param second_word	    Second word of the triple to remove.
+	 *  @param third_word	    Third word of the triple to remove.
+	 *  @param freqdec  	    How much to decrease its frequency by (default 1).
+	 *  @param prefix   	    The prefix (default is empty).
+	 */
 	void remove_spelling(const std::string & first_word, const std::string & second_word,
 	                     const std::string & third_word, Xapian::termcount freqdec = 1,
 	                     const std::string & prefix = std::string()) const;
 
+	/**
+	 * Enable spelling for the given prefix and use the given prefix group.
+	 *
+	 * @param prefix	The prefix.
+	 * @param group_prefix	The prefix group for spelling (empty for unprefixed,
+	 * 			group_prefix equals to prefix for a new group,
+	 * 			group_prefix is existing prefix for a using of existing group)
+	 */
 	void enable_spelling(const std::string& prefix, const std::string& group_prefix) const;
 
+	/**
+	 * Disable spelling for the given prefix.
+	 */
 	void disable_spelling(const std::string& prefix) const;
 
 	/** Add a synonym for a term.
