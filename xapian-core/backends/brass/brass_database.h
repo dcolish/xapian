@@ -217,6 +217,13 @@ class BrassDatabase : public Xapian::Database::Internal {
 				     brass_revision_number_t * startrev,
 				     brass_revision_number_t * endrev) const;
 
+#ifndef _MSC_VER
+	using Xapian::Database::Internal::open_spelling_termlist;
+	using Xapian::Database::Internal::open_spelling_wordlist;
+	using Xapian::Database::Internal::get_spelling_frequency;
+	using Xapian::Database::Internal::get_spellings_frequency;
+#endif
+
     public:
 	/** Create and open a brass database.
 	 *
@@ -274,10 +281,18 @@ class BrassDatabase : public Xapian::Database::Internal {
 	TermList * open_allterms(const string & prefix) const;
 
 	TermList * open_spelling_termlist(const string & word) const;
-	TermList * open_spelling_termlist_max(const string & word, unsigned max_distance) const;
+	TermList * open_spelling_termlist(const string & word, unsigned max_distance) const;
+	TermList * open_spelling_termlist(const string & word, const string& prefix) const;
+	TermList * open_spelling_termlist(const string & word, const string& prefix, unsigned max_distance) const;
+
 	TermList * open_spelling_wordlist() const;
+	TermList * open_spelling_wordlist(const string & prefix) const;
+
 	Xapian::doccount get_spelling_frequency(const string & word) const;
+	Xapian::doccount get_spelling_frequency(const string & word, const string & prefix) const;
+
 	Xapian::doccount get_spellings_frequency(const string & first_word, const string & second_word) const;
+	Xapian::doccount get_spellings_frequency(const string & first_word, const string & second_word, const string & prefix) const;
 
 	TermList * open_synonym_termlist(const string & term) const;
 	TermList * open_synonym_keylist(const string & prefix) const;
@@ -358,6 +373,14 @@ class BrassWritableDatabase : public BrassDatabase {
 
 	//@}
 
+#ifndef _MSC_VER
+	using Xapian::Database::Internal::add_spelling;
+	using Xapian::Database::Internal::add_spellings;
+	using Xapian::Database::Internal::remove_spelling;
+	using Xapian::Database::Internal::remove_spellings;
+	using Xapian::Database::Internal::open_spelling_wordlist;
+#endif
+
     public:
 	/** Create and open a writable brass database.
 	 *
@@ -389,10 +412,20 @@ class BrassWritableDatabase : public BrassDatabase {
 	TermList * open_allterms(const string & prefix) const;
 
 	void add_spelling(const string & word, Xapian::termcount freqinc) const;
+	void add_spelling(const string & word, const string & prefix, Xapian::termcount freqinc) const;
+
 	void remove_spelling(const string & word, Xapian::termcount freqdec) const;
+	void remove_spelling(const string & word, const string & prefix, Xapian::termcount freqdec) const;
 
 	void add_spellings(const string & first_word, const string & second_word, Xapian::termcount freqinc) const;
+	void add_spellings(const string & first_word, const string & second_word, const string & prefix, Xapian::termcount freqinc) const;
+
 	void remove_spellings(const string & first_word, const string & second_word, Xapian::termcount freqdec) const;
+	void remove_spellings(const string & first_word, const string & second_word, const string & prefix, Xapian::termcount freqdec) const;
+
+	void enable_spelling(const std::string& prefix, const std::string& group_prefix) const;
+	void disable_spelling(const std::string& prefix) const;
+	bool is_spelling_enabled(const std::string& prefix) const;
 
 	TermList * open_spelling_wordlist() const;
 

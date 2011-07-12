@@ -66,8 +66,9 @@ class SpellingCorrector : public SpellingBase {
 
 public:
     SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
-                      unsigned max_edit_distance_, const SpellingKeyboard* keyboard_layout_ = NULL) :
-                	  SpellingBase(internal_), max_edit_distance(max_edit_distance_),
+                      const std::string& prefix_, unsigned max_edit_distance_,
+                      const SpellingKeyboard* keyboard_layout_ = NULL) :
+                	  SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_),
                 	  keyboard_layout(keyboard_layout_)
     {
     }

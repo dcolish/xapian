@@ -1101,9 +1101,7 @@ phrased_term:
 		const list<string> & pfxes = prefix_info->prefixes;
 		list<string>::const_iterator pfx_it;
 		for (pfx_it = pfxes.begin(); pfx_it != pfxes.end(); ++pfx_it) {
-		    if (!pfx_it->empty())
-			continue;
-		    const string & suggest = db.get_spelling_suggestion(term);
+		    const string & suggest = db.get_spelling_suggestion(term, *pfx_it);
 		    if (!suggest.empty()) {
 			if (corrected_query.empty()) corrected_query = qs;
 			size_t term_end_index = it.raw() - qs.data();
@@ -1112,8 +1110,8 @@ phrased_term:
 			corrected_query.replace(pos, n, suggest);
 			correction_offset += suggest.size();
 			correction_offset -= n;
+			break;
 		    }
-		    break;
 		}
 	    }
 

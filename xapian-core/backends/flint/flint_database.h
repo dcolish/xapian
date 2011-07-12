@@ -221,6 +221,13 @@ class FlintDatabase : public Xapian::Database::Internal {
 	void get_changeset_revisions(const string & path,
 				     flint_revision_number_t * startrev,
 				     flint_revision_number_t * endrev) const;
+
+#ifndef _MSC_VER
+	using Xapian::Database::Internal::open_spelling_termlist;
+	using Xapian::Database::Internal::open_spelling_wordlist;
+	using Xapian::Database::Internal::get_spelling_frequency;
+#endif
+
     public:
 	/** Create and open a flint database.
 	 *
@@ -387,6 +394,12 @@ class FlintWritableDatabase : public FlintDatabase {
 						   bool lazy = false) const;
 
 	//@}
+
+#ifndef _MSC_VER
+	using Xapian::Database::Internal::add_spelling;
+	using Xapian::Database::Internal::remove_spelling;
+	using Xapian::Database::Internal::open_spelling_wordlist;
+#endif
 
     public:
 	/** Create and open a writable flint database.

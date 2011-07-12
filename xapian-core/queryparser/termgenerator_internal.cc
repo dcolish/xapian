@@ -222,8 +222,11 @@ endofterm:
 	if ((flags & FLAG_SPELLING) && prefix.empty()) {
 	    db.add_spelling(term);
 
-	    if (!last_term.empty() && !last_last_term.empty())
-		db.add_spelling(last_last_term, last_term, term);
+	    if (!last_term.empty()){
+		if (!last_last_term.empty())
+		    db.add_spelling(term, last_term, last_last_term);
+		else db.add_spelling(term, last_term);
+	    }
 
 	    last_last_term = last_term;
 	    last_term = term;

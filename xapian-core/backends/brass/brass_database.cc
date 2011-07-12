@@ -964,9 +964,21 @@ BrassDatabase::open_spelling_termlist(const string & word) const
 }
 
 TermList *
-BrassDatabase::open_spelling_termlist_max(const string & word, unsigned max_distance) const
+BrassDatabase::open_spelling_termlist(const string & word, const string & prefix) const
+{
+    return spelling_table.open_termlist(word, prefix);
+}
+
+TermList *
+BrassDatabase::open_spelling_termlist(const string & word, unsigned max_distance) const
 {
     return spelling_table.open_termlist(word, max_distance);
+}
+
+TermList *
+BrassDatabase::open_spelling_termlist(const string & word, const string & prefix, unsigned max_distance) const
+{
+    return spelling_table.open_termlist(word, max_distance, prefix);
 }
 
 TermList *
@@ -975,7 +987,17 @@ BrassDatabase::open_spelling_wordlist() const
     BrassCursor * cursor = spelling_table.cursor_get();
     if (!cursor) return NULL;
     return new BrassSpellingWordsList(Xapian::Internal::RefCntPtr<const BrassDatabase>(this),
-				      cursor);
+                                      spelling_table, cursor);
+}
+
+TermList *
+BrassDatabase::open_spelling_wordlist(const string& prefix) const
+{
+    BrassCursor * cursor = spelling_table.cursor_get();
+    if (!cursor) return NULL;
+
+    return new BrassSpellingWordsList(Xapian::Internal::RefCntPtr<const BrassDatabase>(this),
+                                      spelling_table, cursor, prefix);
 }
 
 Xapian::doccount
@@ -985,9 +1007,21 @@ BrassDatabase::get_spelling_frequency(const string & word) const
 }
 
 Xapian::doccount
+BrassDatabase::get_spelling_frequency(const string & word, const string & prefix) const
+{
+    return spelling_table.get_word_frequency(word, prefix);
+}
+
+Xapian::doccount
 BrassDatabase::get_spellings_frequency(const string& first_word, const string& second_word) const
 {
-	return spelling_table.get_words_frequency(first_word, second_word);
+    return spelling_table.get_words_frequency(first_word, second_word);
+}
+
+Xapian::doccount
+BrassDatabase::get_spellings_frequency(const string& first_word, const string& second_word, const string & prefix) const
+{
+    return spelling_table.get_words_frequency(first_word, second_word, prefix);
 }
 
 TermList *
@@ -1549,6 +1583,14 @@ BrassWritableDatabase::add_spelling(const string & word,
 }
 
 void
+BrassWritableDatabase::add_spelling(const string & word,
+                                    const string & prefix,
+				    Xapian::termcount freqinc) const
+{
+    spelling_table.add_word(word, freqinc, prefix);
+}
+
+void
 BrassWritableDatabase::remove_spelling(const string & word,
 				       Xapian::termcount freqdec) const
 {
@@ -1556,15 +1598,53 @@ BrassWritableDatabase::remove_spelling(const string & word,
 }
 
 void
+BrassWritableDatabase::remove_spelling(const string & word,
+                                       const string & prefix,
+				       Xapian::termcount freqdec) const
+{
+    spelling_table.remove_word(word, freqdec, prefix);
+}
+
+void
 BrassWritableDatabase::add_spellings(const string & first_word, const string & second_word, Xapian::termcount freqinc) const
 {
-	spelling_table.add_words(first_word, second_word, freqinc);
+    spelling_table.add_words(first_word, second_word, freqinc);
+}
+
+void
+BrassWritableDatabase::add_spellings(const string & first_word, const string & second_word, const string & prefix, Xapian::termcount freqinc) const
+{
+    spelling_table.add_words(first_word, second_word, freqinc, prefix);
 }
 
 void
 BrassWritableDatabase::remove_spellings(const string & first_word, const string & second_word, Xapian::termcount freqdec) const
 {
-	spelling_table.remove_words(first_word, second_word, freqdec);
+    spelling_table.remove_words(first_word, second_word, freqdec);
+}
+
+void
+BrassWritableDatabase::remove_spellings(const string & first_word, const string & second_word, const string & prefix, Xapian::termcount freqdec) const
+{
+    spelling_table.remove_words(first_word, second_word, freqdec, prefix);
+}
+
+void
+BrassWritableDatabase::enable_spelling(const std::string& prefix, const std::string& group_prefix) const
+{
+    spelling_table.enable_spelling(prefix, group_prefix);
+}
+
+void
+BrassWritableDatabase::disable_spelling(const std::string& prefix) const
+{
+    spelling_table.disable_spelling(prefix);
+}
+
+bool
+BrassWritableDatabase::is_spelling_enabled(const std::string& prefix) const
+{
+    return spelling_table.is_spelling_enabled(prefix);
 }
 
 TermList *

@@ -303,13 +303,21 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	 */
 	virtual TermList * open_spelling_termlist(const string & word) const;
 
+	virtual TermList * open_spelling_termlist(const string & word,
+	                                          const string & prefix) const;
+
 	/** Create a termlist tree from trigrams of @a word.
 	 *
 	 *  You can assume word.size() > 1.
 	 *
 	 *  If there are no trigrams, returns NULL.
 	 */
-	virtual TermList * open_spelling_termlist_max(const string & word, unsigned max_distance) const;
+	virtual TermList * open_spelling_termlist(const string & word,
+	                                          unsigned max_distance) const;
+
+	virtual TermList * open_spelling_termlist(const string & word,
+	                                          const string & prefix,
+	                                          unsigned max_distance) const;
 
 	/** Return a termlist which returns the words which are spelling
 	 *  correction targets.
@@ -318,11 +326,18 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	 */
 	virtual TermList * open_spelling_wordlist() const;
 
+	virtual TermList * open_spelling_wordlist(const string & prefix) const;
+
 	/** Return the number of times @a word was added as a spelling. */
 	virtual Xapian::doccount get_spelling_frequency(const string & word) const;
 
+	virtual Xapian::doccount get_spelling_frequency(const string & word, const string & prefix) const;
+
 	/** Return the number of times @a pair of words were added as a spelling. */
 	virtual Xapian::doccount get_spellings_frequency(const string & first_word, const string & second_word) const;
+
+	virtual Xapian::doccount get_spellings_frequency(const string & first_word,
+	                                                 const string & second_word, const string & prefix) const;
 
 	/** Add a word to the spelling dictionary.
 	 *
@@ -334,7 +349,18 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	virtual void add_spelling(const string & word,
 				  Xapian::termcount freqinc) const;
 
-	virtual void add_spellings(const string & first_word, const string & second_word, Xapian::termcount freqinc) const;
+	virtual void add_spelling(const string & word,
+	                          const string & prefix,
+	                          Xapian::termcount freqinc) const;
+
+	virtual void add_spellings(const string & first_word,
+	                           const string & second_word,
+	                           Xapian::termcount freqinc) const;
+
+	virtual void add_spellings(const string & first_word,
+	                           const string & second_word,
+	                           const string & prefix,
+	                           Xapian::termcount freqinc) const;
 
 	/** Remove a word from the spelling dictionary.
 	 *
@@ -347,7 +373,24 @@ class Database::Internal : public Xapian::Internal::RefCntBase {
 	virtual void remove_spelling(const string & word,
 				     Xapian::termcount freqdec) const;
 
-	virtual void remove_spellings(const string & first_word, const string & second_word, Xapian::termcount freqdec) const;
+	virtual void remove_spelling(const string & word,
+	                             const string & prefix,
+	                             Xapian::termcount freqdec) const;
+
+	virtual void remove_spellings(const string & first_word,
+	                              const string & second_word,
+	                              Xapian::termcount freqdec) const;
+
+	virtual void remove_spellings(const string & first_word,
+	                              const string & second_word,
+	                              const string & prefix,
+	                              Xapian::termcount freqdec) const;
+
+	virtual void enable_spelling(const std::string& prefix, const std::string& group_prefix) const;
+
+	virtual void disable_spelling(const std::string& prefix) const;
+
+	virtual bool is_spelling_enabled(const std::string& prefix) const;
 
 	/** Open a termlist returning synonyms for a term.
 	 *

@@ -28,8 +28,8 @@
 using namespace std;
 using namespace Xapian;
 
-SpellingBase::SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Database::Internal> >& internal_) :
-    internal(internal_)
+SpellingBase::SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Database::Internal> >& internal_, const std::string& prefix_) :
+    internal(internal_), prefix(prefix_)
 {
 }
 
@@ -43,7 +43,7 @@ SpellingBase::request_internal(const string& word)
     unsigned freq = 0;
 
     for (size_t i = 0; i < internal.size(); ++i)
-	freq += internal[i]->get_spelling_frequency(word);
+	freq += internal[i]->get_spelling_frequency(word, prefix);
 
     return freq;
 }
@@ -54,7 +54,7 @@ SpellingBase::request_internal(const string& first_word, const string& second_wo
     unsigned freq = 0;
 
     for (size_t i = 0; i < internal.size(); ++i)
-	freq += internal[i]->get_spellings_frequency(first_word, second_word);
+	freq += internal[i]->get_spellings_frequency(first_word, second_word, prefix);
 
     if (freq > 0) return freq * 2;
 

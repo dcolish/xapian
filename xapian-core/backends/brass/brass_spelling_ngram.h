@@ -85,9 +85,9 @@ protected:
 
     void toggle_fragment(Brass::fragment frag, const std::string & word);
 
-    void toggle_word(const std::string& word, const std::string& prefix_group);
+    void toggle_word(const std::string& word, const std::string& prefix);
 
-    void populate_word(const std::string& word, const std::string& prefix_group, unsigned max_distance,
+    void populate_word(const std::string& word, const std::string& prefix, unsigned max_distance,
 		       std::vector<TermList*>& result);
 
 public:

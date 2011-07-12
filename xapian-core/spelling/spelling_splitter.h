@@ -99,7 +99,8 @@ class SpellingSplitter : public SpellingBase {
 						unsigned word_index, unsigned word_offset, unsigned merge_count);
 
 public:
-    SpellingSplitter(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_) : SpellingBase(internal_)
+    SpellingSplitter(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
+                     const std::string& prefix_) : SpellingBase(internal_, prefix_)
     {
     }
 

@@ -53,7 +53,9 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 
     public:
 	TermIndexCompare(std::vector<std::vector<unsigned> >& wordlist_map_) :
-	    wordlist_map(wordlist_map_)
+	    wordlist_map(wordlist_map_),
+	    first_word_index(0), first_error_mask(0),
+	    second_word_index(0), second_error_mask(0)
 	{
 	}
 
@@ -167,9 +169,9 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 protected:
     void merge_fragment_changes();
 
-    void toggle_word(const std::string& word, const std::string& prefix_group);
+    void toggle_word(const std::string& word, const std::string& prefix);
 
-    void populate_word(const std::string& word, const std::string& prefix_group, unsigned max_distance,
+    void populate_word(const std::string& word, const std::string& prefix, unsigned max_distance,
 		       std::vector<TermList*>& result);
 
 public:

@@ -349,6 +349,10 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	std::string get_spelling_suggestion(const std::string &word,
 					    unsigned max_edit_distance = 2) const;
 
+	std::string get_spelling_suggestion(const std::string &word,
+	                                    const std::string &prefix,
+					    unsigned max_edit_distance = 2) const;
+
 	/** Suggest a spelling correction for group of words.
 	 *
 	 *  @param word Potentially misspelled words.
@@ -358,7 +362,13 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	 *	adjacent characters (default is 2).
 	 */
 	std::vector<std::string> get_spelling_suggestion(const std::vector<std::string> &words,
-					    unsigned max_edit_distance = 2) const;
+	                                                 unsigned max_edit_distance = 2) const;
+
+	std::vector<std::string> get_spelling_suggestion(const std::vector<std::string> &words,
+	                                                 const std::string &prefix,
+	                                                 unsigned max_edit_distance = 2) const;
+
+	bool is_spelling_enabled(const std::string& prefix) const;
 
 	/** An iterator which returns all the spelling correction targets.
 	 *
@@ -367,7 +377,7 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	 *  available as the term frequency of each entry in the returned
 	 *  iterator.
 	 */
-	Xapian::TermIterator spellings_begin() const;
+	Xapian::TermIterator spellings_begin(const std::string & prefix = std::string()) const;
 
 	/// Corresponding end iterator to spellings_begin().
 	Xapian::TermIterator spellings_end() const {
@@ -811,13 +821,15 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 	 *  @param freqinc  How much to increase its frequency by (default 1).
 	 */
 	void add_spelling(const std::string & word,
-			  Xapian::termcount freqinc = 1) const;
+			  Xapian::termcount freqinc = 1,
+			  const std::string & prefix = std::string()) const;
 
 	void add_spelling(const std::string & first_word, const std::string & second_word,
-	                  Xapian::termcount freqinc = 1) const;
+	                  Xapian::termcount freqinc = 1, const std::string & prefix = std::string()) const;
 
 	void add_spelling(const std::string & first_word, const std::string & second_word,
-	                  const std::string & third_word, Xapian::termcount freqinc = 1) const;
+	                  const std::string & third_word, Xapian::termcount freqinc = 1,
+	                  const std::string & prefix = std::string()) const;
 
 	/** Remove a word from the spelling dictionary.
 	 *
@@ -828,10 +840,19 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 	 *  @param freqdec  How much to decrease its frequency by (default 1).
 	 */
 	void remove_spelling(const std::string & word,
-			     Xapian::termcount freqdec = 1) const;
+			     Xapian::termcount freqdec = 1,
+			     const std::string & prefix = std::string()) const;
 
 	void remove_spelling(const std::string & first_word, const std::string & second_word,
-			  Xapian::termcount freqdec = 1) const;
+	                     Xapian::termcount freqdec = 1, const std::string & prefix = std::string()) const;
+
+	void remove_spelling(const std::string & first_word, const std::string & second_word,
+	                     const std::string & third_word, Xapian::termcount freqdec = 1,
+	                     const std::string & prefix = std::string()) const;
+
+	void enable_spelling(const std::string& prefix, const std::string& group_prefix) const;
+
+	void disable_spelling(const std::string& prefix) const;
 
 	/** Add a synonym for a term.
 	 *

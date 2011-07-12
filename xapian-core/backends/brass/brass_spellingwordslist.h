@@ -21,6 +21,7 @@
 #ifndef XAPIAN_HGUARD_BRASS_SPELLINGWORDSLIST_H
 #define XAPIAN_HGUARD_BRASS_SPELLINGWORDSLIST_H
 
+#include <string>
 #include "alltermslist.h"
 #include "database.h"
 #include "brass_spelling.h"
@@ -42,6 +43,8 @@ class BrassSpellingWordsList : public AllTermsList {
      */
     BrassCursor * cursor;
 
+    std::string prefix_key;
+
     /** The term frequency of the term at the current position.
      *
      *  If this value is zero, then we haven't read the term frequency or
@@ -55,11 +58,16 @@ class BrassSpellingWordsList : public AllTermsList {
 
   public:
     BrassSpellingWordsList(Xapian::Internal::RefCntPtr<const Xapian::Database::Internal> database_,
-			   BrassCursor * cursor_)
+                           const BrassSpellingTable& spelling_table,
+			   BrassCursor * cursor_, const std::string& prefix = string())
 	    : database(database_), cursor(cursor_), termfreq(0) {
+
+	prefix_key = "W";
+	BrassSpellingTable::append_prefix_group(prefix_key, spelling_table.get_spelling_group(prefix));
+
 	// Seek to the entry before the first key with a "W" prefix, so the
 	// first next() will advance us to the first such entry.
-	cursor->find_entry(std::string("W", 1));
+	cursor->find_entry(prefix_key);
     }
 
     /// Destructor.

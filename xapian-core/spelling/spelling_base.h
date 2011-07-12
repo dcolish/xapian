@@ -39,9 +39,10 @@ protected:
 
     //Keeps references to internal databases.
     const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> > & internal;
+    std::string prefix;
 
 public:
-    SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_);
+    SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_, const std::string& prefix_);
     virtual ~SpellingBase();
 
     //Find spelling correction for a sequence of words.

@@ -215,6 +215,13 @@ class ChertDatabase : public Xapian::Database::Internal {
 	void get_changeset_revisions(const string & path,
 				     chert_revision_number_t * startrev,
 				     chert_revision_number_t * endrev) const;
+
+#ifndef _MSC_VER
+	using Xapian::Database::Internal::open_spelling_termlist;
+	using Xapian::Database::Internal::open_spelling_wordlist;
+	using Xapian::Database::Internal::get_spelling_frequency;
+#endif
+
     public:
 	/** Create and open a chert database.
 	 *
@@ -398,6 +405,12 @@ class ChertWritableDatabase : public ChertDatabase {
 						   bool lazy) const;
 
 	//@}
+
+#ifndef _MSC_VER
+	using Xapian::Database::Internal::add_spelling;
+	using Xapian::Database::Internal::remove_spelling;
+	using Xapian::Database::Internal::open_spelling_wordlist;
+#endif
 
     public:
 	/** Create and open a writable chert database.

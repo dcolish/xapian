@@ -44,6 +44,14 @@ class ConstDatabaseWrapper : public Xapian::Database::Internal {
     /// Raise an exception complaining about access to a non-const method.
     XAPIAN_NORETURN(void nonconst_access() const);
 
+#ifndef _MSC_VER
+    using Xapian::Database::Internal::add_spelling;
+    using Xapian::Database::Internal::remove_spelling;
+    using Xapian::Database::Internal::open_spelling_termlist;
+    using Xapian::Database::Internal::open_spelling_wordlist;
+    using Xapian::Database::Internal::get_spelling_frequency;
+#endif
+
   public:
     ConstDatabaseWrapper(Xapian::Internal::RefCntPtr<const Xapian::Database::Internal> realdb_);
 

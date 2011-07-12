@@ -119,6 +119,11 @@ class RemoteDatabase : public Xapian::Database::Internal {
     /// The timeout value used in network communications, in seconds.
     double timeout;
 
+#ifndef _MSC_VER
+    using Xapian::Database::Internal::add_spelling;
+    using Xapian::Database::Internal::remove_spelling;
+#endif
+
   public:
     /// Return this pointer as a RemoteDatabase*.
     RemoteDatabase * as_remotedatabase();

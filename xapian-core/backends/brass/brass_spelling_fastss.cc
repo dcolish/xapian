@@ -275,16 +275,19 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
     termlist_deltas.clear();
 }
 
-void BrassSpellingTableFastSS::toggle_word(const string& word, const string& prefix_group)
+void BrassSpellingTableFastSS::toggle_word(const string& word, const string& prefix)
 {
+    unsigned prefix_group = get_spelling_group(prefix);
+    if (prefix_group == PREFIX_DISABLED) return;
+
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
     wordlist_deltas.push_back(word_utf);
     unsigned index = wordlist_deltas.size() - 1;
 
-    string prefix;
-    toggle_recursive_term(word_utf, prefix, get_spelling_group(prefix_group),
-                          index, 0, 0, 0, min(MAX_DISTANCE, word.size() / 2));
+    string prefix_data;
+    toggle_recursive_term(word_utf, prefix_data, prefix_group, index, 0, 0, 0,
+                          min(MAX_DISTANCE, word.size() / 2));
 }
 
 void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string& prefix,
@@ -398,16 +401,18 @@ void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& w
     }
 }
 
-void BrassSpellingTableFastSS::populate_word(const string& word, const string& prefix_group, unsigned max_distance, vector<TermList*>& result)
+void BrassSpellingTableFastSS::populate_word(const string& word, const string& prefix, unsigned max_distance, vector<TermList*>& result)
 {
+    unsigned prefix_group = get_spelling_group(prefix);
+    if (prefix_group == PREFIX_DISABLED) return;
+
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
-    string prefix;
+    string prefix_data;
     string data;
     unordered_set<unsigned> result_set;
-    populate_recursive_term(word_utf, data, prefix, get_spelling_group(prefix_group),
-                            0, 0, 0, min(min(max_distance, MAX_DISTANCE), word.size() / 2),
-			    result_set);
+    populate_recursive_term(word_utf, data, prefix_data, prefix_group, 0, 0, 0,
+                            min(min(max_distance, MAX_DISTANCE), word.size() / 2), result_set);
 
     vector<unsigned> result_vector(result_set.begin(), result_set.end());
     result.push_back(new BrassSpellingFastSSTermList(result_vector, *this));

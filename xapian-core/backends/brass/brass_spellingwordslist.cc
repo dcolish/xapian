@@ -45,7 +45,7 @@ BrassSpellingWordsList::get_termname() const
     Assert(!at_end());
     Assert(!cursor->current_key.empty());
     Assert(cursor->current_key[0] == 'W');
-    RETURN(cursor->current_key.substr(1 + BrassSpellingTable::PREFIX_GROUP_LENGTH));
+    RETURN(cursor->current_key.substr(prefix_key.length()));
 }
 
 Xapian::doccount
@@ -79,7 +79,7 @@ BrassSpellingWordsList::next()
     Assert(!at_end());
 
     cursor->next();
-    if (!cursor->after_end() && !startswith(cursor->current_key, 'W')) {
+    if (!cursor->after_end() && !startswith(cursor->current_key, prefix_key)) {
 	// We've reached the end of the prefixed terms.
 	cursor->to_end();
     }
@@ -93,10 +93,10 @@ BrassSpellingWordsList::skip_to(const string &tname)
     LOGCALL(DB, TermList *, "BrassSpellingWordsList::skip_to", tname);
     Assert(!at_end());
 
-    if (!cursor->find_entry_ge("W" + tname)) {
+    if (!cursor->find_entry_ge(prefix_key + tname)) {
 	// The exact term we asked for isn't there, so check if the next
 	// term after it also has a W prefix.
-	if (!cursor->after_end() && !startswith(cursor->current_key, 'W')) {
+	if (!cursor->after_end() && !startswith(cursor->current_key, prefix_key)) {
 	    // We've reached the end of the prefixed terms.
 	    cursor->to_end();
 	}

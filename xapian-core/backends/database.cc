@@ -233,12 +233,21 @@ Database::Internal::open_spelling_termlist(const string &) const
 }
 
 TermList *
-Database::Internal::open_spelling_termlist_max(const string & word, unsigned) const
+Database::Internal::open_spelling_termlist(const string & word, const string &) const
 {
-    // Only implemented for some database backends - others will just not
-    // suggest spelling corrections (or not contribute to them in a multiple
-    // database situation).
     return open_spelling_termlist(word);
+}
+
+TermList *
+Database::Internal::open_spelling_termlist(const string & word, unsigned) const
+{
+    return open_spelling_termlist(word);
+}
+
+TermList *
+Database::Internal::open_spelling_termlist(const string & word, const string &, unsigned max_distance) const
+{
+    return open_spelling_termlist(word, max_distance);
 }
 
 TermList *
@@ -248,6 +257,12 @@ Database::Internal::open_spelling_wordlist() const
     // suggest spelling corrections (or not contribute to them in a multiple
     // database situation).
     return NULL;
+}
+
+TermList *
+Database::Internal::open_spelling_wordlist(const string &) const
+{
+    return open_spelling_wordlist();
 }
 
 Xapian::doccount
@@ -260,12 +275,25 @@ Database::Internal::get_spelling_frequency(const string &) const
 }
 
 Xapian::doccount
+Database::Internal::get_spelling_frequency(const string & word, const string &) const
+{
+    return get_spelling_frequency(word);
+}
+
+Xapian::doccount
 Database::Internal::get_spellings_frequency(const string& first_word, const string& second_word) const
 {
     // Only implemented for some database backends - others will just not
     // suggest spelling corrections (or not contribute to them in a multiple
     // database situation).
     return get_spelling_frequency(first_word) + get_spelling_frequency(second_word);
+}
+
+Xapian::doccount
+Database::Internal::get_spellings_frequency(const string& first_word,
+                                            const string& second_word, const string&) const
+{
+    return get_spellings_frequency(first_word, second_word);
 }
 
 void
@@ -275,21 +303,68 @@ Database::Internal::add_spelling(const string &, Xapian::termcount) const
 }
 
 void
+Database::Internal::add_spelling(const string & word,
+                                 const string&, Xapian::termcount freqinc) const
+{
+    return add_spelling(word, freqinc);
+}
+
+void
 Database::Internal::remove_spelling(const string &, Xapian::termcount) const
 {
     throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
 }
 
 void
-Database::Internal::add_spellings(const string &, const string &, Xapian::termcount) const
+Database::Internal::remove_spelling(const string & word,
+                                    const string &, Xapian::termcount freqdec) const
 {
-	throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
+    return remove_spelling(word, freqdec);
+}
+
+void
+Database::Internal::add_spellings(const string &,
+                                  const string &, Xapian::termcount) const
+{
+    throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
+}
+
+void
+Database::Internal::add_spellings(const string & first_word,
+                                  const string & second_word,
+                                  const string &, Xapian::termcount freqinc) const
+{
+    return add_spellings(first_word, second_word, freqinc);
 }
 
 void
 Database::Internal::remove_spellings(const string &, const string &, Xapian::termcount) const
 {
-	throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
+    throw Xapian::UnimplementedError("This backend doesn't implement spelling correction");
+}
+
+void
+Database::Internal::remove_spellings(const string & first_word,
+                                     const string & second_word,
+                                     const string &, Xapian::termcount freqdec) const
+{
+    return remove_spellings(first_word, second_word, freqdec);
+}
+
+void
+Database::Internal::enable_spelling(const std::string&, const std::string&) const
+{
+}
+
+void
+Database::Internal::disable_spelling(const std::string&) const
+{
+}
+
+bool
+Database::Internal::is_spelling_enabled(const std::string&) const
+{
+    return false;
 }
 
 TermList *

@@ -29,7 +29,6 @@
 #include <map>
 #include <set>
 #include <vector>
-
 #include <string>
 
 class BrassSpellingTable : public BrassLazyTable {
@@ -51,19 +50,17 @@ class BrassSpellingTable : public BrassLazyTable {
     std::map<std::string, Xapian::termcount> wordsfreq_changes;
 
 protected:
-    static void append_prefix_group(std::string& data, unsigned value);
-
-    unsigned get_spelling_group(const std::string& prefix) const;
+    static const unsigned PREFIX_DISABLED;
 
     virtual void merge_fragment_changes() = 0;
 
-    virtual void toggle_word(const std::string& word, const std::string& prefix_group) = 0;
+    virtual void toggle_word(const std::string& word, const std::string& prefix) = 0;
 
-    virtual void populate_word(const std::string& word, const std::string& prefix_group, unsigned max_distance,
+    virtual void populate_word(const std::string& word, const std::string& prefix, unsigned max_distance,
 			       std::vector<TermList*>& result) = 0;
 
 public:
-    static const unsigned PREFIX_GROUP_LENGTH = sizeof(unsigned);
+    static void append_prefix_group(std::string& data, unsigned value);
 
     /** Create a new BrassSpellingTable object.
      *
@@ -106,9 +103,13 @@ public:
 					 const std::string& second_word,
 					 const std::string& prefix = string()) const;
 
+    unsigned get_spelling_group(const std::string& prefix = string()) const;
+
     void enable_spelling(const std::string& prefix, const std::string& group_prefix);
 
     void disable_spelling(const std::string& prefix);
+
+    bool is_spelling_enabled(const std::string& prefix) const;
 
     /** Override methods of BrassTable.
      *

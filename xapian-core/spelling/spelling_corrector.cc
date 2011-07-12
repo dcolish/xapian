@@ -43,7 +43,7 @@ void SpellingCorrector::get_top_spelling_corrections(const string& word,
     AutoPtr<TermList> merger;
     for (size_t i = 0; i < internal.size(); ++i)
     {
-	TermList* term_list = internal[i]->open_spelling_termlist_max(word, max_edit_distance);
+	TermList* term_list = internal[i]->open_spelling_termlist(word, prefix, max_edit_distance);
 	if (term_list != 0)
 	{
 	    if (merger.get() != 0)
