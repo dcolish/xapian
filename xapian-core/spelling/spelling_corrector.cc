@@ -85,18 +85,13 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
 	    double distance_precise = edit_distance.edit_distance(&term_utf[0], term_utf.size(), &word_utf[0],
 	                                                          word_utf.size(), distance);
 
-	    double frequency = 1.0;
-
 	    if (use_freq)
-		frequency = request_internal(term);
+		distance_precise /= request_internal(term);
 
-	    if (frequency > 1.0 - 1e-12)
-	    {
-		top_spelling.insert(make_pair(distance_precise, term));
+	    top_spelling.insert(make_pair(distance_precise, term));
 
-		if (top_spelling.size() > top)
-		    top_spelling.erase(--top_spelling.end());
-	    }
+	    if (top_spelling.size() > top)
+		top_spelling.erase(--top_spelling.end());
 	}
     }
 
