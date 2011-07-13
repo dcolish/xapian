@@ -60,7 +60,7 @@ class SpellingSplitter : public SpellingBase {
     //Value structure for states memorisation
     struct word_splitter_value {
 
-	unsigned word_freq;
+	double word_freq;
 	bool has_next;
 	word_splitter_key next_key; //next key in resulting sequence
 	std::pair<unsigned, unsigned> word_stack_range;
@@ -74,7 +74,7 @@ class SpellingSplitter : public SpellingBase {
 	std::vector<unsigned> word_stack;
 	std::vector<std::pair<unsigned, unsigned> > word_range;
 
-	std::map<word_freq_key, unsigned> word_freq_map;
+	std::map<word_freq_key, double> word_freq_map;
 	std::map<word_splitter_key, word_splitter_value> word_recursive_map;
 
 	std::vector<unsigned> word_ranges;
@@ -84,19 +84,19 @@ class SpellingSplitter : public SpellingBase {
 	std::string second_string;
     };
 
-    unsigned request_pair(const word_splitter_data& data, word_splitter_temp& temp);
+    double request_pair(const word_splitter_data& data, word_splitter_temp& temp) const;
 
     void generate_word_splitter_result(const word_splitter_data& data, const word_splitter_temp& temp,
-				       word_splitter_value value, std::vector<std::string>& result);
+				       word_splitter_value value, std::vector<std::string>& result) const;
 
-    word_splitter_key get_splitter_key(const word_splitter_temp& temp, unsigned word_index);
+    word_splitter_key get_splitter_key(const word_splitter_temp& temp, unsigned word_index) const;
 
     word_splitter_value recursive_word_splits(const word_splitter_data& data, word_splitter_temp& temp,
 					      unsigned word_index, unsigned word_offset, unsigned k,
-					      unsigned split_start, unsigned merge_count);
+					      unsigned split_start, unsigned merge_count) const;
 
     word_splitter_value recursive_word_splitter(const word_splitter_data& data, word_splitter_temp& temp,
-						unsigned word_index, unsigned word_offset, unsigned merge_count);
+						unsigned word_index, unsigned word_offset, unsigned merge_count) const;
 
 public:
     SpellingSplitter(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
@@ -104,9 +104,9 @@ public:
     {
     }
 
-    unsigned get_spelling(const std::string& word, std::string& result);
+    double get_spelling(const std::string& word, std::string& result) const;
 
-    unsigned get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result);
+    double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_SPLITTER_H

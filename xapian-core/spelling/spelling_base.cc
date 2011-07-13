@@ -21,6 +21,7 @@
 #include <config.h>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #include "database.h"
 #include "spelling_base.h"
@@ -37,8 +38,14 @@ SpellingBase::~SpellingBase()
 {
 }
 
+double
+SpellingBase::normalize_freq(double freq) const
+{
+    return log(1.0 + freq) / log(2.0);
+}
+
 unsigned
-SpellingBase::request_internal(const string& word)
+SpellingBase::request_internal_freq(const std::string& word) const
 {
     unsigned freq = 0;
 
@@ -49,17 +56,27 @@ SpellingBase::request_internal(const string& word)
 }
 
 unsigned
-SpellingBase::request_internal(const string& first_word, const string& second_word)
+SpellingBase::request_internal_freq(const std::string& first_word, const std::string& second_word) const
 {
     unsigned freq = 0;
 
     for (size_t i = 0; i < internal.size(); ++i)
 	freq += internal[i]->get_spellings_frequency(first_word, second_word, prefix);
 
-    if (freq > 0) return freq * 2;
+    return freq;
+}
 
-    freq = request_internal(first_word) + request_internal(second_word);
+double
+SpellingBase::request_internal(const string& word) const
+{
+    return normalize_freq(request_internal_freq(word));
+}
 
-    if (freq > 0) return max(freq / 32, 1u);
-    return 0;
+double
+SpellingBase::request_internal(const string& first_word, const string& second_word) const
+{
+    unsigned pair_freq = request_internal_freq(first_word, second_word);
+    unsigned single_freq = request_internal_freq(first_word) + request_internal_freq(second_word);
+
+    return (1 + pair_freq) * normalize_freq(single_freq);
 }

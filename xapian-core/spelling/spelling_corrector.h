@@ -52,17 +52,17 @@ class SpellingCorrector : public SpellingBase {
     const SpellingKeyboard* keyboard_layout;
 
     void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq,
-				      std::vector<std::string>& result);
+				      std::vector<std::string>& result) const;
 
-    unsigned get_spelling_freq(const std::vector<std::vector<std::string> >& words,
+    double get_spelling_freq(const std::vector<std::vector<std::string> >& words,
 			       const std::vector<unsigned>& word_spelling,
-			       std::map<word_spelling_key, unsigned>& freq_map, unsigned first_index,
-			       unsigned second_index);
+			       std::map<word_spelling_key, double>& freq_map, unsigned first_index,
+			       unsigned second_index) const;
 
     void recursive_spelling_corrections(const std::vector<std::vector<std::string> >& words, unsigned word_index,
-					std::vector<unsigned>& word_spelling, unsigned word_freq, std::map<
-						word_spelling_key, unsigned>& freq_map,
-					std::vector<unsigned>& max_spelling_word, unsigned& max_word_freq);
+					std::vector<unsigned>& word_spelling, double word_freq,
+					std::map<word_spelling_key, double>& freq_map,
+					std::vector<unsigned>& max_spelling_word, double& max_word_freq) const;
 
 public:
     SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
@@ -73,9 +73,9 @@ public:
     {
     }
 
-    unsigned get_spelling(const std::string& words, std::string& result);
+    double get_spelling(const std::string& words, std::string& result) const;
 
-    unsigned get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result);
+    double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_CORRECTOR_H

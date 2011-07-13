@@ -544,14 +544,16 @@ Database::get_spelling_suggestion(const vector<string>& words, const string& pre
     SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
 
     vector<string> result_spelling;
-    unsigned spelling_freq = spelling_corrector.get_spelling(words, result_spelling);
+    double spelling_freq = spelling_corrector.get_spelling(words, result_spelling);
+    if (result_spelling == words) result_spelling.clear();
 
     SpellingSplitter spelling_splitter(internal, prefix);
 
     vector<string> result_splitter;
-    unsigned splitter_freq = spelling_splitter.get_spelling(words, result_splitter);
+    double splitter_freq = spelling_splitter.get_spelling(words, result_splitter);
+    if (result_splitter == words) result_splitter.clear();
 
-    if (spelling_freq == 0 && splitter_freq == 0) return words;
+    if (spelling_freq < 1e-12 && splitter_freq < 1e-12) return words;
 
     if (spelling_freq > splitter_freq)
 	return result_spelling;

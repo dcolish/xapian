@@ -31,11 +31,19 @@
 class SpellingBase {
 
 protected:
+    double normalize_freq(double freq) const;
+
     //Method to obtain a frequency of the given word.
-    unsigned request_internal(const std::string& word);
+    unsigned request_internal_freq(const std::string& word) const;
 
     //Method to obtain a frequency of the given word pair.
-    unsigned request_internal(const std::string& first_word, const std::string& second_word);
+    unsigned request_internal_freq(const std::string& first_word, const std::string& second_word) const;
+
+    //Method to obtain a normalized frequency of the given word.
+    double request_internal(const std::string& word) const;
+
+    //Method to obtain a normalized frequency of the given word pair.
+    double request_internal(const std::string& first_word, const std::string& second_word) const;
 
     //Keeps references to internal databases.
     const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> > & internal;
@@ -46,11 +54,10 @@ public:
     virtual ~SpellingBase();
 
     //Find spelling correction for a sequence of words.
-    virtual unsigned get_spelling(const std::string& word, std::string& result) = 0;
+    virtual double get_spelling(const std::string& word, std::string& result) const = 0;
 
     //Find spelling correction for a sequence of words.
-    virtual unsigned get_spelling(const std::vector<std::string>& words, std::vector<
-	    std::string>& result) = 0;
+    virtual double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const = 0;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_BASE_H

@@ -30,8 +30,8 @@
 using namespace std;
 using namespace Xapian;
 
-unsigned
-SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_temp& temp)
+double
+SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_temp& temp) const
 {
     word_splitter_temp::word_freq_key word_key;
 
@@ -44,7 +44,7 @@ SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_tem
     temp.first_string.clear();
     temp.second_string.clear();
 
-    map<word_splitter_temp::word_freq_key, unsigned>::const_iterator it = temp.word_freq_map.find(word_key);
+    map<word_splitter_temp::word_freq_key, double>::const_iterator it = temp.word_freq_map.find(word_key);
 
     if (it == temp.word_freq_map.end()) {
 	if (temp.word_range.size() > 0) {
@@ -60,7 +60,7 @@ SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_tem
 		temp.second_string.assign(data.allword, second_start_i, second_end_i - second_start_i);
 	    }
 	}
-	unsigned value = request_internal(temp.first_string, temp.second_string);
+	double value = request_internal(temp.first_string, temp.second_string);
 	it = temp.word_freq_map.insert(make_pair(word_key, value)).first;
     }
 
@@ -69,7 +69,7 @@ SpellingSplitter::request_pair(const word_splitter_data& data, word_splitter_tem
 
 void
 SpellingSplitter::generate_word_splitter_result(const word_splitter_data& data, const word_splitter_temp& temp,
- 					        word_splitter_value value, vector<string>& result)
+ 					        word_splitter_value value, vector<string>& result) const
 {
     result.clear();
     string word;
@@ -89,7 +89,7 @@ SpellingSplitter::generate_word_splitter_result(const word_splitter_data& data, 
 
 SpellingSplitter::word_splitter_key
 SpellingSplitter::get_splitter_key(const word_splitter_temp& temp,
-                                   unsigned word_index)
+                                   unsigned word_index) const
 {
     const unsigned INF = std::numeric_limits<unsigned>::max();
     const unsigned size = temp.word_stack.size();
@@ -108,7 +108,7 @@ SpellingSplitter::recursive_word_splits(const word_splitter_data& data,
 				        unsigned word_index,
 				        unsigned word_offset, unsigned k,
 					unsigned split_start,
-					unsigned merge_count)
+					unsigned merge_count) const
 {
     unsigned word_start = data.word_starts[word_index];
     unsigned word_length = data.word_lengths[word_index];
@@ -143,7 +143,7 @@ SpellingSplitter::recursive_word_splitter(const word_splitter_data& data,
 					  word_splitter_temp& temp,
 					  unsigned word_index,
 					  unsigned word_offset,
-					  unsigned merge_count)
+					  unsigned merge_count) const
 {
     word_splitter_value value;
     value.word_freq = 0;
@@ -218,15 +218,15 @@ SpellingSplitter::recursive_word_splitter(const word_splitter_data& data,
     return value;
 }
 
-unsigned
-SpellingSplitter::get_spelling(const string& word, string& result)
+double
+SpellingSplitter::get_spelling(const string& word, string& result) const
 {
     result = word;
     return request_internal(word);
 }
 
-unsigned
-SpellingSplitter::get_spelling(const vector<string>& words, vector<string>& result)
+double
+SpellingSplitter::get_spelling(const vector<string>& words, vector<string>& result) const
 {
     word_splitter_data data;
 
