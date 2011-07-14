@@ -30,6 +30,8 @@
 
 #include <list>
 #include <map>
+#include <vector>
+#include <set>
 
 using namespace std;
 
@@ -81,6 +83,12 @@ class QueryParser::Internal : public Xapian::Internal::RefCntBase {
 
     std::string parse_term(Utf8Iterator &it, const Utf8Iterator &end,
 			   bool &was_acronym);
+
+    void apply_spelling(std::set<std::string>& prefixes,
+                        std::vector<std::pair<size_t, size_t> >& terms,
+                        std::string& correction_query,
+                        int& correction_offset,
+                        const std::string& query) const;
 
   public:
     Internal() : stem_action(STEM_NONE), stopper(NULL),

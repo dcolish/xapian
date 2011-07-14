@@ -613,6 +613,53 @@ class ParserHandler {
     ~ParserHandler() { ParseFree(parser); }
 };
 
+void
+QueryParser::Internal::apply_spelling(set<string>& prefixes,
+                                      vector<pair<size_t, size_t> >& terms,
+                                      string& correction_query,
+                                      int& correction_offset,
+                                      const string& query) const
+{
+    if (!prefixes.empty() && !terms.empty()) {
+	if (correction_query.empty()) correction_query = query;
+	vector<string> terms_sequence;
+
+	for (unsigned i = 0; i < terms.size(); ++i)
+	    terms_sequence.push_back(correction_query.substr(terms[i].first + correction_offset,
+	                                                     terms[i].second));
+
+	set<string>::const_iterator prefix_it;
+	for (prefix_it = prefixes.begin(); prefix_it != prefixes.end(); ++prefix_it) {
+
+	    vector<string> suggestion = db.get_spelling_suggestion(terms_sequence, *prefix_it);
+
+	    if (!suggestion.empty()) {
+		for (unsigned i = 0; i < min(terms.size(), suggestion.size()); ++i) {
+		    correction_query.replace(terms[i].first + correction_offset,
+		                             terms[i].second, suggestion[i]);
+		    correction_offset += suggestion[i].length();
+		    correction_offset -= terms[i].second;
+		}
+
+		for (unsigned i = terms.size(); i < suggestion.size(); ++i) {
+		    correction_query.insert(terms.back().first + terms.back().second
+		                            + correction_offset, " " + suggestion[i]);
+		    correction_offset += 1 + suggestion[i].length();
+		}
+
+		for (unsigned i = suggestion.size(); i < terms.size(); ++i) {
+		    correction_query.erase(terms[i].first + correction_offset,
+		                           terms[i].second);
+		    correction_offset -= terms[i].second;
+		}
+		break;
+	    }
+	}
+    }
+    prefixes.clear();
+    terms.clear();
+}
+
 Query
 QueryParser::Internal::parse_query(const string &qs, unsigned flags,
 				   const string &default_prefix)
@@ -625,6 +672,9 @@ QueryParser::Internal::parse_query(const string &qs, unsigned flags,
     Utf8Iterator it(qs), end;
 
     State state(this, flags);
+
+    set<string> correction_prefixes;
+    vector< pair<size_t, size_t> > correction_terms;
 
     // To successfully apply more than one spelling correction to a query
     // string, we must keep track of the offset due to previous corrections.
@@ -1095,24 +1145,36 @@ phrased_term:
 		}
 	    }
 
+
+	    if (mode == 0 && (flags & FLAG_SPELLING_CORRECTION))
+		apply_spelling(correction_prefixes, correction_terms, corrected_query, correction_offset, qs);
+
 	    // Check spelling, if we're a normal term, and any of the prefixes
 	    // are empty.
 	    if ((flags & FLAG_SPELLING_CORRECTION) && !was_acronym) {
 		const list<string> & pfxes = prefix_info->prefixes;
 		list<string>::const_iterator pfx_it;
-		for (pfx_it = pfxes.begin(); pfx_it != pfxes.end(); ++pfx_it) {
-		    const string & suggest = db.get_spelling_suggestion(term, *pfx_it);
-		    if (!suggest.empty()) {
-			if (corrected_query.empty()) corrected_query = qs;
-			size_t term_end_index = it.raw() - qs.data();
-			size_t n = term_end_index - term_start_index;
-			size_t pos = term_start_index + correction_offset;
-			corrected_query.replace(pos, n, suggest);
-			correction_offset += suggest.size();
-			correction_offset -= n;
-			break;
-		    }
+
+		bool need_apply = pfxes.size() != correction_prefixes.size();
+		for (pfx_it = pfxes.begin(); pfx_it != pfxes.end() && !need_apply; ++pfx_it)
+		{
+		    if (correction_prefixes.find(*pfx_it) == correction_prefixes.end())
+			need_apply = true;
 		}
+
+		if (need_apply)
+		{
+		    apply_spelling(correction_prefixes, correction_terms,
+		                   corrected_query, correction_offset, qs);
+
+		    correction_prefixes.insert(pfxes.begin(), pfxes.end());
+		}
+
+		size_t term_end_index = it.raw() - qs.data();
+		size_t n = term_end_index - term_start_index;
+		size_t pos = term_start_index;
+
+		correction_terms.push_back(make_pair(pos, n));
 	    }
 
 	    if (mode == IN_PHRASED_TERM) {
