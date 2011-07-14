@@ -55,6 +55,10 @@ class SpellingCorrector : public SpellingBase {
 				      std::vector<std::string>& result) const;
 
     double get_spelling_freq(const std::vector<std::vector<std::string> >& words,
+			     const std::vector<unsigned>& word_spelling,
+			     unsigned index) const;
+
+    double get_spelling_freq(const std::vector<std::vector<std::string> >& words,
 			       const std::vector<unsigned>& word_spelling,
 			       std::map<word_spelling_key, double>& freq_map, unsigned first_index,
 			       unsigned second_index) const;

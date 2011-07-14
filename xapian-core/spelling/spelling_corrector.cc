@@ -105,6 +105,13 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
 	result.push_back(word);
 }
 
+double SpellingCorrector::get_spelling_freq(const std::vector<std::vector<std::string> >& words,
+                                            const std::vector<unsigned>& word_spelling,
+                                            unsigned index) const
+{
+    return request_internal(words[index][word_spelling[index]]);
+}
+
 double SpellingCorrector::get_spelling_freq(const vector<vector<string> >& words,
 					    const vector<unsigned>& word_spelling,
 					    map<word_spelling_key, double>& freq_map,
@@ -139,13 +146,17 @@ SpellingCorrector::recursive_spelling_corrections(const vector<vector<string> >&
 	for (unsigned i = 0; i < words[word_index].size(); ++i) {
 	    word_spelling[word_index] = i;
 
+	    double current_word_freq = word_freq;
 	    for (unsigned gap = 0; gap < min(word_index, MAX_GAP + 1); ++gap) {
-		word_freq += get_spelling_freq(words, word_spelling, freq_map,
+		current_word_freq += get_spelling_freq(words, word_spelling, freq_map,
 		                               word_index - gap - 1, word_index);
 	    }
 
+	    if (words.size() == 1)
+		current_word_freq += get_spelling_freq(words, word_spelling, word_index);
+
 	    recursive_spelling_corrections(words, word_index + 1,
-					   word_spelling, word_freq, freq_map,
+					   word_spelling, current_word_freq, freq_map,
 					   max_spelling_word, max_word_freq);
 	}
     } else if (word_freq > max_word_freq) {

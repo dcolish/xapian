@@ -539,7 +539,7 @@ Database::get_spelling_suggestion(const vector<string>& words, const string& pre
 {
     LOGCALL(API, string, "Database::get_spelling_suggestion", prefix | max_edit_distance);
 
-    if (!is_spelling_enabled(prefix)) return vector<string>();
+    if (words.empty() || !is_spelling_enabled(prefix)) return vector<string>();
 
     SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
 
