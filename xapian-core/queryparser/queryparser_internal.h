@@ -2,6 +2,7 @@
  * class.
  *
  * Copyright (C) 2005,2006,2007,2010 Olly Betts
+ * Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,7 +32,6 @@
 #include <list>
 #include <map>
 #include <vector>
-#include <set>
 
 using namespace std;
 
@@ -84,7 +84,7 @@ class QueryParser::Internal : public Xapian::Internal::RefCntBase {
     std::string parse_term(Utf8Iterator &it, const Utf8Iterator &end,
 			   bool &was_acronym);
 
-    void apply_spelling(std::set<std::string>& prefixes,
+    void apply_spelling(std::vector<std::string>& prefixes,
                         std::vector<std::pair<size_t, size_t> >& terms,
                         std::string& correction_query,
                         int& correction_offset,

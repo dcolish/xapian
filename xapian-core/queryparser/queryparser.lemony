@@ -1,6 +1,7 @@
 %include {
 /* queryparser.lemony: build a Xapian::Query object from a user query string.
  *
+ * Copyright (C) 2011 Nikita Smetanin
  * Copyright (C) 2004,2005,2006,2007,2008,2009,2010 Olly Betts
  * Copyright (C) 2007,2008,2009 Lemur Consulting Ltd
  *
@@ -614,7 +615,7 @@ class ParserHandler {
 };
 
 void
-QueryParser::Internal::apply_spelling(set<string>& prefixes,
+QueryParser::Internal::apply_spelling(vector<string>& prefixes,
                                       vector<pair<size_t, size_t> >& terms,
                                       string& correction_query,
                                       int& correction_offset,
@@ -628,10 +629,9 @@ QueryParser::Internal::apply_spelling(set<string>& prefixes,
 	    terms_sequence.push_back(correction_query.substr(terms[i].first + correction_offset,
 	                                                     terms[i].second));
 
-	set<string>::const_iterator prefix_it;
-	for (prefix_it = prefixes.begin(); prefix_it != prefixes.end(); ++prefix_it) {
+	for (unsigned prefix_i = 0; prefix_i < prefixes.size(); ++prefix_i) {
 
-	    vector<string> suggestion = db.get_spelling_suggestion(terms_sequence, *prefix_it);
+	    vector<string> suggestion = db.get_spelling_suggestion(terms_sequence, prefixes[prefix_i]);
 
 	    if (!suggestion.empty()) {
 		for (unsigned i = 0; i < min(terms.size(), suggestion.size()); ++i) {
@@ -673,7 +673,7 @@ QueryParser::Internal::parse_query(const string &qs, unsigned flags,
 
     State state(this, flags);
 
-    set<string> correction_prefixes;
+    vector<string> correction_prefixes;
     vector< pair<size_t, size_t> > correction_terms;
 
     // To successfully apply more than one spelling correction to a query
@@ -1153,21 +1153,13 @@ phrased_term:
 	    // are empty.
 	    if ((flags & FLAG_SPELLING_CORRECTION) && !was_acronym) {
 		const list<string> & pfxes = prefix_info->prefixes;
-		list<string>::const_iterator pfx_it;
 
-		bool need_apply = pfxes.size() != correction_prefixes.size();
-		for (pfx_it = pfxes.begin(); pfx_it != pfxes.end() && !need_apply; ++pfx_it)
-		{
-		    if (correction_prefixes.find(*pfx_it) == correction_prefixes.end())
-			need_apply = true;
-		}
-
-		if (need_apply)
-		{
+		if (pfxes.size() != correction_prefixes.size() ||
+		    !equal(pfxes.begin(), pfxes.end(), correction_prefixes.begin())) {
 		    apply_spelling(correction_prefixes, correction_terms,
 		                   corrected_query, correction_offset, qs);
 
-		    correction_prefixes.insert(pfxes.begin(), pfxes.end());
+		    correction_prefixes.assign(pfxes.begin(), pfxes.end());
 		}
 
 		size_t term_end_index = it.raw() - qs.data();
@@ -1244,6 +1236,8 @@ phrased_term:
     }
 done:
     if (!state.error) {
+	if (flags & FLAG_SPELLING_CORRECTION)
+	    apply_spelling(correction_prefixes, correction_terms, corrected_query, correction_offset, qs);
 	// Implicitly close any unclosed quotes...
 	if (mode == IN_QUOTES || mode == IN_PREFIXED_QUOTES)
 	    Parse(pParser, QUOTE, NULL, &state);
