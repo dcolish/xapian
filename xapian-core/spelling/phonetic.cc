@@ -1,4 +1,4 @@
-/** @file Phonetic.cc
+/** @file phonetic.cc
  * @brief Phonetic class.
  */
 /* Copyright (C) 2011 Nikita Smetanin
