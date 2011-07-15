@@ -553,12 +553,10 @@ Database::get_spelling_suggestion(const vector<string>& words, const string& pre
     double splitter_freq = spelling_splitter.get_spelling(words, result_splitter);
     if (result_splitter == words) result_splitter.clear();
 
-    if (spelling_freq < 1e-12 && splitter_freq < 1e-12) return words;
+    if (splitter_freq > spelling_freq)
+	return result_splitter;
 
-    if (spelling_freq > splitter_freq)
-	return result_spelling;
-
-    return result_splitter;
+    return result_spelling;
 }
 
 bool
