@@ -34,6 +34,7 @@
 
 #include <algorithm>
 #include <list>
+#include <set>
 #include <string>
 
 #include <string.h>
@@ -1438,6 +1439,73 @@ reprocess:
 	    }
 	}
     }
+
+    if (state->flags & QueryParser::FLAG_AUTO_MULTIWORD_SPELLING_CORRECTION) {
+
+	Database db = state->get_database();
+
+	vector<string> correction_terms;
+	correction_terms.reserve(terms.size());
+
+	vector<Query> terms_queries;
+	terms_queries.reserve(terms.size());
+
+	set<string> prefixes;
+
+	vector<Term*>::const_iterator i;
+	for (i = terms.begin(); i != terms.end(); ++i) {
+	    Term* term = *i;
+	    if (stopper && (*stopper)(term->name)) {
+		state->add_to_stoplist(term);
+	    } else {
+		correction_terms.push_back(term->name);
+		terms_queries.push_back(term->get_query());
+		prefixes.insert(term->prefix_info->prefixes.begin(),
+		                term->prefix_info->prefixes.end());
+	    }
+	}
+
+	Query result_query;
+	if (is_positional(default_op)) {
+	    result_query = Query(default_op,
+		                 terms_queries.begin(),
+		                 terms_queries.end(),
+		                 terms_queries.size() + 9);
+	} else {
+	    result_query = Query(default_op,
+	                         terms_queries.begin(),
+		                 terms_queries.end());
+	}
+
+	termpos pos = terms.front()->pos;
+
+	set<string>::const_iterator p_it;
+	for (p_it = prefixes.begin(); p_it != prefixes.end(); ++p_it) {
+
+	    vector<string> suggestion_terms = db.get_spelling_suggestion(correction_terms, *p_it);
+
+	    terms_queries.clear();
+	    for (unsigned s_i = 0; s_i < suggestion_terms.size(); ++s_i)
+		terms_queries.push_back(Query(suggestion_terms[s_i], 1, pos));
+
+	    if (!terms_queries.empty())
+		result_query = Query(Query::OP_SYNONYM, result_query,
+		                     Query(default_op, terms_queries.begin(), terms_queries.end()));
+	}
+	subqs.push_back(result_query);
+
+    } else {
+	vector<Term*>::const_iterator i;
+	for (i = terms.begin(); i != terms.end(); ++i) {
+	    Term* term = *i;
+	    if (stopper && (*stopper)(term->name)) {
+		state->add_to_stoplist(term);
+	    } else {
+		subqs.push_back(term->get_query());
+	    }
+	}
+    }
+
 
     if (!empty_ok && stopper && subqs.empty() &&
 	stoplist_size < state->stoplist_size()) {

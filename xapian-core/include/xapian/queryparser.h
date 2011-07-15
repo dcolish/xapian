@@ -366,6 +366,21 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
 	 */
 	FLAG_AUTO_MULTIWORD_SYNONYMS = 1024 | FLAG_AUTO_SYNONYMS,
 
+	/**
+	 * Enable automatic use of spelling corrections for single terms
+	 *
+	 *  NB: You must also call set_database() for this to work.
+	 */
+	FLAG_AUTO_SPELLING_CORRECTION = 2048,
+
+	/**
+	 * Enable automatic use of spelling corrections for single terms and groups
+	 * of terms.
+	 *
+	 *  NB: You must also call set_database() for this to work.
+	 */
+	FLAG_AUTO_MULTIWORD_SPELLING_CORRECTION = 4096 | FLAG_AUTO_SPELLING_CORRECTION,
+
 	/** The default flags.
 	 *
 	 *  Used if you don't explicitly pass any to @a parse_query().
