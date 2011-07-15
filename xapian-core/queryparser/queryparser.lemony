@@ -199,6 +199,12 @@ class Term {
     Query get_query_with_synonyms() const;
 
     Query get_query_with_auto_synonyms() const;
+    
+    Query get_query_with_spelling() const;
+
+    Query get_query_with_auto_spelling() const;
+
+    Query get_query_with_auto() const;
 };
 
 /// Parser State shared between the lexer and the parser.
@@ -325,6 +331,49 @@ Term::get_query_with_auto_synonyms() const
 {
     if (state->flags & QueryParser::FLAG_AUTO_SYNONYMS)
 	return get_query_with_synonyms();
+
+    return get_query();
+}
+
+Query
+Term::get_query_with_spelling() const
+{
+    Query q = get_query();
+    Xapian::Database db = state->get_database();
+
+    // Handle single-word synonyms with each prefix.
+    const list<string> & prefixes = prefix_info->prefixes;
+    list<string>::const_iterator piter;
+    for (piter = prefixes.begin(); piter != prefixes.end(); ++piter) {
+	string suggestion = db.get_spelling_suggestion(name, *piter);
+	q = Query(Query::OP_SYNONYM, q, Query(suggestion, 1, pos));
+    }
+    return q;
+}
+
+Query
+Term::get_query_with_auto_spelling() const
+{
+    if (state->flags & QueryParser::FLAG_AUTO_SPELLING_CORRECTION)
+	return get_query_with_spelling();
+
+    return get_query();
+}
+
+Query
+Term::get_query_with_auto() const
+{
+    bool synonyms = state->flags & QueryParser::FLAG_AUTO_SYNONYMS;
+    bool spelling = state->flags & QueryParser::FLAG_AUTO_SPELLING_CORRECTION;
+
+    if (synonyms && spelling)
+	return Query(Query::OP_SYNONYM, get_query_with_synonyms(), get_query_with_spelling());
+
+    if (synonyms && !spelling)
+	return get_query_with_synonyms();
+
+    if (!synonyms && spelling)
+	return get_query_with_spelling();
 
     return get_query();
 }
@@ -1536,7 +1585,7 @@ TermGroup::apply_features(State* state, vector<Query>& subqs) const
 	    if (stopper && (*stopper)(term->name)) {
 		state->add_to_stoplist(term);
 	    } else {
-		subqs.push_back(term->get_query());
+		subqs.push_back(term->get_query_with_auto_spelling());
 	    }
 	}
     }
@@ -2054,7 +2103,7 @@ stop_term(T) ::= TERM(U). {
 	T = NULL;
 	state->add_to_stoplist(U);
     } else {
-	T = new Query(U->get_query_with_auto_synonyms());
+	T = new Query(U->get_query_with_auto());
     }
     delete U;
 }
@@ -2069,7 +2118,7 @@ stop_term(T) ::= compound_term(U). {
 %destructor term {delete $$;}
 
 term(T) ::= TERM(U). {
-    T = new Query(U->get_query_with_auto_synonyms());
+    T = new Query(U->get_query_with_auto());
     delete U;
 }
 
