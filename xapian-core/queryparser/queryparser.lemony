@@ -1511,6 +1511,9 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
     vector<Query> terms_queries;
     terms_queries.reserve(terms.size());
 
+    vector<termpos> terms_pos;
+    terms_pos.reserve(terms.size());
+
     set<string> prefixes;
 
     vector<Term*>::const_iterator i;
@@ -1521,6 +1524,7 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 	} else {
 	    correction_terms.push_back(term->name);
 	    terms_queries.push_back(term->get_query());
+	    terms_pos.push_back(term->get_termpos());
 	    prefixes.insert(term->prefix_info->prefixes.begin(),
 			    term->prefix_info->prefixes.end());
 	}
@@ -1538,8 +1542,6 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 			     terms_queries.end());
     }
 
-    termpos pos = terms.front()->pos;
-
     set<string>::const_iterator p_it;
     for (p_it = prefixes.begin(); p_it != prefixes.end(); ++p_it) {
 
@@ -1548,8 +1550,10 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 	                                  db.get_spelling_suggestion(correction_terms, *p_it);
 
 	terms_queries.clear();
-	for (unsigned s_i = 0; s_i < suggestion_terms.size(); ++s_i)
+	for (unsigned s_i = 0; s_i < suggestion_terms.size(); ++s_i) {
+	    termpos pos = terms_pos[min(s_i, terms_pos.size() - 1)];
 	    terms_queries.push_back(Query(suggestion_terms[s_i], 1, pos));
+	}
 
 	if (!terms_queries.empty())
 	    result_query = Query(Query::OP_SYNONYM, result_query,
