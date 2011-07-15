@@ -754,12 +754,13 @@ QueryParser::Internal::parse_query(const string &qs, unsigned flags,
 main_lex_loop:
     enum {
 	DEFAULT, IN_QUOTES, IN_PREFIXED_QUOTES, IN_PHRASED_TERM, IN_GROUP,
-	IN_GROUP2, EXPLICIT_SYNONYM
+	IN_GROUP2, EXPLICIT_SYNONYM, EXPLICIT_SPELLING
     } mode = DEFAULT;
     while (it != end && !state.error) {
 	bool last_was_operator = false;
 	bool last_was_operator_needing_term = false;
-	if (mode == EXPLICIT_SYNONYM) mode = DEFAULT;
+	if (mode == EXPLICIT_SYNONYM || 
+	    mode == EXPLICIT_SPELLING) mode = DEFAULT;
 	if (false) {
 just_had_operator:
 	    if (it == end) break;
@@ -947,6 +948,24 @@ just_had_operator_needing_term:
 		    goto just_had_operator_needing_term;
 		}
 		break;
+		
+	      case '#': // Spelling correction expansion.
+		// Ignore at the end of the query string.
+		if (it == end) goto done;
+		if (mode == DEFAULT && (flags & FLAG_SPELLING_CORRECTION)) {
+		    if (prev > ' ' && strchr("+-(", prev) == NULL) {
+			// Or if not after whitespace, +, -, or an open bracket.
+			break;
+		    }
+		    if (!is_wordchar(*it)) {
+			// Ignore if not followed by a word character.
+			break;
+		    }
+		    Parse(pParser, FUZZY_SINGLE, NULL, &state);
+		    mode = EXPLICIT_SPELLING;
+		    goto just_had_operator_needing_term;
+		}
+		break;
 	    }
 	    // Skip any other characters.
 	    continue;
@@ -960,7 +979,8 @@ just_had_operator_needing_term:
 
 	// A term, a prefix, or a boolean operator.
 	const PrefixInfo * prefix_info = NULL;
-	if ((mode == DEFAULT || mode == IN_GROUP || mode == IN_GROUP2 || mode == EXPLICIT_SYNONYM) &&
+	if ((mode == DEFAULT || mode == IN_GROUP || mode == IN_GROUP2 || 
+	     mode == EXPLICIT_SYNONYM || mode == EXPLICIT_SPELLING) &&
 	    !prefixmap.empty()) {
 	    // Check for a fieldname prefix (e.g. title:historical).
 	    Utf8Iterator p = find_if(it, end, is_not_wordchar);
@@ -1818,7 +1838,7 @@ class Terms {
 %left XOR.
 %left AND NOT.
 %left NEAR ADJ.
-%left LOVE HATE HATE_AFTER_AND SYNONYM FUZZY.
+%left LOVE HATE HATE_AFTER_AND SYNONYM FUZZY FUZZY_SINGLE.
 
 // Destructors for terminal symbols:
 
@@ -2166,6 +2186,11 @@ compound_term(T) ::= BRA expr(E) KET.
 
 compound_term(T) ::= SYNONYM TERM(U). {
     T = new Query(U->get_query_with_synonyms());
+    delete U;
+}
+
+compound_term(T) ::= FUZZY_SINGLE TERM(U). {
+    T = new Query(U->get_query_with_spelling());
     delete U;
 }
 
