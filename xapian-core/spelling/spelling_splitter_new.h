@@ -45,12 +45,12 @@ class SpellingSplitterNew : public SpellingBase {
     };
 
     //Key structure for states memorisation
-    struct word_extract_key {
+    struct word_splitter_key {
 	unsigned start;
 	unsigned p_start;
 	unsigned p_end;
 
-	bool operator<(const word_extract_key& other) const
+	bool operator<(const word_splitter_key& other) const
 	{
 	    return start < other.start || (start == other.start && (p_start < other.p_start || (p_start == other.p_start
 		    && (p_end < other.p_end))));
@@ -58,32 +58,32 @@ class SpellingSplitterNew : public SpellingBase {
     };
 
     //Value structure for states memorisation
-    struct word_extract_value {
+    struct word_splitter_value {
 	double freq;
 	bool has_next;
-	word_extract_key next_key;
+	word_splitter_key next_key;
 	unsigned index;
     };
 
     //Temp structures for result computation
-    struct word_extract_temp {
+    struct word_splitter_temp {
 
 	std::vector< vector<unsigned> > word_vector;
-    	std::map<word_extract_key, word_extract_value> memo;
+    	std::map<word_splitter_key, word_splitter_value> memo;
 
 	std::string word;
 	std::string p_word;
     };
 
-    double request_word_pair(const word_splitter_data& data, word_extract_temp& temp, unsigned start, unsigned end, unsigned p_start, unsigned p_end) const;
+    double request_word_pair(const word_splitter_data& data, word_splitter_temp& temp, unsigned start, unsigned end, unsigned p_start, unsigned p_end) const;
 
     bool request_word_exists(const word_splitter_data& data, unsigned word_start, unsigned word_end, string& word) const;
 
-    word_extract_key recursive_extract_words(const word_splitter_data& data, word_extract_temp& temp, unsigned start, unsigned p_start, unsigned p_end) const;
+    word_splitter_key recursive_select_words(const word_splitter_data& data, word_splitter_temp& temp, unsigned start, unsigned p_start, unsigned p_end) const;
 
-    double generate_extract_words_result(const word_splitter_data& data, const word_extract_temp& temp, word_extract_key key, std::vector<std::string>& result) const;
+    double generate_result(const word_splitter_data& data, const word_splitter_temp& temp, word_splitter_key key, std::vector<std::string>& result) const;
 
-    void extract_words(const word_splitter_data& data, word_extract_temp& temp) const;
+    void find_existing_words(const word_splitter_data& data, word_splitter_temp& temp) const;
 
 public:
     SpellingSplitterNew(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
