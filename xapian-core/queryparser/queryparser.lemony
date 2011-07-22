@@ -346,7 +346,8 @@ Term::get_query_with_spelling() const
     list<string>::const_iterator piter;
     for (piter = prefixes.begin(); piter != prefixes.end(); ++piter) {
 	string suggestion = db.get_spelling_suggestion(name, *piter);
-	q = Query(Query::OP_SYNONYM, q, Query(suggestion, 1, pos));
+	if (!suggestion.empty())
+	    q = Query(Query::OP_SYNONYM, q, Query(suggestion, 1, pos));
     }
     return q;
 }
