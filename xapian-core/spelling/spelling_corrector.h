@@ -51,9 +51,6 @@ class SpellingCorrector : public SpellingBase {
     unsigned max_edit_distance;
     const SpellingKeyboard* keyboard_layout;
 
-    void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq,
-				      std::vector<std::string>& result) const;
-
     double get_spelling_freq(const std::vector<std::vector<std::string> >& words,
 			     const std::vector<unsigned>& word_spelling,
 			     unsigned index) const;
@@ -76,6 +73,9 @@ public:
                 	  keyboard_layout(keyboard_layout_)
     {
     }
+
+    void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq,
+				      std::vector<std::string>& result) const;
 
     double get_spelling(const std::string& words, std::string& result) const;
 

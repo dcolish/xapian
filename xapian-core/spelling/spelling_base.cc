@@ -75,6 +75,9 @@ SpellingBase::request_internal(const string& word) const
 double
 SpellingBase::request_internal(const string& first_word, const string& second_word) const
 {
+    if (first_word.empty()) return request_internal(second_word);
+    if (second_word.empty()) return request_internal(first_word);
+
     unsigned pair_freq = request_internal_freq(first_word, second_word);
     unsigned single_freq = request_internal_freq(first_word) + request_internal_freq(second_word);
 

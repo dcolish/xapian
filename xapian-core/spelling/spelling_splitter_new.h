@@ -28,6 +28,7 @@
 
 class SpellingSplitterNew : public SpellingBase {
 
+    static const unsigned TOP_SPELLING_CORRECTIONS = 3;
     static const unsigned MAX_SPLIT_COUNT = 2;
     static const unsigned MAX_MERGE_COUNT = 2;
     static const unsigned INF;
@@ -48,12 +49,13 @@ class SpellingSplitterNew : public SpellingBase {
     struct word_splitter_key {
 	unsigned start;
 	unsigned p_start;
-	unsigned p_end;
+	unsigned p_index;
 
 	bool operator<(const word_splitter_key& other) const
 	{
-	    return start < other.start || (start == other.start && (p_start < other.p_start || (p_start == other.p_start
-		    && (p_end < other.p_end))));
+	    return start < other.start || (start == other.start && (
+		   p_start < other.p_start || (p_start == other.p_start && (
+		   p_index < other.p_index))));
 	}
     };
 
@@ -68,26 +70,34 @@ class SpellingSplitterNew : public SpellingBase {
     //Temp structures for result computation
     struct word_splitter_temp {
 
-	std::vector< vector<unsigned> > word_vector;
-    	std::map<word_splitter_key, word_splitter_value> memo;
+	std::vector< std::vector< std::pair<unsigned, std::string> > > word_vector;
+	std::map<word_splitter_key, word_splitter_value> memo;
 
 	std::string word;
 	std::string p_word;
     };
 
-    double request_word_pair(const word_splitter_data& data, word_splitter_temp& temp, unsigned start, unsigned end, unsigned p_start, unsigned p_end) const;
+    unsigned max_edit_distance;
 
-    bool request_word_exists(const word_splitter_data& data, unsigned word_start, unsigned word_end, string& word) const;
+    double request_word_pair(const word_splitter_data& data, word_splitter_temp& temp,
+                             unsigned start, unsigned index, unsigned p_start, unsigned p_index) const;
 
-    word_splitter_key recursive_select_words(const word_splitter_data& data, word_splitter_temp& temp, unsigned start, unsigned p_start, unsigned p_end) const;
+    bool request_word_exists(const word_splitter_data& data, unsigned word_start,
+                             unsigned word_end, string& word) const;
 
-    double generate_result(const word_splitter_data& data, const word_splitter_temp& temp, word_splitter_key key, std::vector<std::string>& result) const;
+    word_splitter_key recursive_select_words(const word_splitter_data& data,
+                                             word_splitter_temp& temp,
+                                             unsigned start, unsigned p_start, unsigned p_index) const;
+
+    double generate_result(const word_splitter_data& data, const word_splitter_temp& temp,
+                           word_splitter_key key, std::vector<std::string>& result) const;
 
     void find_existing_words(const word_splitter_data& data, word_splitter_temp& temp) const;
 
 public:
     SpellingSplitterNew(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
-                        const std::string& prefix_) : SpellingBase(internal_, prefix_)
+                        const std::string& prefix_, unsigned max_edit_distance_ = 0) :
+                            SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_)
     {
     }
 
