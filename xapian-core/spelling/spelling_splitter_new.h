@@ -33,19 +33,6 @@ class SpellingSplitterNew : public SpellingBase {
     static const unsigned MAX_MERGE_COUNT = 2;
     static const unsigned INF;
 
-    //Word sequence data for the splitting
-    struct word_splitter_data {
-
-	unsigned word_count;
-	unsigned word_total_length;
-	std::vector<unsigned> word_starts;
-	std::vector<unsigned> word_lengths;
-	std::vector<unsigned> word_utf_map;
-	unsigned result_count;
-
-	std::string allword;
-    };
-
     //Key structure for states memorisation
     struct word_splitter_key {
 	unsigned start;
@@ -66,6 +53,7 @@ class SpellingSplitterNew : public SpellingBase {
 	bool has_next;
 	word_splitter_key next_key;
 	unsigned next_value_index;
+	unsigned start;
 	unsigned index;
 
 	bool operator<(const word_splitter_value& other) const
@@ -74,11 +62,24 @@ class SpellingSplitterNew : public SpellingBase {
 	}
     };
 
+    //Word sequence data for the splitting
+    struct word_splitter_data {
+
+	unsigned word_count;
+	unsigned word_total_length;
+	std::vector<unsigned> word_starts;
+	std::vector<unsigned> word_lengths;
+	std::vector<unsigned> word_utf_map;
+	unsigned result_count;
+
+	std::string allword;
+    };
+
     //Temp structures for result computation
     struct word_splitter_temp {
 
 	std::vector< std::vector< std::pair<unsigned, std::string> > > word_vector;
-	std::map<word_splitter_key, std::vector<word_splitter_value> > memo;
+	std::map<word_splitter_key, std::pair<unsigned, unsigned> > memo;
 
 	std::vector<word_splitter_value> value_vector;
 	std::string word;
@@ -104,8 +105,7 @@ class SpellingSplitterNew : public SpellingBase {
     double generate_result(const word_splitter_temp& temp,
                            word_splitter_key key, std::vector<std::string>& result) const;
 
-    void generate_multiple_result(const word_splitter_data& data,
-				  const word_splitter_temp& temp,
+    void generate_multiple_result(const word_splitter_temp& temp,
                                   word_splitter_key key,
                                   std::map<double, std::vector<std::string> >& result) const;
 
