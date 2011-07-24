@@ -244,7 +244,7 @@ SpellingSplitterNew::find_existing_words(const word_splitter_data& data,
 
 	unknown_words.clear();
 	if (max_edit_distance > 0)
-	    corrector.get_top_spelling_corrections(temp.word, TOP_SPELLING_CORRECTIONS, false, unknown_words);
+	    corrector.get_top_spelling_corrections(temp.word, TOP_SPELLING_CORRECTIONS, false, true, unknown_words);
 	unknown_words.push_back(temp.word);
 
 	for (unsigned u = 0; u < unknown_words.size(); ++u)

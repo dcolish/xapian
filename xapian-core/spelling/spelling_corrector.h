@@ -74,7 +74,7 @@ public:
     {
     }
 
-    void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq,
+    void get_top_spelling_corrections(const std::string& word, unsigned top, bool use_freq, bool skip_exact,
 				      std::vector<std::string>& result) const;
 
     double get_spelling(const std::string& words, std::string& result) const;

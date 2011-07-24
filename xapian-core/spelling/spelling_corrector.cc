@@ -39,6 +39,7 @@ using namespace Xapian;
 void
 SpellingCorrector::get_top_spelling_corrections(const string& word,
                                                 unsigned top, bool use_freq,
+                                                bool skip_exact,
 						vector<string>& result) const
 {
     AutoPtr<TermList> merger;
@@ -79,6 +80,7 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
 
 	unsigned distance = edit_distance_unsigned(&term_utf[0], int(term_utf.size()), &word_utf[0],
 	                                           int(word_utf.size()), max_edit_distance);
+	if (distance == 0 && skip_exact) continue;
 
 	if (distance <= max_edit_distance)
 	{
@@ -170,23 +172,10 @@ SpellingCorrector::get_spelling(const string& word, string& result) const
 {
     result.clear();
     vector<string> result_vector;
-    get_top_spelling_corrections(word, 2, true, result_vector);
+    get_top_spelling_corrections(word, 1, true, true, result_vector);
 
-    if (result_vector.empty()) return 0;
-
-    bool found_exact = (result_vector[0] == word);
-    if (found_exact) {
-	if (result_vector.size() <= 1) return 0;
-
-	double word_freq = request_internal(word);
-	double result_freq = request_internal(result_vector[1]);
-	if (result_freq < word_freq) return word_freq;
-
-	result = result_vector[1];
-
-    } else result = result_vector[0];
-
-    return request_internal(result);
+    if (result_vector.empty()) return 0.0;
+    return request_internal(result_vector.front());
 }
 
 double
@@ -195,7 +184,7 @@ SpellingCorrector::get_spelling(const vector<string>& words,
 {
     vector<vector<string> > word_corrections(words.size());
     for (unsigned i = 0; i < words.size(); ++i)
-	get_top_spelling_corrections(words[i], LIMIT_CORRECTIONS, false, word_corrections[i]);
+	get_top_spelling_corrections(words[i], LIMIT_CORRECTIONS, false, false, word_corrections[i]);
 
     double max_word_freq = 0;
     vector<unsigned> max_spelling_word(words.size(), 0);
