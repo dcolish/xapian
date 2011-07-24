@@ -41,6 +41,7 @@ class SpellingSplitterNew : public SpellingBase {
 	std::vector<unsigned> word_starts;
 	std::vector<unsigned> word_lengths;
 	std::vector<unsigned> word_utf_map;
+	unsigned result_count;
 
 	std::string allword;
     };
@@ -64,17 +65,23 @@ class SpellingSplitterNew : public SpellingBase {
 	double freq;
 	bool has_next;
 	word_splitter_key next_key;
+	unsigned next_value_index;
 	unsigned index;
+
+	bool operator<(const word_splitter_value& other) const
+	{
+	    return freq < other.freq - 1e-12;
+	}
     };
 
     //Temp structures for result computation
     struct word_splitter_temp {
 
 	std::vector< std::vector< std::pair<unsigned, std::string> > > word_vector;
-	std::map<word_splitter_key, word_splitter_value> memo;
+	std::map<word_splitter_key, std::vector<word_splitter_value> > memo;
 
+	std::vector<word_splitter_value> value_vector;
 	std::string word;
-	std::string p_word;
     };
 
     unsigned max_edit_distance;
@@ -89,10 +96,18 @@ class SpellingSplitterNew : public SpellingBase {
                                              word_splitter_temp& temp,
                                              unsigned start, unsigned p_start, unsigned p_index) const;
 
-    double generate_result(const word_splitter_data& data, const word_splitter_temp& temp,
+    void find_existing_words(const word_splitter_data& data, word_splitter_temp& temp) const;
+
+    word_splitter_key find_spelling(const std::vector<std::string>& words,
+                                    word_splitter_data& data, word_splitter_temp& temp) const;
+
+    double generate_result(const word_splitter_temp& temp,
                            word_splitter_key key, std::vector<std::string>& result) const;
 
-    void find_existing_words(const word_splitter_data& data, word_splitter_temp& temp) const;
+    void generate_multiple_result(const word_splitter_data& data,
+				  const word_splitter_temp& temp,
+                                  word_splitter_key key,
+                                  std::map<double, std::vector<std::string> >& result) const;
 
 public:
     SpellingSplitterNew(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
@@ -104,6 +119,8 @@ public:
     double get_spelling(const std::string& word, std::string& result) const;
 
     double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
+
+    void get_multiple_spelling(const std::vector<std::string>& words, unsigned top, std::map< double, std::vector<std::string> >& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_SPLITTER_NEW_H
