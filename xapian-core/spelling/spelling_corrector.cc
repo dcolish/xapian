@@ -132,16 +132,14 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
                                                   word_corrector_temp& temp,
                                                   unsigned word_index) const
 {
-    word_corrector_key key;
+    word_corrector_key key(temp.key_vector);
     key.word_index = word_index;
-    key.spelling_index = INF;
-    key.p_spelling_index = INF;
+    key.key_start = temp.key_vector.size();
 
-    if (word_index > 0)
-	key.spelling_index = temp.word_spelling[word_index - 1];
+    for (unsigned gap = 0; gap < min(word_index, MAX_GAP + 1); ++gap)
+	temp.key_vector.push_back(temp.word_spelling[word_index - gap - 1]);
 
-    if (word_index > 1)
-	key.p_spelling_index = temp.word_spelling[word_index - 2];
+    key.key_end = temp.key_vector.size();
 
     if (temp.memo.find(key) != temp.memo.end()) return key;
 

@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <algorithm>
 #include "database.h"
 #include "spelling_keyboard.h"
 #include "spelling_base.h"
@@ -52,14 +53,30 @@ class SpellingCorrector : public SpellingBase {
 
     struct word_corrector_key {
 	unsigned word_index;
-	unsigned spelling_index;
-	unsigned p_spelling_index;
+	unsigned key_start;
+	unsigned key_end;
+	const std::vector<unsigned>& key_vector;
+
+	word_corrector_key(const std::vector<unsigned>& key_vector_) : key_vector(key_vector_)
+	{
+	}
 
 	bool operator<(const word_corrector_key& other) const
 	{
-	    return word_index < other.word_index || (word_index == other.word_index && (
-		   spelling_index < other.spelling_index || (spelling_index == other.spelling_index && (
-		   p_spelling_index < other.p_spelling_index))));
+	    if (word_index != other.word_index)
+		return word_index < other.word_index;
+
+	    unsigned key_count = key_end - key_start;
+	    unsigned o_key_count = other.key_end - other.key_start;
+
+	    for (unsigned i = 0; i < min(key_count, o_key_count); ++i) {
+		unsigned key = key_vector[i + key_start];
+		unsigned o_key = other.key_vector[i + other.key_start];
+
+		if (key != o_key) return key < o_key;
+	    }
+
+	    return key_count < o_key_count;
 	}
     };
 
@@ -80,6 +97,7 @@ class SpellingCorrector : public SpellingBase {
 	std::map<word_spelling_key, double> freq_map;
 	std::map<word_corrector_key, pair<unsigned, unsigned> > memo;
 	std::vector<word_corrector_value> value_vector;
+	std::vector<unsigned> key_vector;
     };
 
     unsigned max_edit_distance;
