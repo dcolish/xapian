@@ -55,6 +55,7 @@
 
 #include "../spelling/spelling_corrector.h"
 #include "../spelling/spelling_splitter.h"
+#include "../spelling/spelling_splitter_new.h"
 
 using namespace std;
 
@@ -542,21 +543,42 @@ Database::get_spelling_suggestion(const vector<string>& words, const string& pre
     if (words.empty() || !is_spelling_enabled(prefix)) return vector<string>();
 
     SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
+    SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
 
-    vector<string> result_spelling;
-    double spelling_freq = spelling_corrector.get_spelling(words, result_spelling);
-    if (result_spelling == words) result_spelling.clear();
-
-    SpellingSplitter spelling_splitter(internal, prefix);
+    vector<string> result_corrector;
+    double corrector_freq = spelling_corrector.get_spelling(words, result_corrector);
 
     vector<string> result_splitter;
     double splitter_freq = spelling_splitter.get_spelling(words, result_splitter);
-    if (result_splitter == words) result_splitter.clear();
 
-    if (splitter_freq > spelling_freq)
+    if (splitter_freq > corrector_freq)
 	return result_splitter;
+    return result_corrector;
+}
 
-    return result_spelling;
+vector<vector<string> >
+Database::get_spelling_suggestions(const vector<string>& words, const string& prefix,
+                                  unsigned count, unsigned max_edit_distance) const
+{
+    LOGCALL(API, string, "Database::get_spelling_suggestion", prefix | max_edit_distance);
+
+    if (words.empty() || !is_spelling_enabled(prefix)) return vector<vector<string> >();
+
+    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
+    SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
+
+    multimap<double, vector<string> > result_map;
+    spelling_corrector.get_multiple_spelling(words, count, result_map);
+    spelling_splitter.get_multiple_spelling(words, count, result_map);
+
+    vector<vector<string> > result;
+    multimap<double, vector<string> >::const_iterator it;
+
+    unsigned limit = 0;
+    for (it = result_map.begin(); it != result_map.end() && limit < count; ++it, ++limit)
+	result.push_back(it->second);
+
+    return result;
 }
 
 bool

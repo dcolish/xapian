@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <map>
 #include <xapian/unicode.h>
-#include <iostream>
+
 #include "database.h"
 #include "spelling_splitter_new.h"
 #include "spelling_corrector.h"
@@ -104,8 +104,6 @@ SpellingSplitterNew::recursive_select_words(const word_splitter_data& data,
 	    for (unsigned v = next_values.first; v < next_values.second; ++v) {
 		word_splitter_value result_value;
 		result_value.freq = temp.value_vector[v].freq + pair_freq;
-		result_value.has_next = true;
-		result_value.next_key = next_key;
 		result_value.next_value_index = v;
 		result_value.index = i;
 		result_value.start = start;
@@ -125,7 +123,7 @@ SpellingSplitterNew::recursive_select_words(const word_splitter_data& data,
     else {
 	word_splitter_value result_value;
 	result_value.freq = 0.0;
-	result_value.has_next = false;
+	result_value.next_value_index = INF;
 
 	values.first = temp.value_vector.size();
 	temp.value_vector.push_back(result_value);
@@ -218,44 +216,6 @@ SpellingSplitterNew::find_existing_words(const word_splitter_data& data,
     }
 }
 
-double
-SpellingSplitterNew::generate_result(const word_splitter_temp& temp,
-                                     word_splitter_key key,
-                                     vector<string>& result) const
-{
-    word_splitter_value value = temp.value_vector[temp.memo.at(key).first];
-    double result_freq = value.freq;
-
-    result.clear();
-    while (true) {
-	if (!value.has_next) break;
-
-	result.push_back(temp.word_vector[value.start][value.index].second);
-	value = temp.value_vector[value.next_value_index];
-    }
-    return result_freq;
-}
-
-void
-SpellingSplitterNew::generate_multiple_result(const word_splitter_temp& temp,
-                                              word_splitter_key key,
-                                              map<double, vector<string> >& result) const
-{
-    pair<unsigned, unsigned> start_values = temp.memo.at(key);
-
-    for (unsigned i = start_values.first; i < start_values.second; ++i) {
-	word_splitter_value value = temp.value_vector[i];
-
-	vector<string>& result_vector = result[value.freq];
-	while (true) {
-	    if (!value.has_next) break;
-
-	    result_vector.push_back(temp.word_vector[value.start][value.index].second);
-	    value = temp.value_vector[value.next_value_index];
-	}
-    }
-}
-
 SpellingSplitterNew::word_splitter_key
 SpellingSplitterNew::find_spelling(const std::vector<std::string>& words,
                                    word_splitter_data& data, word_splitter_temp& temp) const
@@ -292,11 +252,10 @@ SpellingSplitterNew::find_spelling(const std::vector<std::string>& words,
 }
 
 double
-SpellingSplitterNew::get_spelling(const string& word,
-                                  string& result) const
+SpellingSplitterNew::get_spelling(const string&, string& result) const
 {
-    result = word;
-    return request_internal(word);
+    result.clear();
+    return 0.0;
 }
 
 double
@@ -308,18 +267,45 @@ SpellingSplitterNew::get_spelling(const vector<string>& words,
     data.result_count = 1;
     word_splitter_key key = find_spelling(words, data, temp);
 
-    return generate_result(temp, key, result);
+    word_splitter_value value = temp.value_vector[temp.memo.at(key).first];
+    double result_freq = value.freq;
+
+    while (value.next_value_index != INF) {
+	result.push_back(temp.word_vector[value.start][value.index].second);
+	value = temp.value_vector[value.next_value_index];
+    }
+
+    if (result != words)
+	return result_freq;
+
+    result.clear();
+    return 0.0;
 }
 
 void
 SpellingSplitterNew::get_multiple_spelling(const vector<string>& words,
-                                           unsigned top,
-                                           map<double, vector<string> >& result) const
+                                           unsigned result_count,
+                                           multimap<double, vector<string> >& result) const
 {
     word_splitter_data data;
     word_splitter_temp temp;
-    data.result_count = max(top, 1u);
+    data.result_count = max(result_count, 1u);
     word_splitter_key key = find_spelling(words, data, temp);
 
-    return generate_multiple_result(temp, key, result);
+    pair<unsigned, unsigned> start_values = temp.memo.at(key);
+
+    for (unsigned i = start_values.first; i < start_values.second; ++i) {
+	word_splitter_value value = temp.value_vector[i];
+
+	multimap<double, vector<string> >::iterator it;
+	it = result.insert(make_pair(value.freq, vector<string>()));
+
+	vector<string>& result_vector = it->second;
+
+	while (value.next_value_index != INF) {
+	    result_vector.push_back(temp.word_vector[value.start][value.index].second);
+	    value = temp.value_vector[value.next_value_index];
+	}
+	if (result_vector == words) result.erase(it);
+    }
 }

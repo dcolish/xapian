@@ -23,7 +23,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <cmath>
 #include <xapian/unicode.h>
 
 #include "database.h"
@@ -36,6 +35,8 @@
 using namespace std;
 using namespace Xapian;
 
+const unsigned SpellingCorrector::INF = numeric_limits<unsigned>::max();
+
 void
 SpellingCorrector::get_top_spelling_corrections(const string& word,
                                                 unsigned top, bool use_freq,
@@ -43,16 +44,12 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
 						vector<string>& result) const
 {
     AutoPtr<TermList> merger;
-    for (size_t i = 0; i < internal.size(); ++i)
-    {
+    for (size_t i = 0; i < internal.size(); ++i) {
 	TermList* term_list = internal[i]->open_spelling_termlist(word, prefix, max_edit_distance);
-	if (term_list != 0)
-	{
-	    if (merger.get() != 0)
-	    {
+	if (term_list != 0) {
+	    if (merger.get() != 0) {
 		merger.reset(new OrTermList(merger.release(), term_list));
-	    }
-	    else merger.reset(term_list);
+	    } else merger.reset(term_list);
 	}
     }
 
@@ -82,8 +79,7 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
 	                                           int(word_utf.size()), max_edit_distance);
 	if (distance == 0 && skip_exact) continue;
 
-	if (distance <= max_edit_distance)
-	{
+	if (distance <= max_edit_distance) {
 	    double distance_precise = edit_distance.edit_distance(&term_utf[0], term_utf.size(), &word_utf[0],
 	                                                          word_utf.size(), distance);
 
@@ -97,74 +93,122 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
 	}
     }
 
-    result.clear();
-    result.reserve(top_spelling.size());
     multimap<double, string>::const_iterator it;
     for (it = top_spelling.begin(); it != top_spelling.end(); ++it)
 	result.push_back(it->second);
-
-    if (result.empty())
-	result.push_back(word);
 }
 
-double SpellingCorrector::get_spelling_freq(const std::vector<std::vector<std::string> >& words,
-                                            const std::vector<unsigned>& word_spelling,
+double SpellingCorrector::get_spelling_freq(const word_corrector_data& data,
+                                            const word_corrector_temp& temp,
                                             unsigned index) const
 {
-    return request_internal(words[index][word_spelling[index]]);
+    return request_internal(data.word_corrections[index][temp.word_spelling[index]]);
 }
 
-double SpellingCorrector::get_spelling_freq(const vector<vector<string> >& words,
-					    const vector<unsigned>& word_spelling,
-					    map<word_spelling_key, double>& freq_map,
-					    unsigned first_index,
-					    unsigned second_index) const
+double
+SpellingCorrector::get_spelling_freq(const word_corrector_data& data,
+                                     word_corrector_temp& temp,
+        			     unsigned first_index,
+        			     unsigned second_index) const
 {
     word_spelling_key key;
     key.first_word_index = first_index;
-    key.first_spelling_index = word_spelling[first_index];
+    key.first_spelling_index = temp.word_spelling[first_index];
     key.second_word_index = second_index;
-    key.second_spelling_index = word_spelling[second_index];
+    key.second_spelling_index = temp.word_spelling[second_index];
 
-    map<word_spelling_key, double>::const_iterator it = freq_map.find(key);
-    if (it == freq_map.end()) {
-	double freq = request_internal(words[first_index][word_spelling[first_index]],
-	                               words[second_index][word_spelling[second_index]]);
-	it = freq_map.insert(make_pair(key, freq)).first;
+    map<word_spelling_key, double>::const_iterator it = temp.freq_map.find(key);
+    if (it == temp.freq_map.end()) {
+	double freq = request_internal(data.word_corrections[first_index][temp.word_spelling[first_index]],
+	                               data.word_corrections[second_index][temp.word_spelling[second_index]]);
+
+	it = temp.freq_map.insert(make_pair(key, freq)).first;
     }
     return it->second;
 }
 
-void
-SpellingCorrector::recursive_spelling_corrections(const vector<vector<string> >& words,
-                                                  unsigned word_index,
-						  vector<unsigned>& word_spelling,
-						  double word_freq,
-						  map<word_spelling_key, double>& freq_map,
-						  vector<unsigned>& max_spelling_word,
-						  double& max_word_freq) const
+SpellingCorrector::word_corrector_key
+SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& data,
+                                                  word_corrector_temp& temp,
+                                                  unsigned word_index) const
 {
-    if (word_index < words.size()) {
-	for (unsigned i = 0; i < words[word_index].size(); ++i) {
-	    word_spelling[word_index] = i;
+    word_corrector_key key;
+    key.word_index = word_index;
+    key.spelling_index = INF;
+    key.p_spelling_index = INF;
 
-	    double current_word_freq = word_freq;
-	    for (unsigned gap = 0; gap < min(word_index, MAX_GAP + 1); ++gap) {
-		current_word_freq += get_spelling_freq(words, word_spelling, freq_map,
-		                               word_index - gap - 1, word_index);
+    if (word_index > 0)
+	key.spelling_index = temp.word_spelling[word_index - 1];
+
+    if (word_index > 1)
+	key.p_spelling_index = temp.word_spelling[word_index - 2];
+
+    if (temp.memo.find(key) != temp.memo.end()) return key;
+
+    pair<unsigned, unsigned> values;
+
+    if (word_index < data.word_corrections.size()) {
+	multimap<double, word_corrector_value, greater<double> > value_map;
+
+	for (unsigned i = 0; i < data.word_corrections[word_index].size(); ++i) {
+	    temp.word_spelling[word_index] = i;
+
+	    double word_freq = 0.0;
+	    for (unsigned gap = 0; gap < min(word_index, MAX_GAP + 1); ++gap)
+		word_freq += get_spelling_freq(data, temp, word_index - gap - 1, word_index);
+
+	    if (data.word_corrections.size() == 1)
+		word_freq += get_spelling_freq(data, temp, word_index);
+
+	    word_corrector_key next_key = recursive_spelling_corrections(data, temp, word_index + 1);
+	    pair<unsigned, unsigned> next_values = temp.memo.at(next_key);
+
+	    for (unsigned v = next_values.first; v < next_values.second; ++v) {
+		word_corrector_value result_value;
+		result_value.freq = temp.value_vector[v].freq + word_freq;
+		result_value.next_value_index = v;
+		result_value.word_index = word_index;
+		result_value.spelling_index = i;
+
+		value_map.insert(make_pair(result_value.freq, result_value));
 	    }
-
-	    if (words.size() == 1)
-		current_word_freq += get_spelling_freq(words, word_spelling, word_index);
-
-	    recursive_spelling_corrections(words, word_index + 1,
-					   word_spelling, current_word_freq, freq_map,
-					   max_spelling_word, max_word_freq);
 	}
-    } else if (word_freq > max_word_freq) {
-	max_word_freq = word_freq;
-	max_spelling_word = word_spelling;
+
+	values.first = temp.value_vector.size();
+
+	unsigned limit = 0;
+	multimap<double, word_corrector_value, greater<double> >::const_iterator it;
+	for (it = value_map.begin(); it != value_map.end() && limit < data.result_count; ++it, ++limit)
+	    temp.value_vector.push_back(it->second);
+
+	values.second = temp.value_vector.size();
+
+    } else {
+	word_corrector_value result_value;
+	result_value.freq = 0.0;
+	result_value.next_value_index = INF;
+
+	values.first = temp.value_vector.size();
+	temp.value_vector.push_back(result_value);
+	values.second = temp.value_vector.size();
     }
+    return temp.memo.insert(make_pair(key, values)).first->first;
+}
+
+SpellingCorrector::word_corrector_key
+SpellingCorrector::find_spelling(const vector<string>& words,
+                                 word_corrector_data& data,
+                                 word_corrector_temp& temp) const
+{
+    data.word_corrections.assign(words.size(), vector<string>());
+    for (unsigned i = 0; i < words.size(); ++i) {
+	data.word_corrections[i].reserve(LIMIT_CORRECTIONS + 1);
+	data.word_corrections[i].push_back(words[i]);
+	get_top_spelling_corrections(words[i], LIMIT_CORRECTIONS, false, true, data.word_corrections[i]);
+    }
+
+    temp.word_spelling.assign(words.size(), 0);
+    return recursive_spelling_corrections(data, temp, 0);
 }
 
 double
@@ -182,22 +226,55 @@ double
 SpellingCorrector::get_spelling(const vector<string>& words,
                                 vector<string>& result) const
 {
-    vector<vector<string> > word_corrections(words.size());
-    for (unsigned i = 0; i < words.size(); ++i)
-	get_top_spelling_corrections(words[i], LIMIT_CORRECTIONS, false, false, word_corrections[i]);
+    word_corrector_data data;
+    data.result_count = 1;
 
-    double max_word_freq = 0;
-    vector<unsigned> max_spelling_word(words.size(), 0);
+    word_corrector_temp temp;
+    word_corrector_key key = find_spelling(words, data, temp);
 
-    vector<unsigned> word_spellings(words.size(), 0);
-    map<word_spelling_key, double> freq_map;
+    word_corrector_value value = temp.value_vector[temp.memo.at(key).first];
+    double result_freq = value.freq;
 
-    recursive_spelling_corrections(word_corrections, 0, word_spellings, 0,
-				   freq_map, max_spelling_word, max_word_freq);
+    bool exact = true;
+    while (value.next_value_index != INF) {
+	exact = exact && value.spelling_index == 0;
+	result.push_back(data.word_corrections[value.word_index][value.spelling_index]);
+	value = temp.value_vector[value.next_value_index];
+    }
+
+    if (!exact)
+	return result_freq;
 
     result.clear();
-    result.reserve(word_corrections.size());
-    for (unsigned i = 0; i < word_corrections.size(); ++i)
-	result.push_back(word_corrections[i][max_spelling_word[i]]);
-    return max_word_freq;
+    return 0.0;
+}
+
+void
+SpellingCorrector::get_multiple_spelling(const vector<string>& words, unsigned result_count,
+					 multimap<double, vector<string> >& result) const
+{
+    word_corrector_data data;
+    data.result_count = max(result_count, 1u);
+
+    word_corrector_temp temp;
+    word_corrector_key key = find_spelling(words, data, temp);
+
+    pair<unsigned, unsigned> start_values = temp.memo.at(key);
+
+    for (unsigned i = start_values.first; i < start_values.second; ++i) {
+	word_corrector_value value = temp.value_vector[i];
+
+	multimap<double, vector<string> >::iterator it;
+	it = result.insert(make_pair(value.freq, vector<string>()));
+
+	vector<string>& result_vector = it->second;
+
+	bool exact = true;
+	while (value.next_value_index != INF) {
+	    exact = exact && value.spelling_index == 0;
+	    result_vector.push_back(data.word_corrections[value.word_index][value.spelling_index]);
+	    value = temp.value_vector[value.next_value_index];
+	}
+	if (exact) result.erase(it);
+    }
 }

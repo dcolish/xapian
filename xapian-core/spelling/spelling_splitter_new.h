@@ -50,8 +50,6 @@ class SpellingSplitterNew : public SpellingBase {
     //Value structure for states memorisation
     struct word_splitter_value {
 	double freq;
-	bool has_next;
-	word_splitter_key next_key;
 	unsigned next_value_index;
 	unsigned start;
 	unsigned index;
@@ -102,13 +100,6 @@ class SpellingSplitterNew : public SpellingBase {
     word_splitter_key find_spelling(const std::vector<std::string>& words,
                                     word_splitter_data& data, word_splitter_temp& temp) const;
 
-    double generate_result(const word_splitter_temp& temp,
-                           word_splitter_key key, std::vector<std::string>& result) const;
-
-    void generate_multiple_result(const word_splitter_temp& temp,
-                                  word_splitter_key key,
-                                  std::map<double, std::vector<std::string> >& result) const;
-
 public:
     SpellingSplitterNew(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
                         const std::string& prefix_, unsigned max_edit_distance_ = 0) :
@@ -120,7 +111,8 @@ public:
 
     double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
 
-    void get_multiple_spelling(const std::vector<std::string>& words, unsigned top, std::map< double, std::vector<std::string> >& result) const;
+    void get_multiple_spelling(const std::vector<std::string>& words, unsigned result_count,
+                               std::multimap<double, std::vector<std::string> >& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_SPLITTER_NEW_H

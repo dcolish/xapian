@@ -22,6 +22,7 @@
 #define XAPIAN_INCLUDED_SPELLING_CORRECTOR_H
 
 #include <vector>
+#include <map>
 #include <string>
 #include "database.h"
 #include "spelling_keyboard.h"
@@ -31,6 +32,7 @@ class SpellingCorrector : public SpellingBase {
 
     static const unsigned LIMIT_CORRECTIONS = 5;
     static const unsigned MAX_GAP = 1;
+    static const unsigned INF;
 
     //Key for states memorisation
     struct word_spelling_key {
@@ -48,22 +50,57 @@ class SpellingCorrector : public SpellingBase {
 	}
     };
 
+    struct word_corrector_key {
+	unsigned word_index;
+	unsigned spelling_index;
+	unsigned p_spelling_index;
+
+	bool operator<(const word_corrector_key& other) const
+	{
+	    return word_index < other.word_index || (word_index == other.word_index && (
+		   spelling_index < other.spelling_index || (spelling_index == other.spelling_index && (
+		   p_spelling_index < other.p_spelling_index))));
+	}
+    };
+
+    struct word_corrector_value {
+	double freq;
+	unsigned next_value_index;
+	unsigned word_index;
+	unsigned spelling_index;
+    };
+
+    struct word_corrector_data {
+	std::vector<std::vector<std::string> > word_corrections;
+	unsigned result_count;
+    };
+
+    struct word_corrector_temp {
+	std::vector<unsigned> word_spelling;
+	std::map<word_spelling_key, double> freq_map;
+	std::map<word_corrector_key, pair<unsigned, unsigned> > memo;
+	std::vector<word_corrector_value> value_vector;
+    };
+
     unsigned max_edit_distance;
     const SpellingKeyboard* keyboard_layout;
 
-    double get_spelling_freq(const std::vector<std::vector<std::string> >& words,
-			     const std::vector<unsigned>& word_spelling,
+    double get_spelling_freq(const word_corrector_data& data,
+                             const word_corrector_temp& temp,
 			     unsigned index) const;
 
-    double get_spelling_freq(const std::vector<std::vector<std::string> >& words,
-			       const std::vector<unsigned>& word_spelling,
-			       std::map<word_spelling_key, double>& freq_map, unsigned first_index,
-			       unsigned second_index) const;
+    double get_spelling_freq(const word_corrector_data& data,
+                             word_corrector_temp& temp,
+			     unsigned first_index,
+			     unsigned second_index) const;
 
-    void recursive_spelling_corrections(const std::vector<std::vector<std::string> >& words, unsigned word_index,
-					std::vector<unsigned>& word_spelling, double word_freq,
-					std::map<word_spelling_key, double>& freq_map,
-					std::vector<unsigned>& max_spelling_word, double& max_word_freq) const;
+    word_corrector_key recursive_spelling_corrections(const word_corrector_data& data,
+                                                      word_corrector_temp& temp,
+                                                      unsigned word_index) const;
+
+    word_corrector_key find_spelling(const std::vector<std::string>& words,
+                                     word_corrector_data& data,
+                                     word_corrector_temp& temp) const;
 
 public:
     SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
@@ -80,6 +117,9 @@ public:
     double get_spelling(const std::string& words, std::string& result) const;
 
     double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
+
+    void get_multiple_spelling(const std::vector<std::string>& words, unsigned result_count,
+                               std::multimap<double, std::vector<std::string> >& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_CORRECTOR_H

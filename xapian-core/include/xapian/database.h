@@ -386,6 +386,22 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	                                                 const std::string &prefix,
 	                                                 unsigned max_edit_distance = 2) const;
 
+	/** Suggest several spelling corrections for group of words.
+	 *
+	 *  @param words 		The potentially misspelled sequence of words.
+	 *  @param prefix 		The prefix.
+	 *  @param count 		The corrections count.
+	 *  @param max_edit_distance	Only consider words which are at most
+	 *	@a max_edit_distance edits from @a word.  An edit is a
+	 *	character insertion, deletion, or the transposition of two
+	 *	adjacent characters (default is 2).
+	 */
+	std::vector<std::vector<std::string> >
+				 get_spelling_suggestions(const std::vector<std::string>& words,
+	                                                  const std::string &prefix,
+	                                                  unsigned count,
+	                                                  unsigned max_edit_distance = 2) const;
+
 	/**
 	 * Check if the spelling correction is enabled for the given prefix
 	 *
