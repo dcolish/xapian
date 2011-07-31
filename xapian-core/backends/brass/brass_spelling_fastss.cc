@@ -297,7 +297,7 @@ void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string&
     if (update_prefix) {
 	prefix.clear();
 	prefix.push_back(PREFIX_SIGNATURE);
-	append_data_int(prefix, prefix_group);
+	append_prefix_group(prefix, prefix_group);
 	get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
     }
 
@@ -362,7 +362,7 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
     if (update_prefix) {
 	prefix.clear();
 	prefix.push_back(PREFIX_SIGNATURE);
-	append_data_int(prefix, prefix_group);
+	append_prefix_group(prefix, prefix_group);
 	get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
 	prefix_exists = get_exact_entry(prefix, data);
 
