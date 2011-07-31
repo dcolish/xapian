@@ -25,6 +25,7 @@
 #include <limits>
 #include "database.h"
 #include "spelling_base.h"
+#include "spelling_corrector.h"
 
 class SpellingSplitterNew : public SpellingBase {
 
@@ -80,10 +81,10 @@ class SpellingSplitterNew : public SpellingBase {
 	std::map<word_splitter_key, std::pair<unsigned, unsigned> > memo;
 
 	std::vector<word_splitter_value> value_vector;
-	std::string word;
     };
 
     unsigned max_edit_distance;
+    SpellingCorrector spelling_corrector;
 
     double request_word_pair(const word_splitter_data& data, word_splitter_temp& temp,
                              unsigned start, unsigned index, unsigned p_start, unsigned p_index) const;
@@ -101,9 +102,12 @@ class SpellingSplitterNew : public SpellingBase {
                                     word_splitter_data& data, word_splitter_temp& temp) const;
 
 public:
+    using SpellingBase::get_multiple_spelling;
+
     SpellingSplitterNew(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
                         const std::string& prefix_, unsigned max_edit_distance_ = 0) :
-                            SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_)
+                            SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_),
+                            spelling_corrector(internal_, prefix_, max_edit_distance_)
     {
     }
 
@@ -111,8 +115,11 @@ public:
 
     double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
 
+    void get_multiple_spelling(const std::string& word, unsigned result_count,
+                               std::multimap<double, std::string, std::greater<double> >& result) const;
+
     void get_multiple_spelling(const std::vector<std::string>& words, unsigned result_count,
-                               std::multimap<double, std::vector<std::string> >& result) const;
+                               std::multimap<double, std::vector<std::string>, std::greater<double> >& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_SPLITTER_NEW_H

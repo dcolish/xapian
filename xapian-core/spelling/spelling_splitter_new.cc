@@ -19,6 +19,7 @@
  */
 
 #include <config.h>
+#include <omassert.h>
 #include <limits>
 #include <vector>
 #include <algorithm>
@@ -77,9 +78,7 @@ SpellingSplitterNew::recursive_select_words(const word_splitter_data& data,
     while (start < data.word_total_length && temp.word_vector[start].empty())
 	++start;
     skip = start - skip;
-
-    if (skip > 0)
-	p_start = p_index = INF;
+    Assert(skip == 0);
 
     word_splitter_key key;
     key.start = start;
@@ -100,6 +99,7 @@ SpellingSplitterNew::recursive_select_words(const word_splitter_data& data,
 	    pair<unsigned, unsigned> next_values = temp.memo.at(next_key);
 
 	    double pair_freq = request_word_pair(data, temp, start, i, p_start, p_index);
+	    if (p_start == INF && end < data.word_total_length) pair_freq = 0.0;
 
 	    for (unsigned v = next_values.first; v < next_values.second; ++v) {
 		word_splitter_value result_value;
@@ -136,6 +136,7 @@ void
 SpellingSplitterNew::find_existing_words(const word_splitter_data& data,
                                          word_splitter_temp& temp) const
 {
+    string word;
     temp.word_vector.assign(data.word_total_length + 1, vector<pair<unsigned, string> >());
 
     vector<bool> begins(data.word_total_length + 1);
@@ -172,7 +173,7 @@ SpellingSplitterNew::find_existing_words(const word_splitter_data& data,
 
 	    for (unsigned end = begin_end; end < merge_length; ++end) {
 		unsigned real_end = offset + end + 1;
-		if (request_word_exists(data, real_start, real_end, temp.word)) {
+		if (request_word_exists(data, real_start, real_end, word)) {
 		    unsigned next_split = (end < length) ? (1 + split) : 1;
 
 		    begins[real_start] = true;
@@ -181,13 +182,11 @@ SpellingSplitterNew::find_existing_words(const word_splitter_data& data,
 			splits[real_end] = next_split;
 		    } else splits[real_end] = min(next_split, splits[real_end]);
 
-		    temp.word_vector[real_start].push_back(make_pair(real_end, temp.word));
+		    temp.word_vector[real_start].push_back(make_pair(real_end, word));
 		}
 	    }
 	}
     }
-
-    SpellingCorrector corrector(internal, prefix, max_edit_distance);
 
     vector<string> unknown_words;
     unsigned skip_end = 0;
@@ -204,15 +203,55 @@ SpellingSplitterNew::find_existing_words(const word_splitter_data& data,
 
 	unsigned word_utf_start = data.word_utf_map[i];
 	unsigned word_utf_end = data.word_utf_map[end];
-	temp.word.assign(data.allword, word_utf_start, word_utf_end - word_utf_start);
+	word.assign(data.allword, word_utf_start, word_utf_end - word_utf_start);
 
 	unknown_words.clear();
 	if (max_edit_distance > 0)
-	    corrector.get_top_spelling_corrections(temp.word, TOP_SPELLING_CORRECTIONS, false, true, unknown_words);
-	unknown_words.push_back(temp.word);
+	    spelling_corrector.get_top_spelling_corrections(word, TOP_SPELLING_CORRECTIONS,
+	                                                    false, true, unknown_words);
+	unknown_words.push_back(word);
 
 	for (unsigned u = 0; u < unknown_words.size(); ++u)
 	    temp.word_vector[i].push_back(make_pair(end, unknown_words[u]));
+
+	if (i == 0 || end_vector[i - 1] == i) {
+	    string left_word;
+	    string right_word;
+	    for (unsigned split = i + 1; split < end; ++split) {
+		bool left_exists = request_word_exists(data, i, split, left_word);
+		bool right_exists = request_word_exists(data, split, end, right_word);
+		bool can_improve = left_exists || right_exists;
+
+		if (max_edit_distance > 0) {
+		    if (!left_exists) {
+			unknown_words.clear();
+
+			spelling_corrector.get_top_spelling_corrections(left_word, TOP_SPELLING_CORRECTIONS,
+			                                                false, true, unknown_words);
+
+			for (unsigned u = 0; u < unknown_words.size(); ++u)
+			    temp.word_vector[i].push_back(make_pair(split, unknown_words[u]));
+			can_improve = can_improve || !unknown_words.empty();
+		    }
+
+		    if (!right_exists) {
+			unknown_words.clear();
+
+			spelling_corrector.get_top_spelling_corrections(right_word, TOP_SPELLING_CORRECTIONS,
+			                                                false, true, unknown_words);
+
+			for (unsigned u = 0; u < unknown_words.size(); ++u)
+			    temp.word_vector[split].push_back(make_pair(end, unknown_words[u]));
+			can_improve = can_improve || !unknown_words.empty();
+		    }
+		}
+
+		if (!can_improve) continue;
+
+		temp.word_vector[i].push_back(make_pair(split, left_word));
+		temp.word_vector[split].push_back(make_pair(end, right_word));
+	    }
+	}
     }
 }
 
@@ -252,10 +291,20 @@ SpellingSplitterNew::find_spelling(const std::vector<std::string>& words,
 }
 
 double
-SpellingSplitterNew::get_spelling(const string&, string& result) const
+SpellingSplitterNew::get_spelling(const string& word, string& result) const
 {
+    vector<string> words;
+    vector<string> results;
+
+    words.push_back(word);
+    double freq = get_spelling(words, results);
+
     result.clear();
-    return 0.0;
+    for (unsigned i = 0; i < results.size(); ++i) {
+	if (i > 0) result.push_back(' ');
+	result.append(results[i]);
+    }
+    return freq;
 }
 
 double
@@ -283,9 +332,30 @@ SpellingSplitterNew::get_spelling(const vector<string>& words,
 }
 
 void
+SpellingSplitterNew::get_multiple_spelling(const string& word,
+                                           unsigned result_count,
+                                           multimap<double, string, greater<double> >& result) const
+{
+    vector<string> words;
+    multimap<double, vector<string>, greater<double> > results;
+
+    words.push_back(word);
+    get_multiple_spelling(words, result_count, results);
+    multimap<double, vector<string>, greater<double> >::const_iterator i;
+    for (i = results.begin(); i != results.end(); ++i) {
+	string single_result;
+	for (unsigned j = 0; j < i->second.size(); ++j) {
+	    if (j > 0) single_result.push_back(' ');
+	    single_result.append(i->second[j]);
+	}
+	result.insert(make_pair(i->first, single_result));
+    }
+}
+
+void
 SpellingSplitterNew::get_multiple_spelling(const vector<string>& words,
                                            unsigned result_count,
-                                           multimap<double, vector<string> >& result) const
+                                           multimap<double, vector<string>, greater<double> >& result) const
 {
     word_splitter_data data;
     word_splitter_temp temp;
@@ -297,15 +367,13 @@ SpellingSplitterNew::get_multiple_spelling(const vector<string>& words,
     for (unsigned i = start_values.first; i < start_values.second; ++i) {
 	word_splitter_value value = temp.value_vector[i];
 
-	multimap<double, vector<string> >::iterator it;
+	multimap<double, vector<string>, greater<double> >::iterator it;
 	it = result.insert(make_pair(value.freq, vector<string>()));
 
-	vector<string>& result_vector = it->second;
-
 	while (value.next_value_index != INF) {
-	    result_vector.push_back(temp.word_vector[value.start][value.index].second);
+	    it->second.push_back(temp.word_vector[value.start][value.index].second);
 	    value = temp.value_vector[value.next_value_index];
 	}
-	if (result_vector == words) result.erase(it);
+	if (it->second == words) result.erase(it);
     }
 }

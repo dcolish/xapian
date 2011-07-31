@@ -83,3 +83,21 @@ SpellingBase::request_internal(const string& first_word, const string& second_wo
 
     return (1 + pair_freq) * normalize_freq(single_freq);
 }
+
+void
+SpellingBase::get_multiple_spelling(const string& word, unsigned,
+                                    multimap<double, string, greater<double> >& result) const
+{
+    string single_result;
+    double freq = get_spelling(word, single_result);
+    result.insert(make_pair(freq, single_result));
+}
+
+void
+SpellingBase::get_multiple_spelling(const vector<string>& words, unsigned,
+                                    multimap<double, vector<string>, greater<double> >& result) const
+{
+    vector<string> single_result;
+    double freq = get_spelling(words, single_result);
+    result.insert(make_pair(freq, single_result));
+}

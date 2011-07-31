@@ -184,6 +184,7 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
     } else {
 	word_corrector_value result_value;
 	result_value.freq = 0.0;
+	result_value.spelling_index = 0;
 	result_value.next_value_index = INF;
 
 	values.first = temp.value_vector.size();
@@ -217,7 +218,9 @@ SpellingCorrector::get_spelling(const string& word, string& result) const
     get_top_spelling_corrections(word, 1, true, true, result_vector);
 
     if (result_vector.empty()) return 0.0;
-    return request_internal(result_vector.front());
+
+    result = result_vector.front();
+    return request_internal(result);
 }
 
 double
@@ -248,8 +251,19 @@ SpellingCorrector::get_spelling(const vector<string>& words,
 }
 
 void
+SpellingCorrector::get_multiple_spelling(const string& word, unsigned result_count,
+					 multimap<double, string, greater<double> >& result) const
+{
+    vector<string> result_vector;
+    get_top_spelling_corrections(word, max(result_count, 1u), true, true, result_vector);
+
+    for (unsigned i = 0; i < result_vector.size(); ++i)
+	result.insert(make_pair(request_internal(result_vector[i]), result_vector[i]));
+}
+
+void
 SpellingCorrector::get_multiple_spelling(const vector<string>& words, unsigned result_count,
-					 multimap<double, vector<string> >& result) const
+					 multimap<double, vector<string>, greater<double> >& result) const
 {
     word_corrector_data data;
     data.result_count = max(result_count, 1u);
@@ -265,12 +279,10 @@ SpellingCorrector::get_multiple_spelling(const vector<string>& words, unsigned r
 	multimap<double, vector<string> >::iterator it;
 	it = result.insert(make_pair(value.freq, vector<string>()));
 
-	vector<string>& result_vector = it->second;
-
 	bool exact = true;
 	while (value.next_value_index != INF) {
 	    exact = exact && value.spelling_index == 0;
-	    result_vector.push_back(data.word_corrections[value.word_index][value.spelling_index]);
+	    it->second.push_back(data.word_corrections[value.word_index][value.spelling_index]);
 	    value = temp.value_vector[value.next_value_index];
 	}
 	if (exact) result.erase(it);

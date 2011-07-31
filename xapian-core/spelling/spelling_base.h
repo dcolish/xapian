@@ -22,6 +22,7 @@
 #define XAPIAN_INCLUDED_SPELLING_BASE_H
 
 #include <vector>
+#include <map>
 #include <string>
 #include "database.h"
 
@@ -53,11 +54,41 @@ public:
     SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_, const std::string& prefix_);
     virtual ~SpellingBase();
 
-    //Find spelling correction for a sequence of words.
+    /** Find spelling correction for a given word.
+     *
+     *  @param word	The misspelled word.
+     *  @param result	The string to receive the result.
+     *
+     *  @return		Returns relative frequency of the result.
+     */
     virtual double get_spelling(const std::string& word, std::string& result) const = 0;
 
-    //Find spelling correction for a sequence of words.
+    /** Find spelling correction for a sequence of words.
+     *
+     *  @param words	The sequence of misspelled words.
+     *  @param result	The vector to receive the result.
+     *
+     *  @return		Returns relative frequency of the result.
+     */
     virtual double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const = 0;
+
+    /** Find multiple spelling corrections for a given word.
+     *
+     *	@param word		The misspelled word.
+     *	@param result_count	The result count.
+     *	@param result		The map to receive the results (value) associated with relative frequency (key).
+     */
+    virtual void get_multiple_spelling(const std::string& word, unsigned result_count,
+                                       std::multimap<double, std::string, std::greater<double> >& result) const;
+
+    /** Find multiple spelling corrections for a sequence of words.
+     *
+     *	@param word		The sequency of misspelled words.
+     *	@param result_count	The result count.
+     *	@param result		The map to receive the results (value) associated with relative frequency (key).
+     */
+    virtual void get_multiple_spelling(const std::vector<std::string>& words, unsigned result_count,
+                                       std::multimap<double, std::vector<std::string>, std::greater<double> >& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_BASE_H

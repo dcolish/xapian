@@ -121,6 +121,8 @@ class SpellingCorrector : public SpellingBase {
                                      word_corrector_temp& temp) const;
 
 public:
+    using SpellingBase::get_multiple_spelling;
+
     SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
                       const std::string& prefix_, unsigned max_edit_distance_,
                       const SpellingKeyboard* keyboard_layout_ = NULL) :
@@ -136,8 +138,11 @@ public:
 
     double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
 
+    void get_multiple_spelling(const std::string& word, unsigned result_count,
+                               std::multimap<double, std::string, std::greater<double> >& result) const;
+
     void get_multiple_spelling(const std::vector<std::string>& words, unsigned result_count,
-                               std::multimap<double, std::vector<std::string> >& result) const;
+                               std::multimap<double, std::vector<std::string>, std::greater<double> >& result) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_CORRECTOR_H
