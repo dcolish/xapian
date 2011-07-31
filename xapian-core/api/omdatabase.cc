@@ -523,10 +523,18 @@ Database::get_spelling_suggestion(const string &word,
     if (!is_spelling_enabled(prefix)) return string();
 
     SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
+    SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
 
-    string result;
-    spelling_corrector.get_spelling(word, result);
-    return result;
+    string corrector_result;
+    double corrector_freq = spelling_corrector.get_spelling(word, corrector_result);
+
+    string splitter_result;
+    double splitter_freq = spelling_splitter.get_spelling(word, splitter_result);
+
+    if (splitter_freq > corrector_freq)
+	return splitter_result;
+
+    return corrector_result;
 }
 
 vector<string>
@@ -567,12 +575,12 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
     SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
     SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
 
-    multimap<double, vector<string> > result_map;
+    multimap<double, vector<string>, greater<double> > result_map;
     spelling_corrector.get_multiple_spelling(words, count, result_map);
     spelling_splitter.get_multiple_spelling(words, count, result_map);
 
     vector<vector<string> > result;
-    multimap<double, vector<string> >::const_iterator it;
+    multimap<double, vector<string>, greater<double> >::const_iterator it;
 
     unsigned limit = 0;
     for (it = result_map.begin(); it != result_map.end() && limit < count; ++it, ++limit)

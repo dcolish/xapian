@@ -2,6 +2,7 @@
  * @brief Spelling correction data for a brass database.
  */
 /* Copyright (C) 2004,2005,2006,2007,2008,2009,2010 Olly Betts
+ * Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +31,6 @@
 #include "ortermlist.h"
 #include "pack.h"
 
-#include "../prefix_compressed_strings.h"
-
 #include <algorithm>
 #include <map>
 #include <queue>
@@ -44,9 +43,11 @@ using namespace Brass;
 using namespace std;
 
 const char* BrassSpellingTable::GROUPMAX_SIGNATURE = "GROUPMAX";
-const unsigned BrassSpellingTable::PREFIX_DISABLED = numeric_limits<unsigned>::max();
+const char* BrassSpellingTable::GROUPSTACK_SIGNATURE = "GROUPSTACK";
+const unsigned BrassSpellingTable::PREFIX_DISABLED = numeric_limits<unsigned char>::max();
 
-void BrassSpellingTable::merge_changes()
+void
+BrassSpellingTable::merge_changes()
 {
     merge_fragment_changes();
 
@@ -60,9 +61,37 @@ void BrassSpellingTable::merge_changes()
 	set_entry_wordfreq(WORDS_SIGNATURE, j->first, j->second);
     }
     wordsfreq_changes.clear();
+
+    map<string, unsigned>::const_iterator i;
+    for (i = prefix_changes.begin(); i != prefix_changes.end(); ++i) {
+	string key = SPELLING_SIGNATURE + i->first;
+
+	if (i->second != PREFIX_DISABLED) {
+	    string tag;
+	    pack_uint_last(tag, i->second);
+	    add(key, tag);
+	} else del(key);
+    }
+    prefix_changes.clear();
+
+    if (prefix_index_max != 0) {
+	string data;
+	pack_uint_last(data, prefix_index_max);
+	add(GROUPMAX_SIGNATURE, data);
+
+	data.clear();
+	for (unsigned k = 0; k < prefix_index_stack.size(); ++k)
+	    pack_uint(data, prefix_index_stack[k]);
+	add(GROUPSTACK_SIGNATURE, data);
+    }
+
+    prefix_index_stack.clear();
+    prefix_index_max = 0;
 }
 
-void BrassSpellingTable::add_word(const string & word, Xapian::termcount freqinc, const string& prefix)
+void
+BrassSpellingTable::add_word(const string& word,
+                             Xapian::termcount freqinc, const string& prefix)
 {
     if (word.size() <= 1) return;
 
@@ -97,7 +126,9 @@ void BrassSpellingTable::add_word(const string & word, Xapian::termcount freqinc
     toggle_word(word, prefix);
 }
 
-void BrassSpellingTable::remove_word(const string & word, Xapian::termcount freqdec, const string& prefix)
+void
+BrassSpellingTable::remove_word(const string& word,
+                                Xapian::termcount freqdec, const string& prefix)
 {
     unsigned prefix_group = get_spelling_group(prefix);
     if (prefix_group == PREFIX_DISABLED) return;
@@ -137,15 +168,19 @@ void BrassSpellingTable::remove_word(const string & word, Xapian::termcount freq
     toggle_word(word, prefix);
 }
 
-void BrassSpellingTable::append_prefix_group(std::string& data, unsigned value)
+void
+BrassSpellingTable::append_prefix_group(std::string& data, unsigned value)
 {
-    for (unsigned i = 0; i < sizeof(unsigned); ++i) {
+    for (unsigned i = 0; i < sizeof(unsigned char); ++i) {
 	data.push_back(value & 0xFF);
 	value >>= 8;
     }
 }
 
-string BrassSpellingTable::pack_words(const string& prefix, const string& first_word, const string& second_word) const
+string
+BrassSpellingTable::pack_words(const string& prefix,
+                               const string& first_word,
+                               const string& second_word) const
 {
     unsigned prefix_group = get_spelling_group(prefix);
     if (prefix_group == PREFIX_DISABLED) return string();
@@ -165,7 +200,10 @@ string BrassSpellingTable::pack_words(const string& prefix, const string& first_
     return value;
 }
 
-void BrassSpellingTable::add_words(const string& first_word, const string& second_word, Xapian::termcount freqinc, const string& prefix)
+void
+BrassSpellingTable::add_words(const string& first_word,
+                              const string& second_word,
+                              Xapian::termcount freqinc, const string& prefix)
 {
     if (second_word.empty()) return add_word(first_word, freqinc);
     if (first_word.empty()) return add_word(second_word, freqinc);
@@ -180,7 +218,10 @@ void BrassSpellingTable::add_words(const string& first_word, const string& secon
     } else i->second += freqinc;
 }
 
-void BrassSpellingTable::remove_words(const string& first_word, const string& second_word, Xapian::termcount freqdec, const string& prefix)
+void
+BrassSpellingTable::remove_words(const string& first_word,
+                                 const string& second_word,
+                                 Xapian::termcount freqdec, const string& prefix)
 {
     string prefixed_word = pack_words(prefix, first_word, second_word);
     if (prefixed_word.empty()) return;
@@ -259,8 +300,9 @@ BrassSpellingTable::open_termlist(const string & word, unsigned max_distance, co
     }
 }
 
-Xapian::doccount BrassSpellingTable::get_word_frequency(const string& word,
-                                                        const string& prefix) const
+Xapian::doccount
+BrassSpellingTable::get_word_frequency(const string& word,
+                                       const string& prefix) const
 {
     unsigned prefix_group = get_spelling_group(prefix);
     if (prefix_group == PREFIX_DISABLED) return 0;
@@ -278,9 +320,10 @@ Xapian::doccount BrassSpellingTable::get_word_frequency(const string& word,
     return get_entry_wordfreq(WORD_SIGNATURE, prefixed_word);
 }
 
-Xapian::doccount BrassSpellingTable::get_words_frequency(const string& first_word,
-                                                         const string& second_word,
-                                                         const string& prefix) const
+Xapian::doccount
+BrassSpellingTable::get_words_frequency(const string& first_word,
+                                        const string& second_word,
+                                        const string& prefix) const
 {
     if (second_word.empty()) return get_word_frequency(first_word);
     if (first_word.empty()) return get_word_frequency(second_word);
@@ -296,49 +339,62 @@ Xapian::doccount BrassSpellingTable::get_words_frequency(const string& first_wor
     return get_entry_wordfreq(WORDS_SIGNATURE, prefixed_word);
 }
 
-void BrassSpellingTable::enable_spelling(const string& prefix, const string& group_prefix)
+void
+BrassSpellingTable::enable_spelling(const string& prefix, const string& group_prefix)
 {
-    string data;
-    pack_uint_last(data, 0u);
+    unsigned spelling_group = get_spelling_group(group_prefix);
+    unsigned current_spelling_group = get_spelling_group(prefix);
 
-    if (!group_prefix.empty() && !get_exact_entry(SPELLING_SIGNATURE + group_prefix, data)) {
-	unsigned group = 1;
+    if (spelling_group == current_spelling_group && spelling_group != PREFIX_DISABLED) return;
 
-	if (get_exact_entry(GROUPMAX_SIGNATURE, data)) {
-	    const char *p = data.data();
-	    unpack_uint_last(&p, p + data.size(), &group);
+    if (spelling_group == PREFIX_DISABLED) {
+	if (prefix_index_max == 0)
+	    prefix_index_max = get_prefix_data(prefix_index_stack);
+
+	if (prefix_index_stack.empty()) {
+	    if (prefix_index_max == PREFIX_DISABLED)
+		throw Xapian::DatabaseError("Can't add new entry - prefix index is too large");
+	    spelling_group = prefix_index_max++;
+	} else {
+	    spelling_group = prefix_index_stack.back();
+	    prefix_index_stack.pop_back();
 	}
-
-	data.clear();
-	pack_uint_last(data, group + 1);
-	add(GROUPMAX_SIGNATURE, data);
-
-	data.clear();
-	pack_uint_last(data, group);
     }
-    add(SPELLING_SIGNATURE + prefix, data);
+    prefix_changes.insert(make_pair(prefix, spelling_group));
 }
 
-void BrassSpellingTable::disable_spelling(const string& prefix)
+void
+BrassSpellingTable::disable_spelling(const string& prefix)
 {
-    del(SPELLING_SIGNATURE + prefix);
+    unsigned spelling_group = get_spelling_group(prefix);
+    if (spelling_group == PREFIX_DISABLED) return;
+
+    prefix_changes.insert(make_pair(prefix, PREFIX_DISABLED));
+
+    if (prefix_index_max == 0)
+	prefix_index_max = get_prefix_data(prefix_index_stack);
+
+    if (spelling_group == prefix_index_max - 1)
+	prefix_index_max--;
+    else prefix_index_stack.push_back(spelling_group);
 }
 
-bool BrassSpellingTable::is_spelling_enabled(const string& prefix) const
+bool
+BrassSpellingTable::is_spelling_enabled(const string& prefix) const
 {
-    if (prefix.empty()) return true;
-
-    string tag;
-    return get_exact_entry(SPELLING_SIGNATURE + prefix, tag);
+    return get_spelling_group(prefix) != PREFIX_DISABLED;
 }
 
-unsigned BrassSpellingTable::get_spelling_group(const string& prefix) const
+unsigned
+BrassSpellingTable::get_spelling_group(const string& prefix) const
 {
     if (prefix.empty()) return 0;
 
+    map<string, unsigned>::const_iterator i = prefix_changes.find(prefix);
+    if (i != prefix_changes.end()) return i->second;
+
     string data;
-    if (get_exact_entry(SPELLING_SIGNATURE + prefix, data))
-    {
+    if (get_exact_entry(SPELLING_SIGNATURE + prefix, data)) {
 	unsigned group = 0;
 	const char *p = data.data();
 	unpack_uint_last(&p, p + data.size(), &group);
@@ -347,7 +403,8 @@ unsigned BrassSpellingTable::get_spelling_group(const string& prefix) const
     return PREFIX_DISABLED;
 }
 
-void BrassSpellingTable::set_entry_wordfreq(char prefix, const string& word, Xapian::termcount freq)
+void
+BrassSpellingTable::set_entry_wordfreq(char prefix, const string& word, Xapian::termcount freq)
 {
     string key = prefix + word;
     if (freq != 0) {
@@ -357,7 +414,8 @@ void BrassSpellingTable::set_entry_wordfreq(char prefix, const string& word, Xap
     } else del(key);
 }
 
-Xapian::termcount BrassSpellingTable::get_entry_wordfreq(char prefix, const string& word) const
+Xapian::termcount
+BrassSpellingTable::get_entry_wordfreq(char prefix, const string& word) const
 {
     string key = prefix + word;
     string data;
@@ -371,4 +429,28 @@ Xapian::termcount BrassSpellingTable::get_entry_wordfreq(char prefix, const stri
 	return freq;
     }
     return 0;
+}
+
+unsigned
+BrassSpellingTable::get_prefix_data(vector<unsigned>& index_stack) {
+    string data;
+
+    index_stack.clear();
+    if (get_exact_entry(GROUPSTACK_SIGNATURE, data)) {
+	const char* start = data.data();
+	const char* end = start + data.size();
+
+	unsigned index;
+	while (start != end) {
+	    unpack_uint(&start, end, &index);
+	    index_stack.push_back(index);
+	}
+    }
+
+    unsigned index_max = 1;
+    if (get_exact_entry(GROUPMAX_SIGNATURE, data)) {
+	const char* p = data.data();
+	unpack_uint_last(&p, p + data.size(), &index_max);
+    }
+    return index_max;
 }
