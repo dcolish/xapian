@@ -13,55 +13,63 @@
 #include "testutils.h"
 #include "str.h"
 
-#include <iostream>
-
 using namespace std;
 
 DEFINE_TESTCASE(spelling, spelling)
 {
-	Xapian::WritableDatabase db = backendmanager->get_writable_database("dbw", string());
+    Xapian::WritableDatabase db = backendmanager->get_writable_database("dbw", string());
 
-	ifstream infile("../testdata/dict.txt");
+    ifstream infile("../testdata/dict.txt");
 
-	if (!infile)
-	{
-		logger.testcase_end();
-		return false;
-	}
-
-	vector<string> lines;
-	string line;
-
-	while (getline(infile, line))
-	{
-		std::transform(line.begin(), line.end(), line.begin(), ::tolower);
-		lines.push_back(line);
-		db.add_spelling(line);
-	}
-
-	infile.close();
-	db.commit();
-	db.flush();
-
-	unsigned int runsize = 100;
-
-	std::map<std::string, std::string> params;
-	params["runsize"] = str(runsize);
-
-	db.get_spelling_suggestion(lines[0], 2);
-
-	logger.testcase_begin("spelling");
-
-	logger.indexing_begin("dbw", params);
-
-	for (size_t i = 0; i < lines.size(); i += (lines.size() / runsize))
-	{
-		db.get_spelling_suggestion(lines[i], 2);
-	}
-
-	logger.indexing_end();
-
+    if (!infile) {
 	logger.testcase_end();
+	return false;
+    }
 
-	return true;
+    vector<string> lines;
+    string line;
+
+    unsigned skip = 2;
+    unsigned pairs = 25;
+    unsigned runsize = 100;
+    unsigned sequence = 5;
+
+    while (getline(infile, line)) {
+	transform(line.begin(), line.end(), line.begin(), ::tolower);
+
+	lines.push_back(line);
+
+	//Skip some words to allow misspelled words in queries.
+	if (lines.size() % skip == 0) {
+	    db.add_spelling(line);
+	    for (unsigned i = 1; i < min(lines.size() / skip, pairs); ++i)
+		db.add_spelling(lines[lines.size() - i * skip - 1], line);
+	}
+    }
+
+    infile.close();
+    db.commit();
+    db.flush();
+
+    map<string, string> params;
+    params["runsize"] = str(runsize);
+
+    vector<string> words;
+    db.get_spelling_suggestion(lines[0]);
+
+    logger.testcase_begin("spelling");
+    logger.indexing_begin("dbw", params);
+
+    for (size_t i = 0; i < lines.size(); i += (lines.size() / runsize)) {
+	while (words.size() >= sequence)
+	    words.erase(words.begin());
+	words.push_back(lines[i]);
+
+	db.get_spelling_suggestion(words);
+    }
+
+    logger.indexing_end();
+    logger.testcase_end();
+
+    return true;
 }

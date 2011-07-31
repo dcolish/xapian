@@ -30,7 +30,7 @@
 #include "testutils.h"
 
 #include <string>
-
+#include <iostream>
 using namespace std;
 
 // Test add_spelling() and remove_spelling(), which remote dbs support.
@@ -298,6 +298,102 @@ DEFINE_TESTCASE(spell7, spelling) {
     TEST_EQUAL(db.get_spelling_suggestion("words"), "word");
     TEST_EQUAL(db.get_spelling_suggestion("sword"), "word");
     TEST_EQUAL(db.get_spelling_suggestion("wrod"), "word");
+
+    return true;
+}
+
+vector<string> split_string(const string& s);
+
+vector<string> split_string(const string& s)
+{
+    istringstream is(s);
+
+    vector<string> result;
+    string temp;
+    while (getline(is, temp, ' '))
+	result.push_back(temp);
+
+    return result;
+}
+
+string merge_strings(const vector<string>& ss);
+
+string merge_strings(const vector<string>& ss)
+{
+    string result;
+    for (unsigned i = 0; i < ss.size(); ++i) {
+	if (i > 0) result.push_back(' ');
+	result.append(ss[i]);
+    }
+    return result;
+}
+
+//Test suggestions for word sequences and multiple suggestions.
+DEFINE_TESTCASE(spell8, spelling) {
+    Xapian::WritableDatabase db = get_writable_database();
+
+    vector<string> source = split_string("the quick brown fox jumps over the lazy dog");
+
+    db.add_spelling(source[0]);
+    for (unsigned i = 1; i < source.size(); ++i) {
+	db.add_spelling(source[i]);
+	db.add_spelling(source[i - 1], source[i]);
+    }
+
+    db.commit();
+
+    vector<string> request = split_string("the unknown brown quik fors jum psover the lazy fogx");
+    vector<string> max_correct = split_string("the unknown brown quick fox jumps over the lazy dog");
+    vector<string> result = db.get_spelling_suggestion(request);
+    TEST_EQUAL(merge_strings(result), merge_strings(max_correct));
+
+    return true;
+}
+
+//Test prefixed spelling.
+DEFINE_TESTCASE(spell9, spelling) {
+    Xapian::WritableDatabase db = get_writable_database();
+
+    //Prefix with common group (for unprefixed terms)
+    db.enable_spelling("prefix", "");
+    //Prefix with its own group
+    db.enable_spelling("prefix1", "prefix1");
+    //Prefix with spelling group united with prefix1
+    db.enable_spelling("prefix2", "prefix1");
+    db.enable_spelling("prefix3", "prefix3");
+
+    db.add_spelling("unprefixedword", 1, "");
+    db.add_spelling("wordwithprefixdefault", 1, "prefix");
+    db.add_spelling("wordwithprefixfirst", 1, "prefix1");
+    db.add_spelling("wordwithprefixsecond", 1, "prefix2");
+    db.add_spelling("wordwithprefixthird", 1, "prefix3");
+
+    db.commit();
+
+    TEST_EQUAL(db.get_spelling_suggestion("unprefixedwordz", ""), "unprefixedword");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixdefaultZ", ""), "wordwithprefixdefault");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixdefaultZ", "prefix"), "wordwithprefixdefault");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixfirstZ", ""), "");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixfirstZ", "prefix1"), "wordwithprefixfirst");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixfirstZ", "prefix2"), "wordwithprefixfirst");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixsecondZ", "prefix1"), "wordwithprefixsecond");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixsecondZ", "prefix3"), "");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixsecondZ", ""), "");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixthirdZ", "prefix2"), "");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixthirdZ", "prefix3"), "wordwithprefixthird");
+
+    db.disable_spelling("prefix");
+    TEST_EQUAL(db.get_spelling_suggestion("unprefixedwordZ", "prefix"), "");
+
+    db.disable_spelling("prefix1");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixfirstZ", "prefix1"), "");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixfirstZ", "prefix2"), "wordwithprefixfirst");
+
+    db.disable_spelling("prefix2");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixsecondZ", "prefix2"), "");
+
+    db.disable_spelling("prefix3");
+    TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixthirdZ", "prefix3"), "");
 
     return true;
 }
