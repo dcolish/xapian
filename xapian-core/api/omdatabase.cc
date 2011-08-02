@@ -581,10 +581,15 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
 
     vector<vector<string> > result;
     multimap<double, vector<string>, greater<double> >::const_iterator it;
+    multimap<double, vector<string>, greater<double> >::const_iterator p_it;
 
-    unsigned limit = 0;
-    for (it = result_map.begin(); it != result_map.end() && limit < count; ++it, ++limit)
+    for (it = result_map.begin(), p_it = it; it != result_map.end() && result.size() < count; ++it) {
+	//Remove duplicates
+	if (p_it != it && it->second == p_it->second) continue;
+
 	result.push_back(it->second);
+	p_it = it;
+    }
 
     return result;
 }
