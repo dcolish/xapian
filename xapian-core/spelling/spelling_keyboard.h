@@ -24,13 +24,14 @@
 #include <vector>
 #include <string>
 
+#include <xapian/base.h>
 #include <xapian/unordered_map.h>
 #include <xapian/unordered_set.h>
 
 /**
  * Base class for a word keyboard layout convertion.
  */
-class SpellingKeyboard {
+class SpellingKeyboardImpl : public Xapian::Internal::RefCntBase {
 
     class DefaultKeyboard {
 
@@ -63,7 +64,7 @@ protected:
     void add_char_mapping(unsigned lang_char, unsigned default_char);
 
 public:
-    SpellingKeyboard(const std::string& language_name_, const std::string& language_code_);
+    SpellingKeyboardImpl(const std::string& language_name_, const std::string& language_code_);
 
     bool convert_to_layout(const std::string& word, std::string& result) const;
 
@@ -74,6 +75,21 @@ public:
     const std::string& get_lang_name() const;
 
     const std::string& get_lang_code() const;
+};
+
+class SpellingKeyboard {
+
+    Xapian::Internal::RefCntPtr<SpellingKeyboardImpl> internal;
+
+public:
+    SpellingKeyboard(const std::string& name);
+    SpellingKeyboard(SpellingKeyboardImpl* impl = NULL);
+
+    std::string convert_to_layout(const std::string& word) const;
+
+    std::string convert_from_layout(const std::string& word) const;
+
+    double get_key_proximity(unsigned first_ch, unsigned second_ch) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_KEYBOARD_H

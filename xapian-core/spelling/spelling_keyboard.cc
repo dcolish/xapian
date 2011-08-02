@@ -25,13 +25,14 @@
 #include <xapian/unicode.h>
 
 #include "spelling_keyboard.h"
+#include "spelling_keyboard_layouts.h"
 
 using namespace std;
 using namespace Xapian;
 
-SpellingKeyboard::DefaultKeyboard SpellingKeyboard::default_keyboard;
+SpellingKeyboardImpl::DefaultKeyboard SpellingKeyboardImpl::default_keyboard;
 
-SpellingKeyboard::DefaultKeyboard::DefaultKeyboard() : max_distance(0.0)
+SpellingKeyboardImpl::DefaultKeyboard::DefaultKeyboard() : max_distance(0.0)
 {
     default_set.insert(0x0060);
     default_set.insert('1');
@@ -240,13 +241,13 @@ SpellingKeyboard::DefaultKeyboard::DefaultKeyboard() : max_distance(0.0)
 }
 
 bool
-SpellingKeyboard::DefaultKeyboard::is_default(unsigned ch) const
+SpellingKeyboardImpl::DefaultKeyboard::is_default(unsigned ch) const
 {
     return default_set.find(ch) != default_set.end();
 }
 
 double
-SpellingKeyboard::DefaultKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
+SpellingKeyboardImpl::DefaultKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
 {
     unordered_map<unsigned, pair<double, double> >::const_iterator first_it = distance_map.find(first_ch);
     unordered_map<unsigned, pair<double, double> >::const_iterator second_it = distance_map.find(second_ch);
@@ -259,7 +260,7 @@ SpellingKeyboard::DefaultKeyboard::get_key_proximity(unsigned first_ch, unsigned
     return 1 - sqrt(dx * dx + dy * dy) / max_distance;
 }
 
-SpellingKeyboard::SpellingKeyboard(const std::string& language_name_,
+SpellingKeyboardImpl::SpellingKeyboardImpl(const std::string& language_name_,
                                    const std::string& language_code_) :
                                    language_name(language_name_),
                                    language_code(language_code_)
@@ -267,14 +268,14 @@ SpellingKeyboard::SpellingKeyboard(const std::string& language_name_,
 }
 
 void
-SpellingKeyboard::add_char_mapping(unsigned lang_char, unsigned default_char)
+SpellingKeyboardImpl::add_char_mapping(unsigned lang_char, unsigned default_char)
 {
     from_char_map.insert(make_pair(lang_char, default_char));
     to_char_map.insert(make_pair(default_char, lang_char));
 }
 
 bool
-SpellingKeyboard::convert_layout(const string& word,
+SpellingKeyboardImpl::convert_layout(const string& word,
                                       const unordered_map<unsigned, unsigned>& char_map,
 				      string& result) const
 {
@@ -295,19 +296,19 @@ SpellingKeyboard::convert_layout(const string& word,
 }
 
 bool
-SpellingKeyboard::convert_to_layout(const string& word, string& result) const
+SpellingKeyboardImpl::convert_to_layout(const string& word, string& result) const
 {
     return convert_layout(word, to_char_map, result);
 }
 
 bool
-SpellingKeyboard::convert_from_layout(const string& word, string& result) const
+SpellingKeyboardImpl::convert_from_layout(const string& word, string& result) const
 {
     return convert_layout(word, from_char_map, result);
 }
 
 double
-SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
+SpellingKeyboardImpl::get_key_proximity(unsigned first_ch, unsigned second_ch) const
 {
     unordered_map<unsigned, unsigned>::const_iterator first_it = from_char_map.find(first_ch);
     unordered_map<unsigned, unsigned>::const_iterator second_it = from_char_map.find(second_ch);
@@ -324,13 +325,63 @@ SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
 }
 
 const string&
-SpellingKeyboard::get_lang_name() const
+SpellingKeyboardImpl::get_lang_name() const
 {
     return language_name;
 }
 
 const string&
-SpellingKeyboard::get_lang_code() const
+SpellingKeyboardImpl::get_lang_code() const
 {
     return language_code;
+}
+
+SpellingKeyboard::SpellingKeyboard(const string& name) : internal(0)
+{
+    vector< Internal::RefCntPtr<SpellingKeyboardImpl> > internals;
+    internals.push_back(new RussianSpellingKeyboard);
+    internals.push_back(new FrenchSpellingKeyboard);
+    internals.push_back(new SpainSpellingKeyboard);
+    internals.push_back(new ArabicSpellingKeyboard);
+
+    for (unsigned i = 0; i < internals.size() && internal.get() == NULL; ++i) {
+
+	if (internals[i]->get_lang_name() == name || internals[i]->get_lang_code() == name)
+	    internal = internals[i];
+    }
+
+    if (internal.get() == NULL)
+	internal = new EnglishSpellingKeyboard;
+}
+
+SpellingKeyboard::SpellingKeyboard(SpellingKeyboardImpl* impl) : internal(impl)
+{
+}
+
+string
+SpellingKeyboard::convert_to_layout(const string& word) const
+{
+    string result;
+    if (internal.get() == NULL) return result;
+
+    internal->convert_to_layout(word, result);
+    return result;
+}
+
+string
+SpellingKeyboard::convert_from_layout(const string& word) const
+{
+    string result;
+    if (internal.get() == NULL) return result;
+
+    internal->convert_from_layout(word, result);
+    return result;
+}
+
+double
+SpellingKeyboard::get_key_proximity(unsigned first_ch, unsigned second_ch) const
+{
+    if (internal.get() == NULL) return 0.0;
+
+    return internal->get_key_proximity(first_ch, second_ch);
 }

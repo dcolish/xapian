@@ -55,7 +55,7 @@ class ExtendedEditDistance
     double* transposition_row;
     unsigned row_capacity;
 
-    const SpellingKeyboard* keyboard_layout;
+    const SpellingKeyboardImpl* keyboard_layout;
 
     //Cost of position of a letter in a word
     inline double get_index_cost(unsigned index, unsigned length)
@@ -98,7 +98,7 @@ class ExtendedEditDistance
     }
 
 public:
-    ExtendedEditDistance(const SpellingKeyboard* keyboard_layout_ = NULL) :
+    ExtendedEditDistance(const SpellingKeyboardImpl* keyboard_layout_ = NULL) :
 	current_row(NULL), previous_row(NULL), transposition_row(NULL), row_capacity(0),
 	keyboard_layout(keyboard_layout_)
     {

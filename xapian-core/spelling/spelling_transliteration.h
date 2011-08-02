@@ -23,12 +23,13 @@
 
 #include <vector>
 #include <string>
+#include <xapian/base.h>
 #include <xapian/unordered_map.h>
 
 /**
  * Base class for word transliteration methods
  */
-class SpellingTransliteration {
+class SpellingTransliterationImpl : public Xapian::Internal::RefCntBase {
 
     std::unordered_map<unsigned, const char*> char_map;
 
@@ -38,16 +39,27 @@ class SpellingTransliteration {
     bool is_default(unsigned ch) const;
 
 protected:
+    SpellingTransliterationImpl(const std::string& language_name_, const std::string& language_code_);
+
     void add_char_mapping(unsigned lang_char, const char* sequence);
 
 public:
-    SpellingTransliteration(const std::string& language_name_, const std::string& language_code_);
-
     bool get_transliteration(const std::string& word, std::string& result) const;
 
     const std::string& get_lang_name() const;
 
     const std::string& get_lang_code() const;
+};
+
+class SpellingTransliteration {
+
+    Xapian::Internal::RefCntPtr<SpellingTransliterationImpl> internal;
+
+public:
+    SpellingTransliteration(const std::string& name);
+    SpellingTransliteration(SpellingTransliterationImpl* impl = NULL);
+
+    std::string get_transliteration(const std::string& word) const;
 };
 
 #endif // XAPIAN_INCLUDED_SPELLING_TRANSLITERATION_H

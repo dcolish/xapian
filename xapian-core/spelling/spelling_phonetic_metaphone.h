@@ -25,7 +25,9 @@
 #include <string>
 #include "spelling_phonetic.h"
 
-class MetaphoneSpellingPhonetic : public SpellingPhonetic {
+namespace Xapian {
+
+class MetaphoneSpellingPhonetic : public SpellingPhoneticImpl {
 
     enum Flag {
 	VOWEL = 1,
@@ -43,5 +45,7 @@ class MetaphoneSpellingPhonetic : public SpellingPhonetic {
 public:
     bool get_phonetic(const std::string& input, std::vector<std::string>& result) const;
 };
+
+}
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_METAPHONE_H

@@ -1,7 +1,6 @@
 noinst_HEADERS +=\
 	spelling/editdistance.h\
 	spelling/extended_edit_distance.h\
-	spelling/phonetic.h\
 	spelling/spelling_base.h\
 	spelling/spelling_corrector.h\
 	spelling/spelling_splitter.h\
@@ -21,7 +20,7 @@ EXTRA_DIST +=\
 lib_src +=\
 	spelling/editdistance.cc\
 	spelling/extended_edit_distance.cc\
-	spelling/phonetic.cc\
+	spelling/spelling_phonetic.cc\
 	spelling/spelling_base.cc\
 	spelling/spelling_corrector.cc\
 	spelling/spelling_splitter.cc\

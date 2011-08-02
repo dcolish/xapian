@@ -31,6 +31,7 @@
 #include "spelling_phonetic_metaphone.h"
 
 using namespace std;
+using namespace Xapian;
 
 const char MetaphoneSpellingPhonetic::alpha[] = { VOWEL, NOGHF, VAR_SOUND, NOGHF,
                                                   VOWEL | FRONT_VOWEL, SAME,

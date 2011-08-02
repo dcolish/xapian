@@ -26,7 +26,9 @@
 #include <xapian/unordered_map.h>
 #include "spelling_phonetic.h"
 
-class DMSoundexSpellingPhonetic : public SpellingPhonetic {
+namespace Xapian {
+
+class DMSoundexSpellingPhonetic : public SpellingPhoneticImpl {
 
     struct Entry {
 	bool vowel;
@@ -52,5 +54,7 @@ public:
 
     bool get_phonetic(const std::string& input, std::vector<std::string>& result) const;
 };
+
+}
 
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_DMSOUNDEX_H

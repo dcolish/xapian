@@ -23,17 +23,37 @@
 
 #include <vector>
 #include <string>
+#include <xapian/base.h>
+#include <xapian/visibility.h>
+#include "spelling_transliteration.h"
+
+namespace Xapian {
 
 /**
  * Base class for a word phonetic key generation.
  */
-class SpellingPhonetic {
+class XAPIAN_VISIBILITY_DEFAULT SpellingPhoneticImpl :
+    public Xapian::Internal::RefCntBase {
 
 public:
-    virtual ~SpellingPhonetic() { }
+    virtual ~SpellingPhoneticImpl() { }
 
     //Generate phonetic codes for a given word.
     virtual bool get_phonetic(const std::string& input, std::vector<std::string>& result) const = 0;
 };
 
+class XAPIAN_VISIBILITY_DEFAULT SpellingPhonetic {
+
+    Xapian::Internal::RefCntPtr<SpellingPhoneticImpl> internal;
+    SpellingTransliteration translit;
+
+public:
+    SpellingPhonetic(const std::string& language);
+    SpellingPhonetic(SpellingPhoneticImpl* internal_ = NULL, SpellingTransliteration translit_ = SpellingTransliteration());
+    ~SpellingPhonetic();
+
+    std::string get_phonetic(const std::string& input) const;
+};
+
+}
 #endif // XAPIAN_INCLUDED_SPELLING_PHONETIC_H

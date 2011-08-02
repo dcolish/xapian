@@ -23,11 +23,12 @@
 #include <xapian/unicode.h>
 
 #include "spelling_transliteration.h"
+#include "spelling_transliteration_alphabets.h"
 
 using namespace std;
 using namespace Xapian;
 
-SpellingTransliteration::SpellingTransliteration(const std::string& language_name_,
+SpellingTransliterationImpl::SpellingTransliterationImpl(const std::string& language_name_,
                                                  const std::string& language_code_) :
                                                  language_name(language_name_),
                                                  language_code(language_code_)
@@ -35,19 +36,19 @@ SpellingTransliteration::SpellingTransliteration(const std::string& language_nam
 }
 
 bool
-SpellingTransliteration::is_default(unsigned ch) const
+SpellingTransliterationImpl::is_default(unsigned ch) const
 {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
 
 void
-SpellingTransliteration::add_char_mapping(unsigned lang_char, const char* sequence)
+SpellingTransliterationImpl::add_char_mapping(unsigned lang_char, const char* sequence)
 {
     char_map.insert(make_pair(Unicode::tolower(lang_char), sequence));
 }
 
 bool
-SpellingTransliteration::get_transliteration(const std::string& word, std::string& result) const
+SpellingTransliterationImpl::get_transliteration(const std::string& word, std::string& result) const
 {
     result.clear();
     for (Utf8Iterator it(word); it != Utf8Iterator(); ++it) {
@@ -62,13 +63,42 @@ SpellingTransliteration::get_transliteration(const std::string& word, std::strin
 }
 
 const std::string&
-SpellingTransliteration::get_lang_name() const
+SpellingTransliterationImpl::get_lang_name() const
 {
     return language_name;
 }
 
 const std::string&
-SpellingTransliteration::get_lang_code() const
+SpellingTransliterationImpl::get_lang_code() const
 {
     return language_code;
+}
+
+SpellingTransliteration::SpellingTransliteration(const std::string& name) : internal(0)
+{
+    vector< Internal::RefCntPtr<SpellingTransliterationImpl> > internals;
+    internals.push_back(new RussianSpellingTransliteration);
+
+    for (unsigned i = 0; i < internals.size() && internal.get() == NULL; ++i) {
+
+	if (internals[i]->get_lang_name() == name || internals[i]->get_lang_code() == name)
+	    internal = internals[i];
+    }
+
+    if (internal.get() == NULL)
+	internal = new EnglishSpellingTransliteration;
+}
+
+SpellingTransliteration::SpellingTransliteration(SpellingTransliterationImpl* impl) : internal(impl)
+{
+}
+
+std::string
+SpellingTransliteration::get_transliteration(const std::string& word) const
+{
+    if (internal.get() == NULL || word.empty()) return string();
+
+    string result;
+    if (!internal->get_transliteration(word, result)) return string();
+    return result;
 }

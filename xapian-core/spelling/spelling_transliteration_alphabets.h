@@ -27,18 +27,18 @@
 
 #include "spelling_transliteration.h"
 
-class EnglishSpellingTransliteration : public SpellingTransliteration {
+class EnglishSpellingTransliteration : public SpellingTransliterationImpl {
 
 public:
-    EnglishSpellingTransliteration() : SpellingTransliteration("english", "en")
+    EnglishSpellingTransliteration() : SpellingTransliterationImpl("english", "en")
     {
     }
 };
 
-class RussianSpellingTransliteration : public SpellingTransliteration {
+class RussianSpellingTransliteration : public SpellingTransliterationImpl {
 
 public:
-    RussianSpellingTransliteration() : SpellingTransliteration("russian", "ru")
+    RussianSpellingTransliteration() : SpellingTransliterationImpl("russian", "ru")
     {
 	add_char_mapping(0x0430, "a");
 	add_char_mapping(0x0431, "b");
@@ -75,51 +75,5 @@ public:
 	add_char_mapping(0x0451, "e");
     }
 };
-
-class SpellingTransliterationFactory
-{
-    const static SpellingTransliterationFactory factory;
-
-    const SpellingTransliteration* default_transliteration;
-    std::vector<const SpellingTransliteration*> transliteration_list;
-
-    SpellingTransliterationFactory()
-    {
-	default_transliteration = new EnglishSpellingTransliteration;
-	transliteration_list.push_back(new RussianSpellingTransliteration);
-    }
-
-    ~SpellingTransliterationFactory()
-    {
-	delete default_transliteration;
-
-	for(unsigned i = 0; i < transliteration_list.size(); ++i)
-	    delete transliteration_list[i];
-    }
-
-public:
-    static const SpellingTransliteration* get_default_transliteration()
-    {
-	return factory.default_transliteration;
-    }
-
-    static const vector<const SpellingTransliteration*>& get_transliterations()
-    {
-	return factory.transliteration_list;
-    }
-
-    static const SpellingTransliteration* get_transliteration(const std::string& name)
-    {
-	for (unsigned i = 0; i < factory.transliteration_list.size(); ++i) {
-	    const SpellingTransliteration* transliteration = factory.transliteration_list[i];
-
-	    if (transliteration->get_lang_name() == name ||
-		transliteration->get_lang_code() == name) return transliteration;
-	}
-	return NULL;
-    }
-};
-
-const SpellingTransliterationFactory SpellingTransliterationFactory::factory;
 
 #endif // XAPIAN_INCLUDED_SPELLING_TRANSLITERATION_ALPHABETS_H

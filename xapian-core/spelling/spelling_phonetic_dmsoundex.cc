@@ -25,6 +25,7 @@
 #include "spelling_phonetic_dmsoundex.h"
 
 using namespace std;
+using namespace Xapian;
 
 DMSoundexSpellingPhonetic::DMSoundexSpellingPhonetic() : max_entry_length(0)
 {
