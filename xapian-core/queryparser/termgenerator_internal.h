@@ -26,6 +26,8 @@
 #include <xapian/document.h>
 #include <xapian/termgenerator.h>
 #include <xapian/stem.h>
+#include <map>
+#include "../spelling/spelling_phonetic.h"
 
 namespace Xapian {
 
@@ -39,6 +41,9 @@ class TermGenerator::Internal : public Xapian::Internal::RefCntBase {
     termcount termpos;
     TermGenerator::flags flags;
     WritableDatabase db;
+
+    SpellingPhonetic phonetic;
+    std::map<std::string, std::string> phonetic_prefixes;
 
   public:
     Internal() : stopper(NULL), termpos(0),

@@ -27,6 +27,7 @@
 #include <xapian/visibility.h>
 
 #include <string>
+#include <map>
 
 namespace Xapian {
 
@@ -34,6 +35,7 @@ class Document;
 class Stem;
 class Stopper;
 class WritableDatabase;
+class SpellingPhonetic;
 
 /** Parses a piece of text and generate terms.
  *
@@ -70,6 +72,9 @@ class XAPIAN_VISIBILITY_DEFAULT TermGenerator {
      */
     void set_stopper(const Xapian::Stopper *stop = NULL);
 
+    /// Set the Xapian::SpellingPhonetic object to be used for generation phonetic code terms.
+    void set_phonetic(const Xapian::SpellingPhonetic& phonetic);
+
     /// Set the current document.
     void set_document(const Xapian::Document & doc);
 
@@ -98,6 +103,8 @@ class XAPIAN_VISIBILITY_DEFAULT TermGenerator {
      *  @return		The old flags setting.
      */
     flags set_flags(flags toggle, flags mask = flags(0));
+
+    void set_phonetic_prefixes(const std::map<std::string, std::string>& prefixes);
 
     /** Index some text.
      *

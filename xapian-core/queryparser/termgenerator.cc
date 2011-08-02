@@ -56,6 +56,12 @@ TermGenerator::set_stopper(const Xapian::Stopper * stopper)
 }
 
 void
+TermGenerator::set_phonetic(const Xapian::SpellingPhonetic& phonetic)
+{
+    internal->phonetic = phonetic;
+}
+
+void
 TermGenerator::set_document(const Xapian::Document & doc)
 {
     internal->doc = doc;
@@ -80,6 +86,12 @@ TermGenerator::set_flags(flags toggle, flags mask)
     TermGenerator::flags old_flags = internal->flags;
     internal->flags = flags((old_flags & mask) ^ toggle);
     return old_flags;
+}
+
+void
+TermGenerator::set_phonetic_prefixes(const map<string, string>& prefixes)
+{
+    internal->phonetic_prefixes = prefixes;
 }
 
 void

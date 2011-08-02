@@ -64,6 +64,19 @@ should_stem(const std::string & term)
     return ((SHOULD_STEM_MASK >> Unicode::get_category(*u)) & 1);
 }
 
+inline bool
+should_phone(const std::string & term)
+{
+    const unsigned int SHOULD_PHONE_MASK =
+	(1 << Unicode::LOWERCASE_LETTER) |
+	(1 << Unicode::UPPERCASE_LETTER) |
+	(1 << Unicode::TITLECASE_LETTER) |
+	(1 << Unicode::MODIFIER_LETTER) |
+	(1 << Unicode::OTHER_LETTER);
+    Utf8Iterator u(term);
+    return ((SHOULD_PHONE_MASK >> Unicode::get_category(*u)) & 1);
+}
+
 /** Value representing "ignore this" when returned by check_infix() or
  *  check_infix_digit().
  */
@@ -230,6 +243,16 @@ endofterm:
 
 	    last_last_term = last_term;
 	    last_term = term;
+	}
+
+	if (!(*stopper)(term) && should_phone(term)) {
+	    map<string, string>::const_iterator it = phonetic_prefixes.find(prefix);
+	    if (it != phonetic_prefixes.end()) {
+		string phon("P");
+		phon += it->second;
+		phon += phonetic.get_phonetic(term);
+		doc.add_term(phon, weight);
+	    }
 	}
 
 	if (!stemmer.internal.get()) continue;
