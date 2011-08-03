@@ -22,6 +22,7 @@
 #include <limits>
 #include <vector>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <xapian/unicode.h>
 
