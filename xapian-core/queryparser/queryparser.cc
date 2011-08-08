@@ -87,6 +87,18 @@ QueryParser::set_stopper(const Stopper * stopper)
 }
 
 void
+QueryParser::set_phonetic(const Xapian::SpellingPhonetic& phonetic)
+{
+    internal->phonetic = phonetic;
+}
+
+void
+QueryParser::add_language(const string& prefix, const string& language)
+{
+    internal->language_prefixes.insert(make_pair(prefix, language));
+}
+
+void
 QueryParser::set_default_op(Query::op default_op)
 {
     internal->default_op = default_op;
@@ -146,6 +158,13 @@ void
 QueryParser::add_boolean_prefix(const string &field, const string &prefix)
 {
     add_boolean_prefix(field, prefix, true);
+}
+
+void
+QueryParser::add_phonetic_prefix(const string& field)
+{
+    Assert(internal.get());
+    internal->phonetic_prefixes.insert(field);
 }
 
 TermIterator

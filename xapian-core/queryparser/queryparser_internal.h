@@ -28,9 +28,11 @@
 #include <xapian/query.h>
 #include <xapian/queryparser.h>
 #include <xapian/stem.h>
+#include "../spelling/spelling_phonetic.h"
 
 #include <list>
 #include <map>
+#include <set>
 #include <vector>
 
 using namespace std;
@@ -70,6 +72,10 @@ class QueryParser::Internal : public Xapian::Internal::RefCntBase {
     list<string> stoplist;
     multimap<string, string> unstem;
 
+    SpellingPhonetic phonetic;
+    set<string> phonetic_prefixes;
+    map<string, string> language_prefixes;
+
     // Map "from" -> "A" ; "subject" -> "C" ; "newsgroups" -> "G" ;
     // "foobar" -> "XFOO". FIXME: it does more than this now!
     map<string, PrefixInfo> prefixmap;
@@ -84,7 +90,7 @@ class QueryParser::Internal : public Xapian::Internal::RefCntBase {
     std::string parse_term(Utf8Iterator &it, const Utf8Iterator &end,
 			   bool &was_acronym);
 
-    void apply_spelling(std::vector<std::string>& prefixes,
+    void apply_spelling(State* state, std::vector<std::string>& prefixes,
                         std::vector<std::pair<size_t, size_t> >& terms,
                         std::string& correction_query,
                         int& correction_offset,

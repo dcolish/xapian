@@ -360,6 +360,7 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	 */
 	std::string get_spelling_suggestion(const std::string &word,
 	                                    const std::string &prefix,
+	                                    const std::string& language = std::string(),
 					    unsigned max_edit_distance = 2) const;
 
 	/** Suggest a spelling correction for group of words.
@@ -384,7 +385,32 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 	 */
 	std::vector<std::string> get_spelling_suggestion(const std::vector<std::string> &words,
 	                                                 const std::string &prefix,
+	                                                 const std::string& language = std::string(),
 	                                                 unsigned max_edit_distance = 2) const;
+
+	std::vector<std::string> get_spelling_suggestions(const std::string& word,
+	                                                  unsigned count,
+	                                                  unsigned max_edit_distance = 2) const;
+
+	std::vector<std::string> get_spelling_suggestions(const std::string& word,
+	                                                  const std::string& prefix,
+	                                                  unsigned count,
+	                                                  const std::string& language = std::string(),
+	                                                  unsigned max_edit_distance = 2) const;
+
+	/** Suggest several spelling corrections for group of words.
+	 *
+	 *  @param words 		The potentially misspelled sequence of words.
+	 *  @param count 		The corrections count.
+	 *  @param max_edit_distance	Only consider words which are at most
+	 *	@a max_edit_distance edits from @a word.  An edit is a
+	 *	character insertion, deletion, or the transposition of two
+	 *	adjacent characters (default is 2).
+	 */
+	std::vector<std::vector<std::string> >
+				 get_spelling_suggestions(const std::vector<std::string>& words,
+	                                                  unsigned count,
+	                                                  unsigned max_edit_distance = 2) const;
 
 	/** Suggest several spelling corrections for group of words.
 	 *
@@ -400,6 +426,7 @@ class XAPIAN_VISIBILITY_DEFAULT Database {
 				 get_spelling_suggestions(const std::vector<std::string>& words,
 	                                                  const std::string &prefix,
 	                                                  unsigned count,
+	                                                  const std::string& language = std::string(),
 	                                                  unsigned max_edit_distance = 2) const;
 
 	/**

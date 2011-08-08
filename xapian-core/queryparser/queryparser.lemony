@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <list>
 #include <set>
+#include <map>
 #include <string>
 
 #include <string.h>
@@ -265,6 +266,11 @@ class State {
     void stoplist_resize(size_t s) {
 	qpi->stoplist.resize(s);
     }
+
+    string get_language(const string& prefix) {
+	map<string, string>::const_iterator it = qpi->language_prefixes.find(prefix);
+	return it != qpi->language_prefixes.end() ? it->second : string();
+    }
 };
 
 string
@@ -345,7 +351,7 @@ Term::get_query_with_spelling() const
     const list<string> & prefixes = prefix_info->prefixes;
     list<string>::const_iterator piter;
     for (piter = prefixes.begin(); piter != prefixes.end(); ++piter) {
-	string suggestion = db.get_spelling_suggestion(name, *piter);
+	string suggestion = db.get_spelling_suggestion(name, *piter, state->get_language(*piter));
 	if (!suggestion.empty())
 	    q = Query(Query::OP_SYNONYM, q, Query(suggestion, 1, pos));
     }
@@ -666,7 +672,7 @@ class ParserHandler {
 };
 
 void
-QueryParser::Internal::apply_spelling(vector<string>& prefixes,
+QueryParser::Internal::apply_spelling(State* state, vector<string>& prefixes,
                                       vector<pair<size_t, size_t> >& terms,
                                       string& correction_query,
                                       int& correction_offset,
@@ -682,7 +688,8 @@ QueryParser::Internal::apply_spelling(vector<string>& prefixes,
 
 	for (unsigned prefix_i = 0; prefix_i < prefixes.size(); ++prefix_i) {
 
-	    vector<string> suggestion = db.get_spelling_suggestion(terms_sequence, prefixes[prefix_i]);
+	    vector<string> suggestion = db.get_spelling_suggestion(terms_sequence, prefixes[prefix_i],
+	                                                           state->get_language(prefixes[prefix_i]));
 
 	    if (!suggestion.empty()) {
 		for (unsigned i = 0; i < min(terms.size(), suggestion.size()); ++i) {
@@ -1234,7 +1241,7 @@ phrased_term:
 	    }
 
 	    if (mode == 0 && (flags & FLAG_SPELLING_CORRECTION))
-		apply_spelling(correction_prefixes, correction_terms, corrected_query, correction_offset, qs);
+		apply_spelling(&state, correction_prefixes, correction_terms, corrected_query, correction_offset, qs);
 
 	    // Check spelling, if we're a normal term, and any of the prefixes
 	    // are empty.
@@ -1243,7 +1250,7 @@ phrased_term:
 
 		if (pfxes.size() != correction_prefixes.size() ||
 		    !equal(pfxes.begin(), pfxes.end(), correction_prefixes.begin())) {
-		    apply_spelling(correction_prefixes, correction_terms,
+		    apply_spelling(&state, correction_prefixes, correction_terms,
 		                   corrected_query, correction_offset, qs);
 
 		    correction_prefixes.assign(pfxes.begin(), pfxes.end());
@@ -1324,7 +1331,7 @@ phrased_term:
 done:
     if (!state.error) {
 	if (flags & FLAG_SPELLING_CORRECTION)
-	    apply_spelling(correction_prefixes, correction_terms, corrected_query, correction_offset, qs);
+	    apply_spelling(&state, correction_prefixes, correction_terms, corrected_query, correction_offset, qs);
 	// Implicitly close any unclosed quotes...
 	if (mode == IN_QUOTES || mode == IN_PREFIXED_QUOTES)
 	    Parse(pParser, QUOTE, NULL, &state);
@@ -1567,8 +1574,8 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
     for (p_it = prefixes.begin(); p_it != prefixes.end(); ++p_it) {
 
 	vector<string> suggestion_terms = distance > 0 ?
-	                                  db.get_spelling_suggestion(correction_terms, *p_it, distance) :
-	                                  db.get_spelling_suggestion(correction_terms, *p_it);
+        db.get_spelling_suggestion(correction_terms, *p_it, state->get_language(*p_it), distance) :
+	    db.get_spelling_suggestion(correction_terms, *p_it, state->get_language(*p_it));
 
 	terms_queries.clear();
 	for (unsigned s_i = 0; s_i < suggestion_terms.size(); ++s_i) {

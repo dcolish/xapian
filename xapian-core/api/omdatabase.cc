@@ -53,9 +53,10 @@
 
 #include <xapian/unordered_map.h>
 
+#include "../spelling/spelling_keyboard.h"
+#include "../spelling/spelling_transliteration.h"
 #include "../spelling/spelling_corrector.h"
 #include "../spelling/spelling_splitter.h"
-#include "../spelling/spelling_splitter_new.h"
 
 using namespace std;
 
@@ -510,20 +511,23 @@ string
 Database::get_spelling_suggestion(const string &word,
 				  unsigned max_edit_distance) const
 {
-    return get_spelling_suggestion(word, string(), max_edit_distance);
+    return get_spelling_suggestion(word, string(), string(), max_edit_distance);
 }
 
 string
 Database::get_spelling_suggestion(const string &word,
                                   const string &prefix,
+				  const std::string& language,
 				  unsigned max_edit_distance) const
 {
     LOGCALL(API, string, "Database::get_spelling_suggestion", word | prefix | max_edit_distance);
 
     if (!is_spelling_enabled(prefix)) return string();
 
-    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
-    SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
+    SpellingKeyboard keyboard(language);
+    SpellingTransliteration translit(language);
+    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance, keyboard, translit);
+    SpellingSplitter spelling_splitter(internal, prefix, max_edit_distance);
 
     string corrector_result;
     double corrector_freq = spelling_corrector.get_spelling(word, corrector_result);
@@ -540,18 +544,22 @@ Database::get_spelling_suggestion(const string &word,
 vector<string>
 Database::get_spelling_suggestion(const vector<string>& words, unsigned max_edit_distance) const
 {
-    return get_spelling_suggestion(words, string(), max_edit_distance);
+    return get_spelling_suggestion(words, string(), string(), max_edit_distance);
 }
 
 vector<string>
-Database::get_spelling_suggestion(const vector<string>& words, const string& prefix, unsigned max_edit_distance) const
+Database::get_spelling_suggestion(const vector<string>& words, const string& prefix,
+                                  const string& language,
+                                  unsigned max_edit_distance) const
 {
     LOGCALL(API, string, "Database::get_spelling_suggestion", prefix | max_edit_distance);
 
     if (words.empty() || !is_spelling_enabled(prefix)) return vector<string>();
 
-    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
-    SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
+    SpellingKeyboard keyboard(language);
+    SpellingTransliteration translit(language);
+    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance, keyboard, translit);
+    SpellingSplitter spelling_splitter(internal, prefix, max_edit_distance);
 
     vector<string> result_corrector;
     double corrector_freq = spelling_corrector.get_spelling(words, result_corrector);
@@ -564,16 +572,67 @@ Database::get_spelling_suggestion(const vector<string>& words, const string& pre
     return result_corrector;
 }
 
+std::vector<std::string>
+Database::get_spelling_suggestions(const std::string& word,
+                                   unsigned count,
+                                   unsigned max_edit_distance) const
+{
+    return get_spelling_suggestions(word, string(), count, string(), max_edit_distance);
+}
+
+std::vector<std::string>
+Database::get_spelling_suggestions(const string& word, const string& prefix,
+                                   unsigned count, const string& language,
+                                   unsigned max_edit_distance) const
+{
+    LOGCALL(API, string, "Database::get_spelling_suggestions", word | prefix | max_edit_distance);
+
+    if (word.empty() || !is_spelling_enabled(prefix)) return vector<string>();
+
+    SpellingKeyboard keyboard(language);
+    SpellingTransliteration translit(language);
+    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance, keyboard, translit);
+    SpellingSplitter spelling_splitter(internal, prefix, max_edit_distance);
+
+    multimap<double, string, greater<double> > result_map;
+    spelling_corrector.get_multiple_spelling(word, count, result_map);
+    spelling_splitter.get_multiple_spelling(word, count, result_map);
+
+    vector<string> result;
+    multimap<double, string, greater<double> >::const_iterator it;
+    multimap<double, string, greater<double> >::const_iterator p_it;
+
+    for (it = result_map.begin(), p_it = it; it != result_map.end() && result.size() < count; ++it) {
+	//Remove duplicates
+	if (p_it != it && it->second == p_it->second) continue;
+
+	result.push_back(it->second);
+	p_it = it;
+    }
+    return result;
+}
+
+std::vector<std::vector<std::string> >
+Database::get_spelling_suggestions(const std::vector<std::string>& words,
+                                   unsigned count,
+                                   unsigned max_edit_distance) const
+{
+    return get_spelling_suggestions(words, string(), count, string(), max_edit_distance);
+}
+
 vector<vector<string> >
 Database::get_spelling_suggestions(const vector<string>& words, const string& prefix,
-                                  unsigned count, unsigned max_edit_distance) const
+                                   unsigned count, const string& language,
+                                   unsigned max_edit_distance) const
 {
-    LOGCALL(API, string, "Database::get_spelling_suggestion", prefix | max_edit_distance);
+    LOGCALL(API, string, "Database::get_spelling_suggestions", prefix | max_edit_distance);
 
     if (words.empty() || !is_spelling_enabled(prefix)) return vector<vector<string> >();
 
-    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance);
-    SpellingSplitterNew spelling_splitter(internal, prefix, max_edit_distance);
+    SpellingKeyboard keyboard(language);
+    SpellingTransliteration translit(language);
+    SpellingCorrector spelling_corrector(internal, prefix, max_edit_distance, keyboard, translit);
+    SpellingSplitter spelling_splitter(internal, prefix, max_edit_distance);
 
     multimap<double, vector<string>, greater<double> > result_map;
     spelling_corrector.get_multiple_spelling(words, count, result_map);

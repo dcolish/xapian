@@ -34,6 +34,9 @@ namespace Xapian {
 
 class Database;
 class Stem;
+class SpellingPhonetic;
+class SpellingKeyboard;
+class SpellingTransliteration;
 
 /// Base class for stop-word decision functor.
 class XAPIAN_VISIBILITY_DEFAULT Stopper {
@@ -436,6 +439,10 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
     /// Set the stopper.
     void set_stopper(const Stopper *stop = NULL);
 
+    void set_phonetic(const Xapian::SpellingPhonetic& phonetic);
+
+    void add_language(const std::string& prefix, const std::string& language);
+
     /** Set the default operator.
      *
      *  This operator is used to combine non-filter query items when no
@@ -586,6 +593,8 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
     /* FIXME:1.1.3: Merge two versions into one with optional parameter
      * "exclusive", default true. */
     void add_boolean_prefix(const std::string &field, const std::string &prefix);
+
+    void add_phonetic_prefix(const std::string& field);
 
     /// Iterate over terms omitted from the query as stopwords.
     TermIterator stoplist_begin() const;
