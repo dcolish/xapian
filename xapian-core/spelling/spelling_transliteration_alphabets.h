@@ -27,6 +27,8 @@
 
 #include "spelling_transliteration.h"
 
+namespace Xapian {
+
 class EnglishSpellingTransliteration : public SpellingTransliterationImpl {
 
 public:
@@ -76,4 +78,5 @@ public:
     }
 };
 
+}
 #endif // XAPIAN_INCLUDED_SPELLING_TRANSLITERATION_ALPHABETS_H

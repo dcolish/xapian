@@ -60,7 +60,7 @@ SpellingCorrector::get_top_spelling_corrections(const string& word,
     vector<unsigned> term_utf;
     multimap<double, string> top_spelling;
 
-    ExtendedEditDistance edit_distance(keyboard_layout);
+    ExtendedEditDistance edit_distance(keyboard);
 
     while (true)
     {
@@ -202,9 +202,20 @@ SpellingCorrector::find_spelling(const vector<string>& words,
 {
     data.word_corrections.assign(words.size(), vector<string>());
     for (unsigned i = 0; i < words.size(); ++i) {
-	data.word_corrections[i].reserve(LIMIT_CORRECTIONS + 1);
 	data.word_corrections[i].push_back(words[i]);
 	get_top_spelling_corrections(words[i], LIMIT_CORRECTIONS, false, true, data.word_corrections[i]);
+
+	string keyboard_from = keyboard.convert_from_layout(words[i]);
+	if (!keyboard_from.empty() && request_internal_freq(keyboard_from) > 0)
+	    data.word_corrections[i].push_back(keyboard_from);
+
+	string keyboard_to = keyboard.convert_to_layout(words[i]);
+	if (!keyboard_to.empty() && request_internal_freq(keyboard_to) > 0)
+	    data.word_corrections[i].push_back(keyboard_to);
+
+	string translit_word = translit.get_transliteration(words[i]);
+	if (!translit_word.empty() && request_internal_freq(translit_word) > 0)
+	    data.word_corrections[i].push_back(translit_word);
     }
 
     temp.word_spelling.assign(words.size(), 0);

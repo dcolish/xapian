@@ -4,7 +4,6 @@ noinst_HEADERS +=\
 	spelling/spelling_base.h\
 	spelling/spelling_corrector.h\
 	spelling/spelling_splitter.h\
-	spelling/spelling_splitter_new.h\
 	spelling/spelling_keyboard.h\
 	spelling/spelling_keyboard_layouts.h\
 	spelling/spelling_phonetic.h\
@@ -24,7 +23,6 @@ lib_src +=\
 	spelling/spelling_base.cc\
 	spelling/spelling_corrector.cc\
 	spelling/spelling_splitter.cc\
-	spelling/spelling_splitter_new.cc\
 	spelling/spelling_keyboard.cc\
 	spelling/spelling_phonetic_dmsoundex.cc\
 	spelling/spelling_phonetic_metaphone.cc\

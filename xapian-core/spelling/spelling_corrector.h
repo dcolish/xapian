@@ -27,6 +27,7 @@
 #include <algorithm>
 #include "database.h"
 #include "spelling_keyboard.h"
+#include "spelling_transliteration.h"
 #include "spelling_base.h"
 
 class SpellingCorrector : public SpellingBase {
@@ -101,7 +102,8 @@ class SpellingCorrector : public SpellingBase {
     };
 
     unsigned max_edit_distance;
-    SpellingKeyboard keyboard_layout;
+    Xapian::SpellingKeyboard keyboard;
+    Xapian::SpellingTransliteration translit;
 
     double get_spelling_freq(const word_corrector_data& data,
                              const word_corrector_temp& temp,
@@ -125,9 +127,10 @@ public:
 
     SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
                       const std::string& prefix_, unsigned max_edit_distance_,
-                      const SpellingKeyboard& keyboard_layout_ = NULL) :
+                      const Xapian::SpellingKeyboard& keyboard_ = Xapian::SpellingKeyboard(),
+                      const Xapian::SpellingTransliteration& translit_ = Xapian::SpellingTransliteration()) :
                 	  SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_),
-                	  keyboard_layout(keyboard_layout_)
+                	  keyboard(keyboard_), translit(translit_)
     {
     }
 

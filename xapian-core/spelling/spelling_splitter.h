@@ -18,95 +18,108 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef XAPIAN_INCLUDED_SPELLING_SPLITTER_H
-#define XAPIAN_INCLUDED_SPELLING_SPLITTER_H
+#ifndef XAPIAN_INCLUDED_SPELLING_SPLITTER_NEW_H
+#define XAPIAN_INCLUDED_SPELLING_SPLITTER_NEW_H
 
 #include <vector>
 #include <limits>
 #include "database.h"
 #include "spelling_base.h"
+#include "spelling_corrector.h"
 
 class SpellingSplitter : public SpellingBase {
 
-    static const unsigned N = 2;
-    static const unsigned MAX_SPLIT_COUNT = 1;
-    static const unsigned MAX_MERGE_COUNT = 1;
-
-    //Word sequence data for the splitting
-    struct word_splitter_data {
-
-	unsigned word_count;
-	std::vector<unsigned> word_starts;
-	std::vector<unsigned> word_lengths;
-	std::vector<unsigned> word_utf_map;
-
-	std::string allword;
-    };
+    static const unsigned TOP_SPELLING_CORRECTIONS = 3;
+    static const unsigned MAX_SPLIT_COUNT = 2;
+    static const unsigned MAX_MERGE_COUNT = 2;
+    static const unsigned INF;
 
     //Key structure for states memorisation
     struct word_splitter_key {
-
-	unsigned index;
-	unsigned first;
-	unsigned second;
+	unsigned start;
+	unsigned p_start;
+	unsigned p_index;
 
 	bool operator<(const word_splitter_key& other) const
 	{
-	    return index < other.index || (index == other.index && (first < other.first || (first == other.first
-		    && (second < other.second))));
+	    return start < other.start || (start == other.start && (
+		   p_start < other.p_start || (p_start == other.p_start && (
+		   p_index < other.p_index))));
 	}
     };
 
     //Value structure for states memorisation
     struct word_splitter_value {
+	double freq;
+	unsigned next_value_index;
+	unsigned start;
+	unsigned index;
 
-	double word_freq;
-	bool has_next;
-	word_splitter_key next_key; //next key in resulting sequence
-	std::pair<unsigned, unsigned> word_stack_range;
+	bool operator<(const word_splitter_value& other) const
+	{
+	    return freq < other.freq - 1e-12;
+	}
+    };
+
+    //Word sequence data for the splitting
+    struct word_splitter_data {
+
+	unsigned word_count;
+	unsigned word_total_length;
+	std::vector<unsigned> word_starts;
+	std::vector<unsigned> word_lengths;
+	std::vector<unsigned> word_utf_map;
+	unsigned result_count;
+
+	std::string allword;
     };
 
     //Temp structures for result computation
     struct word_splitter_temp {
 
-	typedef std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> > word_freq_key;
+	std::vector< std::vector< std::pair<unsigned, std::string> > > word_vector;
+	std::map<word_splitter_key, std::pair<unsigned, unsigned> > memo;
 
-	std::vector<unsigned> word_stack;
-	std::vector<std::pair<unsigned, unsigned> > word_range;
-
-	std::map<word_freq_key, double> word_freq_map;
-	std::map<word_splitter_key, word_splitter_value> word_recursive_map;
-
-	std::vector<unsigned> word_ranges;
-	std::vector<unsigned> word_temp_ranges;
-
-	std::string first_string;
-	std::string second_string;
+	std::vector<word_splitter_value> value_vector;
     };
 
-    double request_pair(const word_splitter_data& data, word_splitter_temp& temp) const;
+    unsigned max_edit_distance;
+    SpellingCorrector spelling_corrector;
 
-    void generate_word_splitter_result(const word_splitter_data& data, const word_splitter_temp& temp,
-				       word_splitter_value value, std::vector<std::string>& result) const;
+    double request_word_pair(const word_splitter_data& data, word_splitter_temp& temp,
+                             unsigned start, unsigned index, unsigned p_start, unsigned p_index) const;
 
-    word_splitter_key get_splitter_key(const word_splitter_temp& temp, unsigned word_index) const;
+    bool request_word_exists(const word_splitter_data& data, unsigned word_start,
+                             unsigned word_end, string& word) const;
 
-    word_splitter_value recursive_word_splits(const word_splitter_data& data, word_splitter_temp& temp,
-					      unsigned word_index, unsigned word_offset, unsigned k,
-					      unsigned split_start, unsigned merge_count) const;
+    word_splitter_key recursive_select_words(const word_splitter_data& data,
+                                             word_splitter_temp& temp,
+                                             unsigned start, unsigned p_start, unsigned p_index) const;
 
-    word_splitter_value recursive_word_splitter(const word_splitter_data& data, word_splitter_temp& temp,
-						unsigned word_index, unsigned word_offset, unsigned merge_count) const;
+    void find_existing_words(const word_splitter_data& data, word_splitter_temp& temp) const;
+
+    word_splitter_key find_spelling(const std::vector<std::string>& words,
+                                    word_splitter_data& data, word_splitter_temp& temp) const;
 
 public:
+    using SpellingBase::get_multiple_spelling;
+
     SpellingSplitter(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
-                     const std::string& prefix_) : SpellingBase(internal_, prefix_)
+                        const std::string& prefix_, unsigned max_edit_distance_ = 0) :
+                            SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_),
+                            spelling_corrector(internal_, prefix_, max_edit_distance_)
     {
     }
 
     double get_spelling(const std::string& word, std::string& result) const;
 
     double get_spelling(const std::vector<std::string>& words, std::vector<std::string>& result) const;
+
+    void get_multiple_spelling(const std::string& word, unsigned result_count,
+                               std::multimap<double, std::string, std::greater<double> >& result) const;
+
+    void get_multiple_spelling(const std::vector<std::string>& words, unsigned result_count,
+                               std::multimap<double, std::vector<std::string>, std::greater<double> >& result) const;
 };
 
-#endif // XAPIAN_INCLUDED_SPELLING_SPLITTER_H
+#endif // XAPIAN_INCLUDED_SPELLING_SPLITTER_NEW_H

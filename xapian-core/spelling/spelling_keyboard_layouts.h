@@ -26,6 +26,8 @@
 
 #include "spelling_keyboard.h"
 
+namespace Xapian {
+
 class EnglishSpellingKeyboard : public SpellingKeyboardImpl {
 
 public:
@@ -287,5 +289,7 @@ public:
 	add_char_mapping(0x061f, 0x003f);
     }
 };
+
+}
 
 #endif // XAPIAN_INCLUDED_SPELLING_KEYBOARD_LAYOUTS_H

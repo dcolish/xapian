@@ -24,12 +24,15 @@
 #include <vector>
 #include <string>
 #include <xapian/base.h>
+#include <xapian/visibility.h>
 #include <xapian/unordered_map.h>
+
+namespace Xapian {
 
 /**
  * Base class for word transliteration methods
  */
-class SpellingTransliterationImpl : public Xapian::Internal::RefCntBase {
+class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Internal::RefCntBase {
 
     std::unordered_map<unsigned, const char*> char_map;
 
@@ -51,7 +54,7 @@ public:
     const std::string& get_lang_code() const;
 };
 
-class SpellingTransliteration {
+class XAPIAN_VISIBILITY_DEFAULT SpellingTransliteration {
 
     Xapian::Internal::RefCntPtr<SpellingTransliterationImpl> internal;
 
@@ -62,4 +65,5 @@ public:
     std::string get_transliteration(const std::string& word) const;
 };
 
+}
 #endif // XAPIAN_INCLUDED_SPELLING_TRANSLITERATION_H
