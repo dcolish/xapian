@@ -25,11 +25,11 @@ character '"' in C and similar languages).  This can make complex OmegaScript
 slightly difficult to read at times.
 
 When a command takes no arguments, the braces must be omitted (i.e.
-`$query` rather than `$query{}` - the latter is a command with a
-single empty argument).  If you want to have the value of `$query` immediately
+`$msize` rather than `$msize{}` - the latter is a command with a single empty
+argument).  If you want to have the value of `$msize` immediately
 followed by a letter, digit, or "_", you can use an empty comment (`${}`) to
 prevent the parser treating the following character as part of a command name.
-E.g. `_$query${}_` rather than `$query_`
+E.g. `_$msize${}_` rather than `_$msize_`
 
 It is important to realise that all whitespace is significant in OmegaScript
 - e.g. if you put whitespace around a "," which separates two command arguments
@@ -176,10 +176,11 @@ $highlight{TEXT,LIST,[OPEN,[CLOSE]]}
         If ``OPEN`` is specified, but close is omitted, ``CLOSE`` defaults to
         the appropriate closing tag for ``OPEN`` (i.e. with a "/" in front and
         any parameters removed).  If both are omitted, then ``OPEN`` is set to:
-	``<b style="color:black;background-color:#XXXXXX">`` (where ``XXXXXX``
-        cycles through ``ffff66`` ``66ffff`` ``ff66ff`` ``6666ff`` ``ff6666``
-        ``66ff66`` ``ffaa33`` ``33ffaa`` ``aa33ff`` ``33aaff``) and ``CLOSE``
-        is ``</b>``.
+	``<b style="color:XXXXX;background-color:#YYYYYY">`` (where ``YYYYYY``
+        cycles through ``ffff66`` ``99ff99`` ``99ffff`` ``ff66ff`` ``ff9999``
+        ``990000`` ``009900`` ``996600`` ``006699`` ``990099`` and ``XXXXX``
+        is ``black`` is ``YYYYYY`` contains an ``f``, and otherwise ``white``)
+        and ``CLOSE`` is ``</b>``.
 
 $hit
 	MSet index of current doc (first document in MSet is 0, so if
@@ -311,9 +312,13 @@ $prettyterm{TERM}
 	Otherwise term prefixes are converted back to user forms as specified
 	by ``$setmap{prefix,...}`` and ``$setmap{boolprefix,...}``.
 
-$query
-	query string (built from CGI ``P`` variable(s) plus possible added
-	terms from ``ADD`` and ``X``).
+$query[{PREFIX}]
+	query string for prefix PREFIX.
+
+	If PREFIX is omitted or empty, this is built from CGI ``P`` variable(s)
+	plus possible added terms from ``ADD`` and ``X``.
+
+	If PREFIX is non-empty, this is built from CGI ``P.PREFIX`` variables.
 
 $querydescription
         a human readable description of the ``Xapian::Query`` object which
@@ -392,6 +397,20 @@ $set{OPT,VALUE}
 	* flag_synonym
 	* flag_wildcard
 
+	Omega 1.2.7 added support for search fields with a probabilistic
+	prefix, and you can set different QueryParser flags for each prefix -
+	for example, for the ``XFOO`` prefix use ``XFOO:flag_pure_not``, etc.
+	The unprefixed constants provide a default value for these.  If a flag
+	is set in the default, the prefix specific flag can unset it if it
+	is set to the empty value (e.g.
+	``$set{flag_pure_not,1}$set{XFOO:flag_pure_not,}``).
+
+	You can use ``:flag_partial``, etc to set or unset a flag just for
+	unprefixed fields.
+
+	Similarly, ``XFOO:stemmer`` specifies the stemmer to use for field
+	``XFOO``, with ``stemmer`` providing a default.
+
 $setrelevant{docids}
 	add documents into the RSet
 
@@ -405,6 +424,16 @@ $setmap{MAP,NAME1,VALUE1,...}
 	"title:" to "S" you would use::
 
 	 $setmap{prefix,author,A,title,S}
+
+	In Omega 1.3.0 and later, you can map a prefix in the query string to
+	more than one term prefix by specifying an OmegaScript list, for
+	example to search unprefixed and S prefix by default use this
+	(this also shows how you can map from an empty query string prefix, and
+	also that you can map to an empty term prefix - these don't require
+	Omega 1.3.0, but become much more useful in combination with this new
+	feature)::
+
+	 $setmap{prefix,,$split{ S}}
 
 	Similarly, if you want to be able to restrict a search with a
 	boolean filter from the text query (e.g. "group:" to "G") you
@@ -524,7 +553,7 @@ $value{VALUENO[,DOCID]}
         ``$hitlist``).
 
 $version
-	omega version string - e.g. "Xapian - omega 0.9.2"
+	omega version string - e.g. "xapian-omega 1.2.6"
 
 $weight
 	raw document weight of the current hit, as a floating point value

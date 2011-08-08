@@ -23,7 +23,6 @@
 
 #include <config.h>
 
-#include <cassert>
 #include <cstdio>
 #include <ctime>
 
@@ -66,9 +65,6 @@ string filters;
 Xapian::docid topdoc = 0;
 Xapian::docid hits_per_page = 0;
 Xapian::docid min_hits = 0;
-
-// the probabilistic query
-string query_string;
 
 // percentage cut-off
 int threshold = 0;
@@ -186,6 +182,9 @@ try {
 	if (!v.empty()) fmtname = v;
     }
 
+    // The probabilistic query string.
+    string query_string;
+
     // Get the probabilistic query.
     val = cgi_params.find("MORELIKE");
     if (enquire && val != cgi_params.end()) {
@@ -212,7 +211,7 @@ try {
     }
 
     if (query_string.empty()) {
-	// collect the prob fields
+	// collect the unprefixed prob fields
 	g = cgi_params.equal_range("P");
 	for (MCI i = g.first; i != g.second; i++) {
 	    const string & v = i->second;
@@ -235,17 +234,16 @@ try {
 	}
     } 
 
-    // strip leading and trailing whitespace from query_string
-    string::size_type first_nonspace;
-    first_nonspace = query_string.find_first_not_of(" \t\r\n\v");
-    if (first_nonspace == string::npos) {
-	query_string.resize(0);
-    } else {
-	string::size_type len = query_string.find_last_not_of(" \t\r\n\v");
-	assert(len != string::npos);
-	if (first_nonspace > 0 || len <= query_string.length() - 1) {
-	    len = len + 1 - first_nonspace;
-	    query_string = query_string.substr(first_nonspace, len + 1);
+    set_probabilistic_query(string(), query_string);
+
+    g.first = cgi_params.lower_bound("P.");
+    g.second = cgi_params.lower_bound("P/"); // '/' is '.' + 1.
+    for (MCI i = g.first; i != g.second; i++) {
+	const string & v = i->second;
+	if (!v.empty()) {
+	    string pfx(i->first, 2, string::npos);
+	    set_probabilistic_query(pfx, v);
+	    // FIXME: Handled P.FOO specified more than once.
 	}
     }
 

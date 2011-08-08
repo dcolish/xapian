@@ -3,7 +3,7 @@
  * Copyright 1999,2000,2001 BrightStation PLC
  * Copyright 2001 Sam Liddicott
  * Copyright 2001,2002 Ananova Ltd
- * Copyright 2002,2003,2004,2005,2006,2007,2008,2009,2010 Olly Betts
+ * Copyright 2002,2003,2004,2005,2006,2007,2008,2009,2010,2011 Olly Betts
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -292,7 +292,7 @@ parse_index_script(const string &filename)
 		++i;
 		j = find_if(i, s.end(), p_notspace);
 		i = find_if(j, s.end(), p_space);
-		string val = string(j, i);
+		string val(j, i);
 		if (takes_integer_argument) {
 		    if (val.find('.') != string::npos) {
 			cout << filename << ':' << line_no
@@ -302,18 +302,6 @@ parse_index_script(const string &filename)
 		}
 		switch (code) {
 		    case Action::INDEX:
-			if (val == "nopos") {
-			    // INDEX used to take an optional argument which
-			    // could be "nopos" to mean the same that
-			    // INDEXNOPOS now does.  FIXME:1.3.0 remove this
-			    // error eventually
-			    cerr << filename << ':' << line_no
-				 << ": Support for 'index=nopos' has been "
-				    "removed - use 'indexnopos' instead"
-				 << endl;
-			    exit(1);
-			}
-			/* FALLTHRU */
 		    case Action::INDEXNOPOS:
 			actions.push_back(Action(code, val, weight));
 			useless_weight_pos = string::npos;
@@ -770,9 +758,14 @@ try {
     argc -= optind;
     if (show_help || argc < 2) {
 	cout << PROG_NAME" - "PROG_DESC"\n"
-"Usage: "PROG_NAME" [OPTIONS] DATABASE INDEXER_SCRIPT [INPUT_FILE]...\n\n"
+"Usage: "PROG_NAME" [OPTIONS] DATABASE INDEXER_SCRIPT [INPUT_FILE]...\n"
+"\n"
 "Creates or updates a Xapian database with the data from the input files listed\n"
-"on the command line.  If no files are specified, data is read from stdin.\n\n"
+"on the command line.  If no files are specified, data is read from stdin.\n"
+"\n"
+"See http://xapian.org/docs/omega/scriptindex.html for documentation of the\n"
+"format for INDEXER_SCRIPT.\n"
+"\n"
 "Options:\n"
 "  -v, --verbose       display additional messages to aid debugging\n"
 "      --overwrite     create the database anew (the default is to update if\n"

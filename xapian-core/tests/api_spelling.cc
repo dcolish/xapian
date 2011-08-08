@@ -1,7 +1,7 @@
 /** @file api_spelling.cc
  * @brief Test the spelling correction suggestion API.
  */
-/* Copyright (C) 2007,2008,2009,2010 Olly Betts
+/* Copyright (C) 2007,2008,2009,2010,2011 Olly Betts
  * Copyright (C) 2007 Lemur Consulting Ltd
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 #include "testutils.h"
 
 #include <string>
-#include <iostream>
+
 using namespace std;
 
 // Test add_spelling() and remove_spelling(), which remote dbs support.
@@ -395,5 +395,14 @@ DEFINE_TESTCASE(spell9, spelling) {
     db.disable_spelling("prefix3");
     TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixthirdZ", "prefix3"), "");
 
+/// Regression test - repeated trigrams cancelled in 1.2.5 and earlier.
+DEFINE_TESTCASE(spell10, spelling) {
+    Xapian::WritableDatabase db = get_writable_database();
+
+    // kin and kin used to cancel out in "skinking".
+    db.add_spelling("skinking", 2);
+    db.add_spelling("stinking", 1);
+    db.commit();
+    TEST_EQUAL(db.get_spelling_suggestion("scimkin", 3), "skinking");
     return true;
 }

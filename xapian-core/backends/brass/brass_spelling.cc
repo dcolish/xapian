@@ -126,7 +126,6 @@ BrassSpellingTable::add_word(const string& word,
     }
 
     // New word - need to create trigrams for it.
-
     toggle_word(word, prefix);
 }
 
@@ -134,6 +133,8 @@ void
 BrassSpellingTable::remove_word(const string& word,
                                 Xapian::termcount freqdec, const string& prefix)
 {
+    if (word.size() <= 1) return;
+
     unsigned prefix_group = get_spelling_group(prefix);
     if (prefix_group == PREFIX_DISABLED) return;
 
@@ -167,7 +168,9 @@ BrassSpellingTable::remove_word(const string& word,
 	wordfreq_changes[prefixed_word] = 0;
     }
 
-    // Remove fragment entries for word.
+    // Remove trigrams for word.
+    toggle_word(word);
+}
 
     toggle_word(word, prefix);
 }
