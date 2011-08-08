@@ -33,7 +33,6 @@
 #include <string>
 
 class BrassSpellingTable : public BrassLazyTable {
-    static const char WORD_SIGNATURE = 'W';
     static const char WORDS_SIGNATURE = 'M';
     static const char SPELLING_SIGNATURE = 'S';
     static const char* GROUPMAX_SIGNATURE;
@@ -44,7 +43,8 @@ class BrassSpellingTable : public BrassLazyTable {
                            const std::string& second_word) const;
 
     void set_entry_wordfreq(char prefix, const std::string& word,
-			    Xapian::termcount freq);
+                            Xapian::termcount freq,
+			    const std::string& extra_value = string());
 
     Xapian::termcount get_entry_wordfreq(char prefix,
                                          const std::string& word) const;
@@ -56,9 +56,14 @@ class BrassSpellingTable : public BrassLazyTable {
     std::map<std::string, unsigned> prefix_changes;
     std::vector<unsigned> prefix_index_stack;
     unsigned prefix_index_max;
+    std::map<std::string, std::string> wordvalue_map;
 
 protected:
     static const unsigned PREFIX_DISABLED;
+
+    void set_word_value(const std::string& word, const std::string& value);
+
+    std::string get_word_value(const std::string& word) const;
 
     virtual void merge_fragment_changes() = 0;
 
@@ -67,9 +72,11 @@ protected:
 
     virtual void populate_word(const std::string& word,
                                const std::string& prefix, unsigned max_distance,
-			       std::vector<TermList*>& result) = 0;
+			       std::vector<TermList*>& result) const = 0;
 
 public:
+    static const char WORD_SIGNATURE = 'W';
+
     static void append_prefix_group(std::string& data, unsigned value);
 
     /** Create a new BrassSpellingTable object.

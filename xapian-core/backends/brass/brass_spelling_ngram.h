@@ -89,7 +89,7 @@ protected:
     void toggle_word(const std::string& word, const std::string& prefix);
 
     void populate_word(const std::string& word, const std::string& prefix, unsigned max_distance,
-		       std::vector<TermList*>& result);
+		       std::vector<TermList*>& result) const;
 
 public:
 

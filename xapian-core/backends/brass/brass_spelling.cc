@@ -53,7 +53,11 @@ BrassSpellingTable::merge_changes()
 
     map<string, Xapian::termcount>::const_iterator j;
     for (j = wordfreq_changes.begin(); j != wordfreq_changes.end(); ++j) {
-	set_entry_wordfreq(WORD_SIGNATURE, j->first, j->second);
+	map<string, string>::const_iterator wv_i = wordvalue_map.find(j->first);
+
+	if (wv_i != wordvalue_map.end())
+	    set_entry_wordfreq(WORD_SIGNATURE, j->first, j->second, wv_i->second);
+	else set_entry_wordfreq(WORD_SIGNATURE, j->first, j->second);
     }
     wordfreq_changes.clear();
 
@@ -404,12 +408,14 @@ BrassSpellingTable::get_spelling_group(const string& prefix) const
 }
 
 void
-BrassSpellingTable::set_entry_wordfreq(char prefix, const string& word, Xapian::termcount freq)
+BrassSpellingTable::set_entry_wordfreq(char prefix, const string& word,
+                                       Xapian::termcount freq, const string& extra_value)
 {
     string key = prefix + word;
     if (freq != 0) {
 	string tag;
-	pack_uint_last(tag, freq);
+	pack_uint(tag, freq);
+	tag.append(extra_value);
 	add(key, tag);
     } else del(key);
 }
@@ -423,7 +429,7 @@ BrassSpellingTable::get_entry_wordfreq(char prefix, const string& word) const
 	// Word "word" already exists.
 	Xapian::termcount freq;
 	const char *p = data.data();
-	if (!unpack_uint_last(&p, p + data.size(), &freq) || freq == 0) {
+	if (!unpack_uint(&p, p + data.size(), &freq) || freq == 0) {
 	    throw Xapian::DatabaseCorruptError("Bad spelling word freq");
 	}
 	return freq;
@@ -453,4 +459,31 @@ BrassSpellingTable::get_prefix_data(vector<unsigned>& index_stack) {
 	unpack_uint_last(&p, p + data.size(), &index_max);
     }
     return index_max;
+}
+
+void
+BrassSpellingTable::set_word_value(const string& word, const string& value)
+{
+    wordvalue_map.insert(make_pair(word, value));
+}
+
+string
+BrassSpellingTable::get_word_value(const string& word) const
+{
+    map<string, string>::const_iterator it = wordvalue_map.find(word);
+    if (it != wordvalue_map.end()) return it->second;
+
+    string key = WORD_SIGNATURE + word;
+    string data;
+    string result;
+    if (get_exact_entry(key, data)) {
+	const char* start = data.data();
+	const char* end = data.data();
+	Xapian::termcount freq;
+
+	if (!unpack_uint(&start, end, &freq) || freq == 0)
+	    throw Xapian::DatabaseCorruptError("Bad spelling word freq");
+	result.assign(start, size_t(end - start));
+    }
+    return result;
 }

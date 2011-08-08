@@ -103,8 +103,8 @@ void BrassSpellingTableFastSS::append_data_int(string& data, unsigned value)
     }
 }
 
-void BrassSpellingTableFastSS::get_term_prefix(const vector<unsigned>& word, string& prefix, unsigned error_mask,
-					       unsigned prefix_length)
+void BrassSpellingTableFastSS::get_term_prefix(const vector<unsigned>& word, string& prefix,
+                                               unsigned error_mask, unsigned prefix_length) const
 {
     prefix_length += prefix.size();
     for (unsigned i = 0; i < word.size() && prefix.size() < prefix_length; ++i, error_mask >>= 1) {
@@ -132,21 +132,29 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
     //Merge word list
     string key;
     string word;
+    string key_word;
     for (unsigned i = 0; i < wordlist_deltas.size(); ++i) {
 	const vector<unsigned>& word_utf = wordlist_deltas[i];
+	unsigned prefix_group = wordlist_deltas_prefixes[i];
 
 	word.clear();
 	for (unsigned j = 0; j < word_utf.size(); ++j)
 	    append_utf8(word, word_utf[j]);
 
+	key_word.clear();
+	append_prefix_group(key_word, prefix_group);
+	key_word.append(word);
+
+	string word_value = get_word_value(key_word);
+
 	//If new word already exists, we should remove it
-	if (get_exact_entry(WORD_VALUE_SIGNATURE + word, databuffer)) {
-	    unsigned index = get_data_int(databuffer, 0);
+	if (!word_value.empty()) {
+	    unsigned index = get_data_int(word_value, 0);
 	    wordlist_index_map[i] = index;
 	    index_stack.push_back(index);
 
 	    get_word_key(index, key);
-	    del(WORD_VALUE_SIGNATURE + word);
+	    set_word_value(key_word, string());
 	    del(key);
 	} else {
 	    //Else assign new index and add word to database.
@@ -159,9 +167,9 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 
 	    get_word_key(index, key);
 	    add(key, word);
-	    databuffer.clear();
-	    append_data_int(databuffer, index);
-	    add(WORD_VALUE_SIGNATURE + word, databuffer);
+	    word_value.clear();
+	    append_data_int(word_value, index);
+	    set_word_value(key_word, word_value);
 	}
     }
 
@@ -272,6 +280,7 @@ void BrassSpellingTableFastSS::merge_fragment_changes()
 	add(it->first, new_databuffer);
     }
     wordlist_deltas.clear();
+    wordlist_deltas_prefixes.clear();
     termlist_deltas.clear();
 }
 
@@ -283,6 +292,7 @@ void BrassSpellingTableFastSS::toggle_word(const string& word, const string& pre
     vector<unsigned> word_utf((Utf8Iterator(word)), Utf8Iterator());
 
     wordlist_deltas.push_back(word_utf);
+    wordlist_deltas_prefixes.push_back(prefix_group);
     unsigned index = wordlist_deltas.size() - 1;
 
     string prefix_data;
@@ -303,9 +313,8 @@ void BrassSpellingTableFastSS::toggle_term(const vector<unsigned>& word, string&
 
     map<string, vector<unsigned> >::iterator it = termlist_deltas.find(prefix);
 
-    if (it == termlist_deltas.end()) {
-	it = termlist_deltas.insert(make_pair(prefix, vector<unsigned> ())).first;
-    }
+    if (it == termlist_deltas.end())
+	it = termlist_deltas.insert(make_pair(prefix, vector<unsigned>())).first;
     it->second.push_back(pack_term_index(index, error_mask));
 }
 
@@ -323,7 +332,7 @@ void BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& wor
 }
 
 unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const vector<unsigned>& word,
-						      unsigned error_mask, unsigned start, unsigned end, bool lower)
+						      unsigned error_mask, unsigned start, unsigned end, bool lower) const
 {
     unsigned count = end - start;
 
@@ -356,20 +365,17 @@ unsigned BrassSpellingTableFastSS::term_binary_search(const string& data, const 
 
 void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, string& data, string& prefix,
                                              unsigned prefix_group, unsigned error_mask,
-                                             bool update_prefix, unordered_set<unsigned>& result)
+                                             bool update_prefix, unordered_set<unsigned>& result) const
 {
-    bool prefix_exists;
     if (update_prefix) {
 	prefix.clear();
 	prefix.push_back(PREFIX_SIGNATURE);
 	append_prefix_group(prefix, prefix_group);
 	get_term_prefix(word, prefix, error_mask, PREFIX_LENGTH);
-	prefix_exists = get_exact_entry(prefix, data);
+	if (!get_exact_entry(prefix, data)) data.clear();
+    }
 
-	if (!prefix_exists) data.clear();
-    } else prefix_exists = !data.empty();
-
-    if (prefix_exists) {
+    if (!data.empty()) {
 	unsigned length = data.size() / sizeof(unsigned);
 	unsigned lower = term_binary_search(data, word, error_mask, 0, length, true);
 	unsigned upper = term_binary_search(data, word, error_mask, lower, length, false);
@@ -379,9 +385,7 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
 
 	for (unsigned i = lower; i < upper; ++i) {
 	    unsigned current_value = get_data_int(data, i);
-
 	    unpack_term_index(current_value, current_index, current_error_mask);
-
 	    result.insert(current_index);
 	}
     }
@@ -390,7 +394,7 @@ void BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, strin
 void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& word, string& data, string& prefix,
                                                        unsigned prefix_group, unsigned error_mask,
                                                        unsigned start, unsigned distance,
-						       unsigned max_distance, unordered_set<unsigned>& result)
+						       unsigned max_distance, unordered_set<unsigned>& result) const
 {
     bool update_prefix = start <= PREFIX_LENGTH + distance;
     populate_term(word, data, prefix, prefix_group, error_mask, update_prefix, result);
@@ -401,7 +405,7 @@ void BrassSpellingTableFastSS::populate_recursive_term(const vector<unsigned>& w
     }
 }
 
-void BrassSpellingTableFastSS::populate_word(const string& word, const string& prefix, unsigned max_distance, vector<TermList*>& result)
+void BrassSpellingTableFastSS::populate_word(const string& word, const string& prefix, unsigned max_distance, vector<TermList*>& result) const
 {
     unsigned prefix_group = get_spelling_group(prefix);
     if (prefix_group == PREFIX_DISABLED) return;

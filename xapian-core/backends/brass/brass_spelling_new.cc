@@ -102,7 +102,7 @@ void BrassSpellingTableNew::toggle_word(const string& word, const string& prefix
 void BrassSpellingTableNew::populate_word(const string& word,
                                           const string& prefix,
 					  unsigned max_distance,
-					  vector<TermList*>& result)
+					  vector<TermList*>& result) const
 {
     result.clear();
 
@@ -146,7 +146,7 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
                                                 unsigned prefix_group,
 						unsigned max_distance,
 						string& str_buf, string& data,
-						vector<TermList*>& result)
+						vector<TermList*>& result) const
 {
     const int end = int(word_utf.size()) - NGRAM_SIZE + 1;
 
@@ -179,7 +179,7 @@ void BrassSpellingTableNew::populate_ngram_word(const vector<unsigned>& word_utf
 
 void BrassSpellingTableNew::populate_action(const string& str_buf,
 					    string& data,
-					    vector<TermList*>& result)
+					    vector<TermList*>& result) const
 {
     if (get_exact_entry(str_buf, data))
 	result.push_back(new BrassSpellingTermListNGram(data));

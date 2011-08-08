@@ -62,7 +62,7 @@ class BrassSpellingWordsList : public AllTermsList {
 			   BrassCursor * cursor_, const std::string& prefix = string())
 	    : database(database_), cursor(cursor_), termfreq(0) {
 
-	prefix_key = "W";
+	prefix_key = BrassSpellingTable::WORD_SIGNATURE;
 	BrassSpellingTable::append_prefix_group(prefix_key, spelling_table.get_spelling_group(prefix));
 
 	// Seek to the entry before the first key with a "W" prefix, so the

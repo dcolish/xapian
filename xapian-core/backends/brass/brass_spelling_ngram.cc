@@ -156,7 +156,7 @@ void BrassSpellingTableNGram::toggle_word(const string& word, const string&)
 }
 
 void BrassSpellingTableNGram::populate_word(const string& word, const string&, unsigned,
-					    vector<TermList*>& result)
+					    vector<TermList*>& result) const
 {
     string data;
     fragment buf;

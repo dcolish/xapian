@@ -44,7 +44,7 @@ BrassSpellingWordsList::get_termname() const
     Assert(cursor);
     Assert(!at_end());
     Assert(!cursor->current_key.empty());
-    Assert(cursor->current_key[0] == 'W');
+    Assert(cursor->current_key[0] == BrassSpellingTable::WORD_SIGNATURE);
     RETURN(cursor->current_key.substr(prefix_key.length()));
 }
 
@@ -55,7 +55,7 @@ BrassSpellingWordsList::get_termfreq() const
     Assert(cursor);
     Assert(!at_end());
     Assert(!cursor->current_key.empty());
-    Assert(cursor->current_key[0] == 'W');
+    Assert(cursor->current_key[0] == BrassSpellingTable::WORD_SIGNATURE);
     cursor->read_tag();
 
     Xapian::termcount freq;
