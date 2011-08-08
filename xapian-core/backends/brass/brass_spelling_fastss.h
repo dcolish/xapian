@@ -86,7 +86,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
                                 const std::vector<unsigned>& word,
                                 unsigned error_mask,
                                 unsigned start, unsigned end,
-				bool lower);
+				bool lower) const;
 
     //Toggle term in database
     void toggle_term(const std::vector<unsigned>& word, std::string& prefix,
@@ -103,7 +103,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
     void populate_term(const std::vector<unsigned>& word, std::string& data,
 		       std::string& prefix, unsigned prefix_group,
 		       unsigned error_mask, bool update_prefix,
-		       std::unordered_set<unsigned>& result);
+		       std::unordered_set<unsigned>& result) const;
 
     //Recursively search for a word with 0, 1, ..., max_distance errors.
     void populate_recursive_term(const std::vector<unsigned>& word,
@@ -111,12 +111,12 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 				 unsigned prefix_group,
 				 unsigned error_mask, unsigned start,
 				 unsigned distance, unsigned max_distance,
-				 std::unordered_set<unsigned>& result);
+				 std::unordered_set<unsigned>& result) const;
 
     //Generate prefix of a word using given error mask.
     void get_term_prefix(const std::vector<unsigned>& word,
 			 std::string& prefix, unsigned error_mask,
-			 unsigned prefix_length);
+			 unsigned prefix_length) const;
 
     //Compare two strings using error mask (error mask contains one-bits at positions with errors)
     template<typename FirstIt, typename SecondIt>
@@ -164,6 +164,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
     }
 
     std::vector<std::vector<unsigned> > wordlist_deltas;
+    std::vector<unsigned> wordlist_deltas_prefixes;
     std::map<std::string, std::vector<unsigned> > termlist_deltas;
 
 protected:
@@ -171,13 +172,13 @@ protected:
 
     void toggle_word(const std::string& word, const std::string& prefix);
 
-    void populate_word(const std::string& word, const std::string& prefix, unsigned max_distance,
-		       std::vector<TermList*>& result);
+    void populate_word(const std::string& word, const std::string& prefix,
+                       unsigned max_distance, std::vector<TermList*>& result) const;
 
 public:
     BrassSpellingTableFastSS(const std::string & dbdir, bool readonly) :
 	BrassSpellingTable(dbdir, readonly), wordlist_deltas(),
-		termlist_deltas()
+	wordlist_deltas_prefixes(), termlist_deltas()
     {
     }
 
@@ -192,6 +193,7 @@ public:
     void cancel()
     {
 	wordlist_deltas.clear();
+	wordlist_deltas_prefixes.clear();
 	termlist_deltas.clear();
 	BrassSpellingTable::cancel();
     }
