@@ -24,7 +24,7 @@
 #include <vector>
 #include <string>
 
-#include <xapian/base.h>
+#include <xapian/intrusive_ptr.h>
 #include <xapian/visibility.h>
 #include <xapian/unordered_map.h>
 #include <xapian/unordered_set.h>
@@ -34,7 +34,7 @@ namespace Xapian {
 /**
  * Base class for a word keyboard layout convertion.
  */
-class XAPIAN_VISIBILITY_DEFAULT SpellingKeyboardImpl : public Xapian::Internal::RefCntBase {
+class XAPIAN_VISIBILITY_DEFAULT SpellingKeyboardImpl : public Xapian::Internal::intrusive_base {
 
     class DefaultKeyboard {
 
@@ -82,7 +82,7 @@ public:
 
 class XAPIAN_VISIBILITY_DEFAULT SpellingKeyboard {
 
-    Xapian::Internal::RefCntPtr<SpellingKeyboardImpl> internal;
+    Xapian::Internal::intrusive_ptr<SpellingKeyboardImpl> internal;
 
 public:
     SpellingKeyboard(const std::string& name);

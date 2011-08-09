@@ -104,7 +104,7 @@ class SpellingSplitter : public SpellingBase {
 public:
     using SpellingBase::get_multiple_spelling;
 
-    SpellingSplitter(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
+    SpellingSplitter(const std::vector<Xapian::Internal::intrusive_ptr<Xapian::Database::Internal> >& internal_,
                         const std::string& prefix_, unsigned max_edit_distance_ = 0) :
                             SpellingBase(internal_, prefix_), max_edit_distance(max_edit_distance_),
                             spelling_corrector(internal_, prefix_, max_edit_distance_)

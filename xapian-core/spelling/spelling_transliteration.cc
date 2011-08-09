@@ -76,7 +76,7 @@ SpellingTransliterationImpl::get_lang_code() const
 
 SpellingTransliteration::SpellingTransliteration(const std::string& name) : internal(0)
 {
-    vector< Internal::RefCntPtr<SpellingTransliterationImpl> > internals;
+    vector< Internal::intrusive_ptr<SpellingTransliterationImpl> > internals;
     internals.push_back(new RussianSpellingTransliteration);
 
     for (unsigned i = 0; i < internals.size() && internal.get() == NULL; ++i) {

@@ -29,7 +29,7 @@
 using namespace std;
 using namespace Xapian;
 
-SpellingBase::SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Database::Internal> >& internal_, const std::string& prefix_) :
+SpellingBase::SpellingBase(const std::vector<Xapian::Internal::intrusive_ptr<Database::Internal> >& internal_, const std::string& prefix_) :
     internal(internal_), prefix(prefix_)
 {
 }

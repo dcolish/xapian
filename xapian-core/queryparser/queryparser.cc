@@ -162,12 +162,6 @@ QueryParser::add_boolean_prefix(const string &field, const string &prefix,
 }
 
 void
-QueryParser::add_boolean_prefix(const string &field, const string &prefix)
-{
-    add_boolean_prefix(field, prefix, true);
-}
-
-void
 QueryParser::add_phonetic_prefix(const string& field)
 {
     Assert(internal.get());

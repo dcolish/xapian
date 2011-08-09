@@ -273,6 +273,7 @@ class State {
     string get_language(const string& prefix) {
 	map<string, string>::const_iterator it = qpi->language_prefixes.find(prefix);
 	return it != qpi->language_prefixes.end() ? it->second : string();
+    }
 
     Xapian::termcount get_max_wildcard_expansion() const {
 	return qpi->max_wildcard_expansion;
@@ -1460,6 +1461,8 @@ TermGroup::apply_synonyms(State* state, vector<Query>& subqs) const
 {
     const Xapian::Stopper * stopper = state->get_stopper();
     Query::op default_op = state->default_op();
+    bool default_op_is_positional = is_positional(state->default_op());
+    
     // Check for multi-word synonyms.
     Database db = state->get_database();
 
@@ -1474,6 +1477,8 @@ TermGroup::apply_synonyms(State* state, vector<Query>& subqs) const
 	    if (stopper && (*stopper)((*i)->name)) {
 		state->add_to_stoplist(*i);
 	    } else {
+		if (default_op_is_positional)
+		    (*i)->need_positions();
 		subqs.push_back((*i)->get_query_with_auto_synonyms());
 	    }
 	    begin = ++i;
@@ -1501,6 +1506,8 @@ TermGroup::apply_synonyms(State* state, vector<Query>& subqs) const
 	    if (stopper && (*stopper)((*i)->name)) {
 		state->add_to_stoplist(*i);
 	    } else {
+		if (default_op_is_positional)
+		    (*i)->need_positions();
 		subqs.push_back((*i)->get_query_with_auto_synonyms());
 	    }
 	    begin = ++i;
@@ -1513,6 +1520,8 @@ TermGroup::apply_synonyms(State* state, vector<Query>& subqs) const
 	    if (stopper && (*stopper)((*j)->name)) {
 		state->add_to_stoplist(*j);
 	    } else {
+		if (default_op_is_positional)
+		    (*j)->need_positions();
 		subqs2.push_back((*j)->get_query());
 	    }
 	}
@@ -1546,6 +1555,7 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 {
     const Xapian::Stopper * stopper = state->get_stopper();
     Query::op default_op = state->default_op();
+    bool default_op_is_positional = is_positional(state->default_op());
 
     Database db = state->get_database();
 
@@ -1566,6 +1576,8 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 	if (stopper && (*stopper)(term->name)) {
 	    state->add_to_stoplist(term);
 	} else {
+		if (default_op_is_positional)
+		    term->need_positions();
 	    correction_terms.push_back(term->name);
 	    terms_queries.push_back(term->get_query());
 	    terms_pos.push_back(term->get_termpos());
@@ -1610,6 +1622,7 @@ void
 TermGroup::apply_features(State* state, vector<Query>& subqs) const
 {
     const Xapian::Stopper * stopper = state->get_stopper();
+    bool default_op_is_positional = is_positional(state->default_op());
 
     if (state->flags & QueryParser::FLAG_AUTO_MULTIWORD_SYNONYMS) {
 	apply_synonyms(state, subqs);
@@ -1635,6 +1648,8 @@ TermGroup::apply_features(State* state, vector<Query>& subqs) const
 	    if (stopper && (*stopper)(term->name)) {
 		state->add_to_stoplist(term);
 	    } else {
+		if (default_op_is_positional)
+		    term->need_positions();
 		subqs.push_back(term->get_query_with_auto_spelling());
 	    }
 	}
@@ -1693,6 +1708,7 @@ void
 FuzzyTermGroup::apply_features(State* state, vector<Query>& subqs) const
 {
     const Xapian::Stopper * stopper = state->get_stopper();
+    bool default_op_is_positional = is_positional(state->default_op());
 
     if (state->flags & QueryParser::FLAG_SPELLING_CORRECTION) {
 	apply_spelling(state, subqs, distance);
@@ -1703,6 +1719,8 @@ FuzzyTermGroup::apply_features(State* state, vector<Query>& subqs) const
 	    if (stopper && (*stopper)(term->name)) {
 		state->add_to_stoplist(term);
 	    } else {
+		if (default_op_is_positional)
+		    term->need_positions();
 		subqs.push_back(term->get_query());
 	    }
 	}

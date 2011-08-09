@@ -47,11 +47,11 @@ protected:
     double request_internal(const std::string& first_word, const std::string& second_word) const;
 
     //Keeps references to internal databases.
-    const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> > & internal;
+    const std::vector<Xapian::Internal::intrusive_ptr<Xapian::Database::Internal> > & internal;
     std::string prefix;
 
 public:
-    SpellingBase(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_, const std::string& prefix_);
+    SpellingBase(const std::vector<Xapian::Internal::intrusive_ptr<Xapian::Database::Internal> >& internal_, const std::string& prefix_);
     virtual ~SpellingBase();
 
     /** Find spelling correction for a given word.

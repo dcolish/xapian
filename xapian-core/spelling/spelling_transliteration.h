@@ -23,7 +23,8 @@
 
 #include <vector>
 #include <string>
-#include <xapian/base.h>
+
+#include <xapian/intrusive_ptr.h>
 #include <xapian/visibility.h>
 #include <xapian/unordered_map.h>
 
@@ -32,7 +33,7 @@ namespace Xapian {
 /**
  * Base class for word transliteration methods
  */
-class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Internal::RefCntBase {
+class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Internal::intrusive_base {
 
     std::unordered_map<unsigned, const char*> char_map;
 
@@ -56,7 +57,7 @@ public:
 
 class XAPIAN_VISIBILITY_DEFAULT SpellingTransliteration {
 
-    Xapian::Internal::RefCntPtr<SpellingTransliterationImpl> internal;
+    Xapian::Internal::intrusive_ptr<SpellingTransliterationImpl> internal;
 
 public:
     SpellingTransliteration(const std::string& name);

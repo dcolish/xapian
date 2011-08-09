@@ -338,7 +338,7 @@ SpellingKeyboardImpl::get_lang_code() const
 
 SpellingKeyboard::SpellingKeyboard(const string& name) : internal(0)
 {
-    vector< Internal::RefCntPtr<SpellingKeyboardImpl> > internals;
+    vector< Internal::intrusive_ptr<SpellingKeyboardImpl> > internals;
     internals.push_back(new RussianSpellingKeyboard);
     internals.push_back(new FrenchSpellingKeyboard);
     internals.push_back(new SpainSpellingKeyboard);

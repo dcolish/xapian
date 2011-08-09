@@ -252,7 +252,7 @@ endofterm:
 		string phon("P");
 		phon += it->second;
 		phon += phonetic.get_phonetic(term);
-		doc.add_term(phon, weight);
+		doc.add_term(phon, wdf_inc);
 	    }
 	}
 

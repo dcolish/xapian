@@ -169,9 +169,6 @@ BrassSpellingTable::remove_word(const string& word,
     }
 
     // Remove trigrams for word.
-    toggle_word(word);
-}
-
     toggle_word(word, prefix);
 }
 

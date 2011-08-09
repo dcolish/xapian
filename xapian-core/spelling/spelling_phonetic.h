@@ -23,7 +23,8 @@
 
 #include <vector>
 #include <string>
-#include <xapian/base.h>
+
+#include <xapian/intrusive_ptr.h>
 #include <xapian/visibility.h>
 #include "spelling_transliteration.h"
 
@@ -33,7 +34,7 @@ namespace Xapian {
  * Base class for a word phonetic key generation.
  */
 class XAPIAN_VISIBILITY_DEFAULT SpellingPhoneticImpl :
-    public Xapian::Internal::RefCntBase {
+    public Xapian::Internal::intrusive_base {
 
 public:
     virtual ~SpellingPhoneticImpl() { }
@@ -44,7 +45,7 @@ public:
 
 class XAPIAN_VISIBILITY_DEFAULT SpellingPhonetic {
 
-    Xapian::Internal::RefCntPtr<SpellingPhoneticImpl> internal;
+    Xapian::Internal::intrusive_ptr<SpellingPhoneticImpl> internal;
     SpellingTransliteration translit;
 
 public:

@@ -125,7 +125,7 @@ class SpellingCorrector : public SpellingBase {
 public:
     using SpellingBase::get_multiple_spelling;
 
-    SpellingCorrector(const std::vector<Xapian::Internal::RefCntPtr<Xapian::Database::Internal> >& internal_,
+    SpellingCorrector(const std::vector<Xapian::Internal::intrusive_ptr<Xapian::Database::Internal> >& internal_,
                       const std::string& prefix_, unsigned max_edit_distance_,
                       const Xapian::SpellingKeyboard& keyboard_ = Xapian::SpellingKeyboard(),
                       const Xapian::SpellingTransliteration& translit_ = Xapian::SpellingTransliteration()) :
