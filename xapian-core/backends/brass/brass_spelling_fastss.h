@@ -33,6 +33,8 @@
 
 class BrassSpellingTableFastSS : public BrassSpellingTable {
 
+    typedef unsigned termindex;
+
     static const unsigned MAX_DISTANCE = 2;
     static const unsigned LIMIT = 8; //There is strange behavior when LIMIT > 8
     static const unsigned PREFIX_LENGTH = 4;
@@ -59,7 +61,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 	{
 	}
 
-	bool operator()(unsigned first_term, unsigned second_term);
+	bool operator()(termindex first_term, termindex second_term);
     };
 
     //Check if index doesn't exceed the bound 2^(32 - LIMIT).
@@ -69,10 +71,10 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
     static void get_word_key(unsigned index, std::string& key);
 
     //Pack word index and error mask into a value
-    static unsigned pack_term_index(unsigned wordindex, unsigned error_mask);
+    static termindex pack_term_index(unsigned wordindex, unsigned error_mask);
 
     //Unpack word index and error mask from a value
-    static void unpack_term_index(unsigned termindex, unsigned& wordindex,
+    static void unpack_term_index(termindex termindex, unsigned& wordindex,
 				  unsigned& error_mask);
 
     //Get integer value from a string data at given index
@@ -165,7 +167,7 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
 
     std::vector<std::vector<unsigned> > wordlist_deltas;
     std::vector<unsigned> wordlist_deltas_prefixes;
-    std::map<std::string, std::vector<unsigned> > termlist_deltas;
+    std::map<std::string, std::vector<termindex> > termlist_deltas;
 
 protected:
     void merge_fragment_changes();
