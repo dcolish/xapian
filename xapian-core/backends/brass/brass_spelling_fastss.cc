@@ -66,7 +66,7 @@ BrassSpellingTableFastSS::get_word_key(unsigned index, string& key)
 unsigned
 BrassSpellingTableFastSS::check_index(unsigned index)
 {
-    const unsigned shift = sizeof(unsigned) * 8 - LIMIT;
+    const unsigned shift = sizeof(termindex) * 8 - LIMIT;
     if (index > (1 << shift) - 1)
 	throw Xapian::DatabaseError("Can't add new entry - index is too large");
     return index;
@@ -76,8 +76,8 @@ BrassSpellingTableFastSS::termindex
 BrassSpellingTableFastSS::pack_term_index(unsigned wordindex,
                                           unsigned error_mask)
 {
-    const unsigned shift = sizeof(unsigned) * 8 - LIMIT;
-    return (wordindex & ((1 << shift) - 1)) | (error_mask << shift);
+    const unsigned shift = sizeof(termindex) * 8 - LIMIT;
+    return (termindex(wordindex) & ((1 << shift) - 1)) | (error_mask << shift);
 }
 
 void
@@ -85,9 +85,9 @@ BrassSpellingTableFastSS::unpack_term_index(termindex termindex,
                                             unsigned& wordindex,
                                             unsigned& error_mask)
 {
-    const unsigned shift = sizeof(unsigned) * 8 - LIMIT;
-    wordindex = termindex & ((1 << shift) - 1);
-    error_mask = termindex >> shift;
+    const unsigned shift = sizeof(termindex) * 8 - LIMIT;
+    wordindex = unsigned(termindex & ((1 << shift) - 1));
+    error_mask = unsigned(termindex >> shift);
 }
 
 unsigned
@@ -337,10 +337,12 @@ BrassSpellingTableFastSS::toggle_recursive_term(const vector<unsigned>& word, st
     bool update_prefix = start <= PREFIX_LENGTH + distance;
     toggle_term(word, prefix, prefix_group, index, error_mask, update_prefix);
 
-    if (distance < max_distance) for (unsigned i = start; i < min(word.size(), LIMIT); ++i) {
-	unsigned current_error_mask = error_mask | (1 << i);
-	toggle_recursive_term(word, prefix, prefix_group, index, current_error_mask, i + 1, distance + 1, max_distance);
-    }
+    if (distance < max_distance)
+	for (unsigned i = start; i < min(word.size(), LIMIT); ++i) {
+	    unsigned current_error_mask = error_mask | (1 << i);
+	    toggle_recursive_term(word, prefix, prefix_group, index,
+	                          current_error_mask, i + 1, distance + 1, max_distance);
+	}
 }
 
 unsigned
