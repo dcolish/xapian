@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2005,2006,2007,2008,2010,2011 Olly Betts
  * Copyright (C) 2010 Adam Sjøgren
+ * Copyright (C) 2011 Nikita Smetanin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
