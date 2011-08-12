@@ -77,11 +77,11 @@ class BrassSpellingTableFastSS : public BrassSpellingTable {
     static void unpack_term_index(termindex termindex, unsigned& wordindex,
 				  unsigned& error_mask);
 
-    //Get integer value from a string data at given index
-    static unsigned get_data_int(const std::string& data, unsigned index);
+    //Get termindex value from a string data at given index
+    static termindex get_data_termindex(const std::string& data, unsigned index);
 
-    //Append integer value to a string data at the end
-    static void append_data_int(std::string& data, unsigned value);
+    //Append termindex value to a string data at the end
+    static void append_data_termindex(std::string& data, termindex value);
 
     //Binary search in a data for a given word and error mask
     unsigned term_binary_search(const std::string& data,

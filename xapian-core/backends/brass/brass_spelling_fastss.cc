@@ -20,6 +20,7 @@
 
 #include <config.h>
 
+#include <pack.h>
 #include <xapian/error.h>
 #include <xapian/types.h>
 
@@ -37,8 +38,7 @@ using namespace Xapian;
 using namespace Xapian::Unicode;
 using namespace std;
 
-const char* BrassSpellingTableFastSS::WORD_INDEX_SIGNATURE = "IW";
-const char* BrassSpellingTableFastSS::WORD_VALUE_SIGNATURE = "IV";
+const char* BrassSpellingTableFastSS::WORD_INDEX_SIGNATURE = "X";
 const char* BrassSpellingTableFastSS::INDEXMAX_SIGNATURE = "INDEXMAX";
 const char* BrassSpellingTableFastSS::INDEXSTACK_SIGNATURE = "INDEXSTACK";
 
@@ -60,7 +60,7 @@ BrassSpellingTableFastSS::get_word_key(unsigned index, string& key)
 {
     key.clear();
     key.append(WORD_INDEX_SIGNATURE);
-    append_data_int(key, index);
+    pack_uint_last(key, index);
 }
 
 unsigned
@@ -90,21 +90,21 @@ BrassSpellingTableFastSS::unpack_term_index(termindex termindex,
     error_mask = unsigned(termindex >> shift);
 }
 
-unsigned
-BrassSpellingTableFastSS::get_data_int(const string& data,
+BrassSpellingTableFastSS::termindex
+BrassSpellingTableFastSS::get_data_termindex(const string& data,
                                        unsigned index)
 {
     unsigned result = 0;
-    for (unsigned i = 0; i < sizeof(unsigned); ++i) {
-	result |= unsigned(byte(data[index * sizeof(unsigned) + i])) << (i * 8);
+    for (unsigned i = 0; i < sizeof(termindex); ++i) {
+	result |= unsigned(byte(data[index * sizeof(termindex) + i])) << (i * 8);
     }
     return result;
 }
 
 void
-BrassSpellingTableFastSS::append_data_int(string& data, unsigned value)
+BrassSpellingTableFastSS::append_data_termindex(string& data, termindex value)
 {
-    for (unsigned i = 0; i < sizeof(unsigned); ++i) {
+    for (unsigned i = 0; i < sizeof(termindex); ++i) {
 	data.push_back(value & 0xFF);
 	value >>= 8;
     }
@@ -128,13 +128,24 @@ BrassSpellingTableFastSS::merge_fragment_changes()
 
     //Load index value from which we should start assign new indexes (if index stack is empty)
     string databuffer;
-    if (get_exact_entry(INDEXMAX_SIGNATURE, databuffer))
-	index_max = get_data_int(databuffer, 0);
+    if (get_exact_entry(INDEXMAX_SIGNATURE, databuffer)) {
+	const char* start = databuffer.data();
+	const char* end = start + databuffer.size();
+	unpack_uint_last(&start, end, &index_max);
+    }
 
     //Load stack of free indexes which should be assigned to new words.
-    if (get_exact_entry(INDEXSTACK_SIGNATURE, databuffer))
-	for (unsigned i = 0; i < databuffer.size() / sizeof(unsigned); ++i)
-	    index_stack.push_back(get_data_int(databuffer, i));
+    if (get_exact_entry(INDEXSTACK_SIGNATURE, databuffer)) {
+	const char* start = databuffer.data();
+	const char* end = start + databuffer.size();
+
+	unsigned index;
+	while (start != end) {
+	    if (!unpack_uint(&start, end, &index))
+		throw Xapian::DatabaseCorruptError("Bad spelling fastss index stack.");
+	    index_stack.push_back(index);
+	}
+    }
 
     vector<unsigned> wordlist_index_map(wordlist_deltas.size(), 0);
 
@@ -158,7 +169,11 @@ BrassSpellingTableFastSS::merge_fragment_changes()
 
 	//If new word already exists, we should remove it
 	if (!word_value.empty()) {
-	    unsigned index = get_data_int(word_value, 0);
+	    unsigned index;
+	    const char* start = word_value.data();
+	    const char* end = start + word_value.size();
+	    unpack_uint_last(&start, end, &index);
+
 	    wordlist_index_map[i] = index;
 	    index_stack.push_back(index);
 
@@ -166,7 +181,7 @@ BrassSpellingTableFastSS::merge_fragment_changes()
 	    set_word_value(key_word, string());
 	    del(key);
 	} else {
-	    //Else assign new index and add word to database.
+	    //Else assign new index and add word to the database.
 	    unsigned index;
 	    if (!index_stack.empty()) {
 		index = index_stack.back();
@@ -177,20 +192,20 @@ BrassSpellingTableFastSS::merge_fragment_changes()
 	    get_word_key(index, key);
 	    add(key, word);
 	    word_value.clear();
-	    append_data_int(word_value, index);
+	    pack_uint_last(word_value, index);
 	    set_word_value(key_word, word_value);
 	}
     }
 
     //Store index_max value
     databuffer.clear();
-    append_data_int(databuffer, index_max);
+    pack_uint_last(databuffer, index_max);
     add(INDEXMAX_SIGNATURE, databuffer);
 
     //Store index_stack value
     databuffer.clear();
     for (unsigned i = 0; i < index_stack.size(); ++i)
-	append_data_int(databuffer, index_stack[i]);
+	pack_uint(databuffer, index_stack[i]);
     add(INDEXSTACK_SIGNATURE, databuffer);
 
     TermIndexCompare term_index_compare(wordlist_deltas);
@@ -236,7 +251,7 @@ BrassSpellingTableFastSS::merge_fragment_changes()
 	    bool merging_has_more = merging_i < merging_data_length;
 
 	    if (existing_has_more && update_existing) {
-		existing_value = get_data_int(databuffer, existing_i);
+		existing_value = get_data_termindex(databuffer, existing_i);
 		unpack_term_index(existing_value, existing_word_index, existing_error_mask);
 		get_word(existing_word_index, key_buffer, existing_word_buffer);
 		update_existing = false;
@@ -264,23 +279,23 @@ BrassSpellingTableFastSS::merge_fragment_changes()
 								unsigned>::max());
 
 		    if (compare_result < 0) {
-			append_data_int(new_databuffer, existing_value);
+			append_data_termindex(new_databuffer, existing_value);
 			++existing_i;
 			update_existing = true;
 		    } else {
-			append_data_int(new_databuffer, merging_value);
+			append_data_termindex(new_databuffer, merging_value);
 			++merging_i;
 			update_merging = true;
 		    }
 		}
 	    } else if (existing_has_more) //Copy remaining existing data
 	    {
-		append_data_int(new_databuffer, existing_value);
+		append_data_termindex(new_databuffer, existing_value);
 		++existing_i;
 		update_existing = true;
 	    } else if (merging_has_more) //Copy remaining merging data
 	    {
-		append_data_int(new_databuffer, merging_value);
+		append_data_termindex(new_databuffer, merging_value);
 		++merging_i;
 		update_merging = true;
 	    }
@@ -362,7 +377,7 @@ BrassSpellingTableFastSS::term_binary_search(const string& data, const vector<un
 	unsigned step = count / 2;
 	current += step;
 
-	termindex current_value = get_data_int(data, current);
+	termindex current_value = get_data_termindex(data, current);
 	unpack_term_index(current_value, current_index, current_error_mask);
 
 	get_word(current_index, key, current_word);
@@ -400,7 +415,7 @@ BrassSpellingTableFastSS::populate_term(const vector<unsigned>& word, string& da
 	unsigned current_error_mask;
 
 	for (unsigned i = lower; i < upper; ++i) {
-	    termindex current_value = get_data_int(data, i);
+	    termindex current_value = get_data_termindex(data, i);
 	    unpack_term_index(current_value, current_index, current_error_mask);
 	    result.insert(current_index);
 	}
