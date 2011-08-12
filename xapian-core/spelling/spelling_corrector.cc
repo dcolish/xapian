@@ -32,7 +32,7 @@
 #include "ortermlist.h"
 #include "editdistance.h"
 #include "extended_edit_distance.h"
-
+#include <iostream>
 using namespace std;
 using namespace Xapian;
 
@@ -213,9 +213,12 @@ SpellingCorrector::find_spelling(const vector<string>& words,
 	if (!keyboard_to.empty() && request_internal_freq(keyboard_to) > 0)
 	    data.word_corrections[i].push_back(keyboard_to);
 
-	string translit_word = translit.get_transliteration(words[i]);
-	if (!translit_word.empty() && request_internal_freq(translit_word) > 0)
-	    data.word_corrections[i].push_back(translit_word);
+	vector<string> translit_words = translit.get_transliterations(words[i]);
+	for (unsigned t = 0; t < translit_words.size(); ++t) {
+	    cout << "TRANSLIT: " << translit_words[t] << endl;
+	    if (request_internal_freq(translit_words[t]) > 0)
+		data.word_corrections[i].push_back(translit_words[t]);
+	}
     }
 
     temp.word_spelling.assign(words.size(), 0);

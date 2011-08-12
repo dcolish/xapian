@@ -23,10 +23,10 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include <xapian/intrusive_ptr.h>
 #include <xapian/visibility.h>
-#include <xapian/unordered_map.h>
 
 namespace Xapian {
 
@@ -35,7 +35,9 @@ namespace Xapian {
  */
 class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Internal::intrusive_base {
 
-    std::unordered_map<unsigned, const char*> char_map;
+    static const unsigned MAX_TRANSLITERATIONS = 1 << 7;
+
+    std::map<unsigned, std::vector<const char*> > char_map;
 
     std::string language_name;
     std::string language_code;
@@ -48,7 +50,9 @@ protected:
     void add_char_mapping(unsigned lang_char, const char* sequence);
 
 public:
-    bool get_transliteration(const std::string& word, std::string& result) const;
+    std::string get_transliteration(const std::string& word) const;
+
+    std::vector<std::string> get_transliterations(const std::string& word) const;
 
     const std::string& get_lang_name() const;
 
@@ -64,6 +68,8 @@ public:
     SpellingTransliteration(SpellingTransliterationImpl* impl = NULL);
 
     std::string get_transliteration(const std::string& word) const;
+
+    std::vector<std::string> get_transliterations(const std::string& word) const;
 };
 
 }
