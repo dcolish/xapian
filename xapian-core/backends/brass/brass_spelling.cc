@@ -399,9 +399,11 @@ BrassSpellingTable::get_spelling_group(const string& prefix) const
 
     string data;
     if (get_exact_entry(SPELLING_SIGNATURE + prefix, data)) {
-	unsigned group = 0;
-	const char *p = data.data();
-	unpack_uint_last(&p, p + data.size(), &group);
+	unsigned group;
+	const char* start = data.data();
+	const char* end = start + data.size();
+	if (!unpack_uint_last(&start, end, &group))
+	    throw Xapian::DatabaseCorruptError("Bad spelling prefix group");
 	return group;
     }
     return PREFIX_DISABLED;
@@ -448,15 +450,18 @@ BrassSpellingTable::get_prefix_data(vector<unsigned>& index_stack) {
 
 	unsigned index;
 	while (start != end) {
-	    unpack_uint(&start, end, &index);
+	    if (!unpack_uint(&start, end, &index))
+		throw Xapian::DatabaseCorruptError("Bad spelling prefix index stack.");
 	    index_stack.push_back(index);
 	}
     }
 
     unsigned index_max = 1;
     if (get_exact_entry(GROUPMAX_SIGNATURE, data)) {
-	const char* p = data.data();
-	unpack_uint_last(&p, p + data.size(), &index_max);
+	const char* start = data.data();
+	const char* end = start + data.size();
+	if (!unpack_uint_last(&start, end, &index_max) || index_max == 0)
+	    throw Xapian::DatabaseCorruptError("Bad spelling group index max value.");
     }
     return index_max;
 }
@@ -473,12 +478,11 @@ BrassSpellingTable::get_word_value(const string& word) const
     map<string, string>::const_iterator it = wordvalue_map.find(word);
     if (it != wordvalue_map.end()) return it->second;
 
-    string key = WORD_SIGNATURE + word;
     string data;
     string result;
-    if (get_exact_entry(key, data)) {
+    if (get_exact_entry(WORD_SIGNATURE + word, data)) {
 	const char* start = data.data();
-	const char* end = data.data();
+	const char* end = start + data.size();
 	Xapian::termcount freq;
 
 	if (!unpack_uint(&start, end, &freq) || freq == 0)
