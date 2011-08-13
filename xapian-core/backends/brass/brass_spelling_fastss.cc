@@ -453,8 +453,7 @@ BrassSpellingTableFastSS::populate_word(const string& word, const string& prefix
     populate_recursive_term(word_utf, data, prefix_data, prefix_group, 0, 0, 0,
                             min(min(max_distance, MAX_DISTANCE), word.size() / 2), result_set);
 
-    vector<unsigned> result_vector(result_set.begin(), result_set.end());
-    result.push_back(new BrassSpellingFastSSTermList(result_vector, *this));
+    result.push_back(new BrassSpellingFastSSTermList(result_set.begin(), result_set.end(), *this));
 }
 
 bool

@@ -210,9 +210,10 @@ class BrassSpellingFastSSTermList : public TermList {
     unsigned index;
 
 public:
-    BrassSpellingFastSSTermList(const std::vector<unsigned>& words_,
+    template<typename Iterator>
+    BrassSpellingFastSSTermList(Iterator word_begin, Iterator word_end,
 				const BrassSpellingTableFastSS& table_) :
-	table(table_), words(words_), index(0)
+	table(table_), words(word_begin, word_end), index(0)
     {
     }
 
