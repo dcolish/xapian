@@ -42,51 +42,60 @@ class RussianSpellingTransliteration : public SpellingTransliterationImpl {
 public:
     RussianSpellingTransliteration() : SpellingTransliterationImpl("russian", "ru")
     {
-	add_char_mapping(0x0430, "a"); // А
-	add_char_mapping(0x0431, "b"); // Б
-	add_char_mapping(0x0432, "v"); // В
-	add_char_mapping(0x0432, "w"); // В (alt)
-	add_char_mapping(0x0433, "g"); // Г
-	add_char_mapping(0x0434, "d"); // Д
-	add_char_mapping(0x0435, "e"); // Е
-	add_char_mapping(0x0451, "e"); // Ё
-	add_char_mapping(0x0451, "yo"); // Ё (alt)
-	add_char_mapping(0x0451, "jo"); // Ё (alt2)
-	add_char_mapping(0x0436, "zh"); // Ж
-	add_char_mapping(0x0437, "z"); // З
-	add_char_mapping(0x0438, "i"); // И
-	add_char_mapping(0x0439, "i"); // Й
-	add_char_mapping(0x0439, "y"); // Й (alt)
-	add_char_mapping(0x0439, "j"); // Й (alt2)
-	add_char_mapping(0x043A, "k"); // К
-	add_char_mapping(0x043B, "l"); // Л
-	add_char_mapping(0x043C, "m"); // М
-	add_char_mapping(0x043D, "n"); // Н
-	add_char_mapping(0x043E, "o"); // О
-	add_char_mapping(0x043F, "p"); // П
-	add_char_mapping(0x0440, "r"); // Р
-	add_char_mapping(0x0441, "s"); // С
-	add_char_mapping(0x0442, "t"); // Т
-	add_char_mapping(0x0443, "u"); // У
-	add_char_mapping(0x0444, "f"); // Ф
-	add_char_mapping(0x0444, "ph"); // Ф (alt)
-	add_char_mapping(0x0445, "kh"); // Х
-	add_char_mapping(0x0446, "ts"); // Ц
-	add_char_mapping(0x0447, "ch"); // Ч
-	add_char_mapping(0x0448, "sh"); // Ш
-	add_char_mapping(0x0449, "sch"); // Щ
-	add_char_mapping(0x0449, "shch"); // Щ (alt)
-	add_char_mapping(0x044A, ""); // Ъ
-	add_char_mapping(0x044B, "y"); // Ы
-	add_char_mapping(0x044B, "i"); // Ы (alt)
-	add_char_mapping(0x044C, ""); // Ь
-	add_char_mapping(0x044D, "e"); // Э
-	add_char_mapping(0x044E, "iu"); // Ю
-	add_char_mapping(0x044E, "yu"); // Ю (alt)
-	add_char_mapping(0x044E, "ju"); // Ю (alt2)
-	add_char_mapping(0x044F, "ia"); // Я
-	add_char_mapping(0x044F, "ya"); // Я (alt)
-	add_char_mapping(0x044F, "ja"); // Я (alt2)
+	add_mapping("\u0430", "a"); // А
+	add_mapping("\u0431", "b"); // Б
+	add_mapping("\u0432", "v"); // В
+	add_mapping("\u0432", "w"); // В (alt)
+	add_mapping("\u0433", "g"); // Г
+	add_mapping("\u0434", "d"); // Д
+	add_mapping("\u0435", "e"); // Е
+	add_mapping("\u0451", "e"); // Ё
+	add_mapping("\u0451", "yo"); // Ё (alt)
+	add_mapping("\u0451", "jo"); // Ё (alt2)
+	add_mapping("\u0436", "zh"); // Ж
+	add_mapping("\u0437", "z"); // З
+	add_mapping("\u0438", "i"); // И
+	add_mapping("\u0439", "i"); // Й
+	add_mapping("\u0439", "y"); // Й (alt)
+	add_mapping("\u0439", "j"); // Й (alt2)
+	add_mapping("\u043A", "k"); // К
+	add_mapping("\u043B", "l"); // Л
+	add_mapping("\u043C", "m"); // М
+	add_mapping("\u043D", "n"); // Н
+	add_mapping("\u043E", "o"); // О
+	add_mapping("\u043F", "p"); // П
+	add_mapping("\u0440", "r"); // Р
+	add_mapping("\u0441", "s"); // С
+	add_mapping("\u0442", "t"); // Т
+	add_mapping("\u0443", "u"); // У
+	add_mapping("\u0444", "f"); // Ф
+	add_mapping("\u0444", "ph"); // Ф (alt)
+	add_mapping("\u0445", "kh"); // Х
+	add_mapping("\u0446", "ts"); // Ц
+	add_mapping("\u0446", "c"); // Ц (alt)
+	add_mapping("\u0447", "ch"); // Ч
+	add_mapping("\u0448", "sh"); // Ш
+	add_mapping("\u0449", "sch"); // Щ
+	add_mapping("\u0449", "shch"); // Щ (alt)
+	add_mapping("\u044A", ""); // Ъ
+	add_mapping("\u044B", "y"); // Ы
+	add_mapping("\u044B", "i"); // Ы (alt)
+	add_mapping("\u044C", ""); // Ь
+	add_mapping("\u044D", "e"); // Э
+	add_mapping("\u044E", "iu"); // Ю
+	add_mapping("\u044E", "yu"); // Ю (alt)
+	add_mapping("\u044E", "ju"); // Ю (alt2)
+	add_mapping("\u044F", "ia"); // Я
+	add_mapping("\u044F", "ya"); // Я (alt)
+	add_mapping("\u044F", "ja"); // Я (alt2)
+
+	make_reverse_mapping();
+
+	add_reverse_mapping("q", "\u043A"); // К (alt)
+	add_reverse_mapping("c", "\u043A"); // К (alt2)
+	add_reverse_mapping("ck", "\u043A"); // К (alt2)
+	add_reverse_mapping("e", "\u0438"); // И
+	add_reverse_mapping("x", "\u043A\u0441"); // КС
     }
 };
 

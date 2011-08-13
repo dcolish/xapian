@@ -37,7 +37,8 @@ class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Int
 
     static const unsigned MAX_TRANSLITERATIONS = 1 << 7;
 
-    std::map<unsigned, std::vector<const char*> > char_map;
+    std::map<std::string, std::vector<std::string> > translit_map;
+    std::map<std::string, std::vector<std::string> > reverse_translit_map;
 
     std::string language_name;
     std::string language_code;
@@ -47,7 +48,16 @@ class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Int
 protected:
     SpellingTransliterationImpl(const std::string& language_name_, const std::string& language_code_);
 
-    void add_char_mapping(unsigned lang_char, const char* sequence);
+    void add_mapping(const char* source, const char* translit);
+
+    void add_reverse_mapping(const char* source, const char* translit);
+
+    void make_reverse_mapping();
+
+    void get_transliterations(const std::string& word,
+                              const std::map<std::string, std::vector<std::string> >& char_map,
+                              bool keep_default, bool limit_variants,
+                              std::vector<std::string>& transliterations) const;
 
 public:
     std::string get_transliteration(const std::string& word) const;
@@ -61,6 +71,14 @@ public:
 
 class XAPIAN_VISIBILITY_DEFAULT SpellingTransliteration {
 
+    struct SpellingTransliterationStatic {
+	Xapian::Internal::intrusive_ptr<SpellingTransliterationImpl> default_internal;
+	std::vector< Xapian::Internal::intrusive_ptr<SpellingTransliterationImpl> > internals;
+
+	SpellingTransliterationStatic();
+    };
+
+    static const SpellingTransliterationStatic static_instance;
     Xapian::Internal::intrusive_ptr<SpellingTransliterationImpl> internal;
 
 public:
