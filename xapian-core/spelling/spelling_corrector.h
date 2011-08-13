@@ -114,6 +114,10 @@ class SpellingCorrector : public SpellingBase {
 			     unsigned first_index,
 			     unsigned second_index) const;
 
+    unsigned get_sort_distance(const word_corrector_temp& temp,
+                               word_corrector_value first,
+                               word_corrector_value second) const;
+
     word_corrector_key recursive_spelling_corrections(const word_corrector_data& data,
                                                       word_corrector_temp& temp,
                                                       unsigned word_index) const;

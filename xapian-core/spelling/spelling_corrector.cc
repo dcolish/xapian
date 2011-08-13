@@ -32,7 +32,7 @@
 #include "ortermlist.h"
 #include "editdistance.h"
 #include "extended_edit_distance.h"
-#include <iostream>
+
 using namespace std;
 using namespace Xapian;
 
@@ -128,6 +128,22 @@ SpellingCorrector::get_spelling_freq(const word_corrector_data& data,
     return it->second;
 }
 
+unsigned
+SpellingCorrector::get_sort_distance(const word_corrector_temp& temp,
+                                     word_corrector_value first,
+                                     word_corrector_value second) const
+{
+    unsigned result = 0;
+
+    while (first.next_value_index != INF && second.next_value_index != INF) {
+	if (first.spelling_index != second.spelling_index) ++result;
+
+	first = temp.value_vector[first.next_value_index];
+	second = temp.value_vector[second.next_value_index];
+    }
+    return result;
+}
+
 SpellingCorrector::word_corrector_key
 SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& data,
                                                   word_corrector_temp& temp,
@@ -175,10 +191,41 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
 
 	values.first = temp.value_vector.size();
 
-	unsigned limit = 0;
-	multimap<double, word_corrector_value, greater<double> >::const_iterator it;
-	for (it = value_map.begin(); it != value_map.end() && limit < data.result_count; ++it, ++limit)
-	    temp.value_vector.push_back(it->second);
+	vector<word_corrector_value> value_list;
+	value_list.reserve(value_map.size());
+
+	multimap<double, word_corrector_value, greater<double> >::iterator it;
+	for (it = value_map.begin(); it != value_map.end(); ++it)
+	    value_list.push_back(it->second);
+
+	temp.value_vector.reserve(temp.value_vector.size() +
+	                          min(data.result_count, value_list.size()));
+
+	vector<unsigned> value_distance(value_list.size(), 0);
+	vector<bool> value_excluded(value_list.size(), false);
+
+	temp.value_vector.push_back(value_list.front());
+	value_excluded.front() = true;
+
+	//Sort suggestions by their "unlikeness" (and then by a frequency) to provide a variety of results.
+	//The first element is the most frequent one. The second element is the most dissimilar to the first one.
+	//The third element is the most dissimilar to the both first and second ones, and so on.
+	for (unsigned i = 1; i < min(value_list.size(), data.result_count); ++i) {
+	    word_corrector_value value = temp.value_vector.back();
+
+	    unsigned max_index = INF;
+	    for (unsigned k = 0; k < value_list.size(); ++k) {
+		if (value_excluded[k]) continue;
+
+		value_distance[k] += get_sort_distance(temp, value, value_list[k]);
+		if (max_index == INF || value_distance[k] > value_distance[max_index])
+		    max_index = k;
+	    }
+	    if (max_index == INF) break;
+
+	    value_excluded[max_index] = true;
+	    temp.value_vector.push_back(value_list[max_index]);
+	}
 
 	values.second = temp.value_vector.size();
 
@@ -215,7 +262,6 @@ SpellingCorrector::find_spelling(const vector<string>& words,
 
 	vector<string> translit_words = translit.get_transliterations(words[i]);
 	for (unsigned t = 0; t < translit_words.size(); ++t) {
-	    cout << "TRANSLIT: " << translit_words[t] << endl;
 	    if (request_internal_freq(translit_words[t]) > 0)
 		data.word_corrections[i].push_back(translit_words[t]);
 	}
