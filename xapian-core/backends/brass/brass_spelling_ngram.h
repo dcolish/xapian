@@ -36,6 +36,8 @@
 namespace Brass {
 
 struct fragment {
+    static const char FRAGMENT_PREFIX = 'O';
+
     std::string data;
 
     // Default constructor.
@@ -57,17 +59,17 @@ struct fragment {
 
     char & operator[](unsigned i)
     {
-	return data[i];
+	return data.at(i);
     }
 
     const char & operator[](unsigned i) const
     {
-	return data[i];
+	return data.at(i);
     }
 
     operator std::string() const
     {
-	return data;
+	return FRAGMENT_PREFIX + data;
     }
 
     bool operator<(const fragment &b) const
