@@ -363,8 +363,7 @@ SpellingKeyboard::convert_to_layout(const string& word) const
 {
     string result;
     if (internal.get() == NULL) return result;
-
-    internal->convert_to_layout(word, result);
+    if (!internal->convert_to_layout(word, result) || result == word) result.clear();
     return result;
 }
 
@@ -373,8 +372,7 @@ SpellingKeyboard::convert_from_layout(const string& word) const
 {
     string result;
     if (internal.get() == NULL) return result;
-
-    internal->convert_from_layout(word, result);
+    if (!internal->convert_from_layout(word, result) || result == word) result.clear();
     return result;
 }
 
