@@ -26,6 +26,10 @@
 #include <string>
 #include <algorithm>
 #include "database.h"
+
+#include "editdistance.h"
+#include "extended_edit_distance.h"
+
 #include "spelling_keyboard.h"
 #include "spelling_transliteration.h"
 #include "spelling_base.h"

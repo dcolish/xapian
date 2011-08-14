@@ -46,6 +46,7 @@
 #include <cstring>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "../spelling/spelling_keyboard.h"
 #include "../spelling/spelling_transliteration.h"
@@ -631,18 +632,56 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
     spelling_corrector.get_multiple_spelling(words, count, result_map);
     spelling_splitter.get_multiple_spelling(words, count, result_map);
 
-    vector<vector<string> > result;
     multimap<double, vector<string>, greater<double> >::const_iterator it;
     multimap<double, vector<string>, greater<double> >::const_iterator p_it;
 
-    for (it = result_map.begin(), p_it = it; it != result_map.end() && result.size() < count; ++it) {
+    vector< vector<string> > value_list;
+
+    for (it = result_map.begin(), p_it = it; it != result_map.end(); ++it) {
 	//Remove duplicates
 	if (p_it != it && it->second == p_it->second) continue;
 
-	result.push_back(it->second);
+	value_list.push_back(it->second);
 	p_it = it;
     }
 
+    vector<unsigned> value_distance(value_list.size(), 0);
+    vector<bool> value_excluded(value_list.size(), false);
+
+    vector<vector<string> > result;
+    result.reserve(min(count, value_list.size()));
+    result.push_back(value_list.front());
+    value_excluded.front() = true;
+
+    const unsigned INF = numeric_limits<unsigned>::max();
+
+    set<string> unlikeness_set;
+    for (unsigned i = 1; i < min(value_list.size(), count); ++i) {
+	const vector<string>& value = result.back();
+
+	unlikeness_set.clear();
+	for (unsigned j = 0; j < value.size(); ++j)
+	    unlikeness_set.insert(value[j]);
+
+	unsigned max_index = INF;
+	for (unsigned k = 0; k < value_list.size(); ++k) {
+	    if (value_excluded[k]) continue;
+
+	    unsigned distance = 0;
+	    for (unsigned j = 0; j < value_list[k].size(); ++j)
+		if (unlikeness_set.find(value_list[k][j]) != unlikeness_set.end())
+		    ++distance;
+
+	    value_distance[k] += value.size() - distance;
+
+	    if (max_index == INF || value_distance[k] > value_distance[max_index])
+		max_index = k;
+	}
+	if (max_index == INF) break;
+
+	value_excluded[max_index] = true;
+	result.push_back(value_list[max_index]);
+    }
     return result;
 }
 

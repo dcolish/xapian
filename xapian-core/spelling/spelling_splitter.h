@@ -92,6 +92,10 @@ class SpellingSplitter : public SpellingBase {
     bool request_word_exists(const word_splitter_data& data, unsigned word_start,
                              unsigned word_end, string& word) const;
 
+    unsigned get_sort_distance(const word_splitter_temp& temp,
+                               word_splitter_value first,
+                               word_splitter_value second) const;
+
     word_splitter_key recursive_select_words(const word_splitter_data& data,
                                              word_splitter_temp& temp,
                                              unsigned start, unsigned p_start, unsigned p_index) const;

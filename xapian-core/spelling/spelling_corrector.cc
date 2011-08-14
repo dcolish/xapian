@@ -198,9 +198,6 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
 	for (it = value_map.begin(); it != value_map.end(); ++it)
 	    value_list.push_back(it->second);
 
-	temp.value_vector.reserve(temp.value_vector.size() +
-	                          min(data.result_count, value_list.size()));
-
 	vector<unsigned> value_distance(value_list.size(), 0);
 	vector<bool> value_excluded(value_list.size(), false);
 

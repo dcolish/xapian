@@ -24,6 +24,7 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <set>
 #include <xapian/unicode.h>
 
 #include "database.h"
@@ -65,6 +66,26 @@ SpellingSplitter::request_word_exists(const word_splitter_data& data,
     word.assign(data.allword, word_utf_start, word_utf_end - word_utf_start);
     double result = request_internal(word);
     return result > 1e-12;
+}
+
+unsigned
+SpellingSplitter::get_sort_distance(const word_splitter_temp& temp,
+                                    word_splitter_value first,
+                                    word_splitter_value second) const
+{
+    unsigned result = 0;
+    set< pair<unsigned, unsigned> > st;
+
+    while (first.next_value_index != INF) {
+	st.insert(make_pair(first.start, first.index));
+	first = temp.value_vector[first.next_value_index];
+    }
+
+    while (second.next_value_index != INF) {
+	if (st.find(make_pair(second.start, second.index)) != st.end()) ++result;
+	second = temp.value_vector[second.next_value_index];
+    }
+    return result;
 }
 
 SpellingSplitter::word_splitter_key
@@ -113,10 +134,38 @@ SpellingSplitter::recursive_select_words(const word_splitter_data& data,
 
 	values.first = temp.value_vector.size();
 
-	unsigned limit = 0;
-	multimap<double, word_splitter_value, greater<double> >::const_iterator it;
-	for (it = value_map.begin(); it != value_map.end() && limit < data.result_count; ++it, ++limit)
-	    temp.value_vector.push_back(it->second);
+	vector<word_splitter_value> value_list;
+	value_list.reserve(value_map.size());
+
+	multimap<double, word_splitter_value, greater<double> >::iterator it;
+	for (it = value_map.begin(); it != value_map.end(); ++it)
+	    value_list.push_back(it->second);
+
+	vector<unsigned> value_distance(value_list.size(), 0);
+	vector<bool> value_excluded(value_list.size(), false);
+
+	temp.value_vector.push_back(value_list.front());
+	value_excluded.front() = true;
+
+	//Sort suggestions by their "unlikeness" (and then by a frequency) to provide a variety of results.
+	//The first element is the most frequent one. The second element is the most dissimilar to the first one.
+	//The third element is the most dissimilar to the both first and second ones, and so on.
+	for (unsigned i = 1; i < min(value_list.size(), data.result_count); ++i) {
+	    word_splitter_value value = temp.value_vector.back();
+
+	    unsigned min_index = INF;
+	    for (unsigned k = 0; k < value_list.size(); ++k) {
+		if (value_excluded[k]) continue;
+
+		value_distance[k] += get_sort_distance(temp, value, value_list[k]);
+		if (min_index == INF || value_distance[k] < value_distance[min_index])
+		    min_index = k;
+	    }
+	    if (min_index == INF) break;
+
+	    value_excluded[min_index] = true;
+	    temp.value_vector.push_back(value_list[min_index]);
+	}
 
 	values.second = temp.value_vector.size();
     }
