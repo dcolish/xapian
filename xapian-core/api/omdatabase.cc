@@ -40,18 +40,12 @@
 #include "multialltermslist.h"
 #include "multivaluelist.h"
 #include "database.h"
-#include "../spelling/editdistance.h"
-#include "../spelling/extended_edit_distance.h"
 #include "ortermlist.h"
 #include "noreturn.h"
-
-#include <cstdlib> // For abs().
 
 #include <cstring>
 #include <vector>
 #include <map>
-
-#include <xapian/unordered_map.h>
 
 #include "../spelling/spelling_keyboard.h"
 #include "../spelling/spelling_transliteration.h"
@@ -210,7 +204,7 @@ Database::allterms_begin() const
 }
 
 TermIterator
-Database::allterms_begin(const std::string & prefix) const
+Database::allterms_begin(const string & prefix) const
 {
     LOGCALL(API, TermIterator, "Database::allterms_begin", NO_ARGS);
     TermList * tl;
@@ -274,7 +268,7 @@ Database::get_lastdocid() const
     unsigned int multiplier = internal.size();
     for (Xapian::doccount i = 0; i < multiplier; ++i) {
 	Xapian::docid did_i = internal[i]->get_lastdocid();
-	if (did_i) did = std::max(did, (did_i - 1) * multiplier + i + 1);
+	if (did_i) did = max(did, (did_i - 1) * multiplier + i + 1);
     }
     RETURN(did);
 }
@@ -357,15 +351,15 @@ Database::get_value_lower_bound(Xapian::valueno slot) const
     RETURN(full_lb);
 }
 
-std::string
+string
 Database::get_value_upper_bound(Xapian::valueno slot) const
 {
-    LOGCALL(API, std::string, "Database::get_value_upper_bound", slot);
+    LOGCALL(API, string, "Database::get_value_upper_bound", slot);
 
-    std::string full_ub;
+    string full_ub;
     vector<intrusive_ptr<Database::Internal> >::const_iterator i;
     for (i = internal.begin(); i != internal.end(); i++) {
-	std::string ub = (*i)->get_value_upper_bound(slot);
+	string ub = (*i)->get_value_upper_bound(slot);
 	if (ub > full_ub)
 	    full_ub = ub;
     }
@@ -516,7 +510,7 @@ Database::get_spelling_suggestion(const string &word,
 string
 Database::get_spelling_suggestion(const string &word,
                                   const string &prefix,
-				  const std::string& language,
+				  const string& language,
 				  unsigned max_edit_distance) const
 {
     LOGCALL(API, string, "Database::get_spelling_suggestion", word | prefix | max_edit_distance);
@@ -571,15 +565,15 @@ Database::get_spelling_suggestion(const vector<string>& words, const string& pre
     return result_corrector;
 }
 
-std::vector<std::string>
-Database::get_spelling_suggestions(const std::string& word,
+vector<string>
+Database::get_spelling_suggestions(const string& word,
                                    unsigned count,
                                    unsigned max_edit_distance) const
 {
     return get_spelling_suggestions(word, string(), count, string(), max_edit_distance);
 }
 
-std::vector<std::string>
+vector<string>
 Database::get_spelling_suggestions(const string& word, const string& prefix,
                                    unsigned count, const string& language,
                                    unsigned max_edit_distance) const
@@ -611,8 +605,8 @@ Database::get_spelling_suggestions(const string& word, const string& prefix,
     return result;
 }
 
-std::vector<std::vector<std::string> >
-Database::get_spelling_suggestions(const std::vector<std::string>& words,
+vector<vector<string> >
+Database::get_spelling_suggestions(const vector<string>& words,
                                    unsigned count,
                                    unsigned max_edit_distance) const
 {
@@ -653,7 +647,7 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
 }
 
 bool
-Database::is_spelling_enabled(const std::string& prefix) const
+Database::is_spelling_enabled(const string& prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::is_spelling_spelling", prefix);
     for (unsigned i = 0; i < internal.size(); ++i)
@@ -662,7 +656,7 @@ Database::is_spelling_enabled(const std::string& prefix) const
 }
 
 TermIterator
-Database::spellings_begin(const std::string & prefix) const
+Database::spellings_begin(const string & prefix) const
 {
     LOGCALL(API, TermIterator, "Database::spellings_begin", prefix);
     AutoPtr<TermList> merger;
@@ -680,7 +674,7 @@ Database::spellings_begin(const std::string & prefix) const
 }
 
 TermIterator
-Database::synonyms_begin(const std::string &term) const
+Database::synonyms_begin(const string &term) const
 {
     LOGCALL(API, TermIterator, "Database::synonyms_begin", term);
     AutoPtr<TermList> merger;
@@ -698,7 +692,7 @@ Database::synonyms_begin(const std::string &term) const
 }
 
 TermIterator
-Database::synonym_keys_begin(const std::string &prefix) const
+Database::synonym_keys_begin(const string &prefix) const
 {
     LOGCALL(API, TermIterator, "Database::synonym_keys_begin", prefix);
     AutoPtr<TermList> merger;
@@ -721,22 +715,22 @@ Database::get_metadata(const string & key) const
     LOGCALL(API, string, "Database::get_metadata", key);
     if (key.empty())
 	throw InvalidArgumentError("Empty metadata keys are invalid");
-    if (internal.empty()) RETURN(std::string());
+    if (internal.empty()) RETURN(string());
     RETURN(internal[0]->get_metadata(key));
 }
 
 Xapian::TermIterator
-Database::metadata_keys_begin(const std::string &prefix) const
+Database::metadata_keys_begin(const string &prefix) const
 {
     LOGCALL(API, Xapian::TermIterator, "Database::metadata_keys_begin", NO_ARGS);
     if (internal.empty()) RETURN(TermIterator());
     RETURN(TermIterator(internal[0]->open_metadata_keylist(prefix)));
 }
 
-std::string
+string
 Database::get_uuid() const
 {
-    LOGCALL(API, std::string, "Database::get_uuid", NO_ARGS);
+    LOGCALL(API, string, "Database::get_uuid", NO_ARGS);
     string uuid;
     for (size_t i = 0; i < internal.size(); ++i) {
 	string sub_uuid = internal[i]->get_uuid();
@@ -839,7 +833,7 @@ WritableDatabase::delete_document(Xapian::docid did)
 }
 
 void
-WritableDatabase::delete_document(const std::string & unique_term)
+WritableDatabase::delete_document(const string & unique_term)
 {
     LOGCALL_VOID(API, "WritableDatabase::delete_document", unique_term);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -859,7 +853,7 @@ WritableDatabase::replace_document(Xapian::docid did, const Document & document)
 }
 
 Xapian::docid
-WritableDatabase::replace_document(const std::string & unique_term,
+WritableDatabase::replace_document(const string & unique_term,
 				   const Document & document)
 {
     LOGCALL(API, Xapian::docid, "WritableDatabase::replace_document", unique_term | document);
@@ -870,8 +864,8 @@ WritableDatabase::replace_document(const std::string & unique_term,
 }
 
 void
-WritableDatabase::add_spelling(const std::string & word,
-                               Xapian::termcount freqinc, const std::string & prefix) const
+WritableDatabase::add_spelling(const string & word,
+                               Xapian::termcount freqinc, const string & prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::add_spelling", word | freqinc);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -879,8 +873,8 @@ WritableDatabase::add_spelling(const std::string & word,
 }
 
 void
-WritableDatabase::add_spelling(const std::string & first_word, const std::string & second_word,
-                               Xapian::termcount freqinc, const std::string & prefix) const
+WritableDatabase::add_spelling(const string & first_word, const string & second_word,
+                               Xapian::termcount freqinc, const string & prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::add_spelling", first_word | second_word | freqinc);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -889,16 +883,16 @@ WritableDatabase::add_spelling(const std::string & first_word, const std::string
 }
 
 void
-WritableDatabase::add_spelling(const std::string & first_word, const std::string & second_word,
-                               const std::string & third_word, Xapian::termcount freqinc, const std::string & prefix) const
+WritableDatabase::add_spelling(const string & first_word, const string & second_word,
+                               const string & third_word, Xapian::termcount freqinc, const string & prefix) const
 {
     add_spelling(first_word, second_word, prefix, freqinc);
     add_spelling(first_word, third_word, prefix, max(freqinc / 2, Xapian::termcount(1)));
 }
 
 void
-WritableDatabase::remove_spelling(const std::string & word,
-                                  Xapian::termcount freqdec, const std::string & prefix) const
+WritableDatabase::remove_spelling(const string & word,
+                                  Xapian::termcount freqdec, const string & prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::remove_spelling", word | freqdec);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -906,8 +900,8 @@ WritableDatabase::remove_spelling(const std::string & word,
 }
 
 void
-WritableDatabase::remove_spelling(const std::string & first_word, const std::string & second_word,
-                                  Xapian::termcount freqdec, const std::string & prefix) const
+WritableDatabase::remove_spelling(const string & first_word, const string & second_word,
+                                  Xapian::termcount freqdec, const string & prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::remove_spelling", first_word | second_word | freqdec);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -915,16 +909,16 @@ WritableDatabase::remove_spelling(const std::string & first_word, const std::str
 }
 
 void
-WritableDatabase::remove_spelling(const std::string & first_word, const std::string & second_word,
-                                  const std::string & third_word, Xapian::termcount freqdec,
-                                  const std::string & prefix) const
+WritableDatabase::remove_spelling(const string & first_word, const string & second_word,
+                                  const string & third_word, Xapian::termcount freqdec,
+                                  const string & prefix) const
 {
     remove_spelling(first_word, second_word, prefix, freqdec);
     remove_spelling(first_word, third_word, prefix, max(freqdec / 2, Xapian::termcount(1)));
 }
 
 void
-WritableDatabase::enable_spelling(const std::string& prefix, const std::string& group_prefix) const
+WritableDatabase::enable_spelling(const string& prefix, const string& group_prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::enable_spelling", prefix | group_prefix);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -932,7 +926,7 @@ WritableDatabase::enable_spelling(const std::string& prefix, const std::string& 
 }
 
 void
-WritableDatabase::disable_spelling(const std::string& prefix) const
+WritableDatabase::disable_spelling(const string& prefix) const
 {
     LOGCALL_VOID(API, "WritableDatabase::disable_spelling", prefix);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -940,8 +934,8 @@ WritableDatabase::disable_spelling(const std::string& prefix) const
 }
 
 void
-WritableDatabase::add_synonym(const std::string & term,
-			      const std::string & synonym) const
+WritableDatabase::add_synonym(const string & term,
+			      const string & synonym) const
 {
     LOGCALL_VOID(API, "WritableDatabase::add_synonym", term | synonym);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -949,8 +943,8 @@ WritableDatabase::add_synonym(const std::string & term,
 }
 
 void
-WritableDatabase::remove_synonym(const std::string & term,
-				 const std::string & synonym) const
+WritableDatabase::remove_synonym(const string & term,
+				 const string & synonym) const
 {
     LOGCALL_VOID(API, "WritableDatabase::remove_synonym", term | synonym);
     if (internal.size() != 1) only_one_subdatabase_allowed();
@@ -958,7 +952,7 @@ WritableDatabase::remove_synonym(const std::string & term,
 }
 
 void
-WritableDatabase::clear_synonyms(const std::string & term) const
+WritableDatabase::clear_synonyms(const string & term) const
 {
     LOGCALL_VOID(API, "WritableDatabase::clear_synonyms", term);
     if (internal.size() != 1) only_one_subdatabase_allowed();
