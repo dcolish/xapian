@@ -30,7 +30,8 @@
 using namespace std;
 using namespace Xapian;
 
-SpellingKeyboardImpl::DefaultKeyboard SpellingKeyboardImpl::default_keyboard;
+const SpellingKeyboardImpl::DefaultKeyboard SpellingKeyboardImpl::default_keyboard;
+const SpellingKeyboard::SpellingKeyboardStatic SpellingKeyboard::static_instance;
 
 SpellingKeyboardImpl::DefaultKeyboard::DefaultKeyboard() : max_distance(0.0)
 {
@@ -336,22 +337,26 @@ SpellingKeyboardImpl::get_lang_code() const
     return language_code;
 }
 
-SpellingKeyboard::SpellingKeyboard(const string& name) : internal(0)
+SpellingKeyboard::SpellingKeyboardStatic::SpellingKeyboardStatic()
 {
-    vector< Internal::intrusive_ptr<SpellingKeyboardImpl> > internals;
     internals.push_back(new RussianSpellingKeyboard);
     internals.push_back(new FrenchSpellingKeyboard);
     internals.push_back(new SpainSpellingKeyboard);
     internals.push_back(new ArabicSpellingKeyboard);
+    default_internal = new EnglishSpellingKeyboard;
+}
 
-    for (unsigned i = 0; i < internals.size() && internal.get() == NULL; ++i) {
+SpellingKeyboard::SpellingKeyboard(const string& name) : internal(0)
+{
+    for (unsigned i = 0; i < static_instance.internals.size() && internal.get() == NULL; ++i) {
 
-	if (internals[i]->get_lang_name() == name || internals[i]->get_lang_code() == name)
-	    internal = internals[i];
+	if (static_instance.internals[i]->get_lang_name() == name ||
+	    static_instance.internals[i]->get_lang_code() == name)
+	    internal = static_instance.internals[i];
     }
 
     if (internal.get() == NULL)
-	internal = new EnglishSpellingKeyboard;
+	internal = static_instance.default_internal;
 }
 
 SpellingKeyboard::SpellingKeyboard(SpellingKeyboardImpl* impl) : internal(impl)

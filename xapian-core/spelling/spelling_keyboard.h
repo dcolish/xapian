@@ -50,7 +50,7 @@ class XAPIAN_VISIBILITY_DEFAULT SpellingKeyboardImpl : public Xapian::Internal::
 	double get_key_proximity(unsigned first_ch, unsigned second_ch) const;
     };
 
-    static DefaultKeyboard default_keyboard;
+    static const DefaultKeyboard default_keyboard;
 
     std::unordered_map<unsigned, unsigned> to_char_map;
     std::unordered_map<unsigned, unsigned> from_char_map;
@@ -82,6 +82,14 @@ public:
 
 class XAPIAN_VISIBILITY_DEFAULT SpellingKeyboard {
 
+    struct SpellingKeyboardStatic {
+	Xapian::Internal::intrusive_ptr<SpellingKeyboardImpl> default_internal;
+	std::vector< Xapian::Internal::intrusive_ptr<SpellingKeyboardImpl> > internals;
+
+	SpellingKeyboardStatic();
+    };
+
+    static const SpellingKeyboardStatic static_instance;
     Xapian::Internal::intrusive_ptr<SpellingKeyboardImpl> internal;
 
 public:
