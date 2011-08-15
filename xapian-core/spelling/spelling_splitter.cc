@@ -68,24 +68,26 @@ SpellingSplitter::request_word_exists(const word_splitter_data& data,
     return result > 1e-12;
 }
 
-unsigned
+double
 SpellingSplitter::get_sort_distance(const word_splitter_temp& temp,
                                     word_splitter_value first,
                                     word_splitter_value second) const
 {
-    unsigned result = 0;
+    unsigned match = 0;
+    unsigned total = 0;
     set< pair<unsigned, unsigned> > st;
 
     while (first.next_value_index != INF) {
 	st.insert(make_pair(first.start, first.index));
 	first = temp.value_vector[first.next_value_index];
+	++total;
     }
 
     while (second.next_value_index != INF) {
-	if (st.find(make_pair(second.start, second.index)) != st.end()) ++result;
+	if (st.find(make_pair(second.start, second.index)) != st.end()) ++match;
 	second = temp.value_vector[second.next_value_index];
     }
-    return result;
+    return double(total - match) / double(total);
 }
 
 SpellingSplitter::word_splitter_key
@@ -141,7 +143,7 @@ SpellingSplitter::recursive_select_words(const word_splitter_data& data,
 	for (it = value_map.begin(); it != value_map.end(); ++it)
 	    value_list.push_back(it->second);
 
-	vector<unsigned> value_distance(value_list.size(), 0);
+	vector<double> value_distance(value_list.size(), 0);
 	vector<bool> value_excluded(value_list.size(), false);
 
 	temp.value_vector.push_back(value_list.front());
@@ -153,18 +155,18 @@ SpellingSplitter::recursive_select_words(const word_splitter_data& data,
 	for (unsigned i = 1; i < min(value_list.size(), data.result_count); ++i) {
 	    word_splitter_value value = temp.value_vector.back();
 
-	    unsigned min_index = INF;
+	    unsigned max_index = INF;
 	    for (unsigned k = 0; k < value_list.size(); ++k) {
 		if (value_excluded[k]) continue;
 
-		value_distance[k] += get_sort_distance(temp, value, value_list[k]);
-		if (min_index == INF || value_distance[k] < value_distance[min_index])
-		    min_index = k;
+		value_distance[k] += value_list[k].freq * get_sort_distance(temp, value, value_list[k]);
+		if (max_index == INF || value_distance[k] > value_distance[max_index])
+		    max_index = k;
 	    }
-	    if (min_index == INF) break;
+	    if (max_index == INF) break;
 
-	    value_excluded[min_index] = true;
-	    temp.value_vector.push_back(value_list[min_index]);
+	    value_excluded[max_index] = true;
+	    temp.value_vector.push_back(value_list[max_index]);
 	}
 
 	values.second = temp.value_vector.size();

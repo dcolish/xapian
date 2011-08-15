@@ -635,17 +635,19 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
     multimap<double, vector<string>, greater<double> >::const_iterator it;
     multimap<double, vector<string>, greater<double> >::const_iterator p_it;
 
-    vector< vector<string> > value_list;
+    vector<vector<string> > value_list;
+    vector<double > value_freq;
 
     for (it = result_map.begin(), p_it = it; it != result_map.end(); ++it) {
 	//Remove duplicates
 	if (p_it != it && it->second == p_it->second) continue;
 
 	value_list.push_back(it->second);
+	value_freq.push_back(it->first);
 	p_it = it;
     }
 
-    vector<unsigned> value_distance(value_list.size(), 0);
+    vector<double> value_distance(value_list.size(), 0);
     vector<bool> value_excluded(value_list.size(), false);
 
     vector<vector<string> > result;
@@ -667,12 +669,13 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
 	for (unsigned k = 0; k < value_list.size(); ++k) {
 	    if (value_excluded[k]) continue;
 
-	    unsigned distance = 0;
+	    unsigned match = 0;
 	    for (unsigned j = 0; j < value_list[k].size(); ++j)
 		if (unlikeness_set.find(value_list[k][j]) != unlikeness_set.end())
-		    ++distance;
+		    ++match;
 
-	    value_distance[k] += value.size() - distance;
+	    double distance = double(value.size() - match) / double(value.size());
+	    value_distance[k] += value_freq[k] * distance;
 
 	    if (max_index == INF || value_distance[k] > value_distance[max_index])
 		max_index = k;

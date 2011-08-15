@@ -128,20 +128,22 @@ SpellingCorrector::get_spelling_freq(const word_corrector_data& data,
     return it->second;
 }
 
-unsigned
+double
 SpellingCorrector::get_sort_distance(const word_corrector_temp& temp,
                                      word_corrector_value first,
                                      word_corrector_value second) const
 {
-    unsigned result = 0;
+    unsigned match = 0;
+    unsigned total = 0;
 
     while (first.next_value_index != INF && second.next_value_index != INF) {
-	if (first.spelling_index != second.spelling_index) ++result;
+	if (first.spelling_index == second.spelling_index) ++match;
 
 	first = temp.value_vector[first.next_value_index];
 	second = temp.value_vector[second.next_value_index];
+	++total;
     }
-    return result;
+    return double(total - match) / double(total);
 }
 
 SpellingCorrector::word_corrector_key
@@ -198,7 +200,7 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
 	for (it = value_map.begin(); it != value_map.end(); ++it)
 	    value_list.push_back(it->second);
 
-	vector<unsigned> value_distance(value_list.size(), 0);
+	vector<double> value_distance(value_list.size(), 0);
 	vector<bool> value_excluded(value_list.size(), false);
 
 	temp.value_vector.push_back(value_list.front());
@@ -214,7 +216,7 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
 	    for (unsigned k = 0; k < value_list.size(); ++k) {
 		if (value_excluded[k]) continue;
 
-		value_distance[k] += get_sort_distance(temp, value, value_list[k]);
+		value_distance[k] += value_list[k].freq + get_sort_distance(temp, value, value_list[k]);
 		if (max_index == INF || value_distance[k] > value_distance[max_index])
 		    max_index = k;
 	    }
