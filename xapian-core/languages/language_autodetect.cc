@@ -21,7 +21,7 @@
 #include <fstream>
 #include <xapian/unicode.h>
 #include "language_autodetect.h"
-#include <iostream>
+
 using namespace std;
 using namespace Xapian;
 
@@ -99,27 +99,29 @@ LanguageAutodetect::create_language_model(const string& text) const
 
     for (Utf8Iterator it(text), end_it;; ++it) {
 	if (it == end_it || !is_word_char(*it)) {
-	    if (word_empty) continue;
-	    //Place placeholders at the start and the end.
-	    unicode_map.push_back(word.size());
-	    word.push_back(placeholder);
-	    unicode_map.push_back(word.size());
+	    if (!word_empty) {
+		//Place placeholders at the start and the end.
+		unicode_map.push_back(word.size());
+		word.push_back(placeholder);
+		unicode_map.push_back(word.size());
 
-	    for (unsigned w = 0; w < unicode_map.size() - 1; ++w)
-		for (unsigned l = 1; l <= min(MAX_N, unicode_map.size() - w - 1); ++l)
-		    ++language_map[word.substr(unicode_map[w], unicode_map[l] - unicode_map[w])];
+		for (unsigned w = 0; w < unicode_map.size() - 1; ++w)
+		    for (unsigned l = 1; l <= min(MAX_N, unicode_map.size() - w - 1); ++l)
+			++language_map[word.substr(unicode_map[w],
+			                           unicode_map[w + l] - unicode_map[w])];
 
-	    word.clear();
-	    word.push_back(placeholder);
-	    unicode_map.clear();
-	    unicode_map.push_back(0);
-	    word_empty = true;
+		word.clear();
+		word.push_back(placeholder);
+		unicode_map.clear();
+		unicode_map.push_back(0);
+		word_empty = true;
+	    }
+	    if (it == end_it) break;
 	} else {
 	    unicode_map.push_back(word.size());
 	    Unicode::append_utf8(word, *it);
 	    word_empty = false;
 	}
-	if(it == end_it) break;
     }
 
     //Sort by count

@@ -43,11 +43,11 @@ class XAPIAN_VISIBILITY_DEFAULT LanguageAutodetect {
     unsigned check_language(const std::vector<std::string>& unknown,
                             const std::map<std::string, unsigned>& language_map) const;
 
-    std::vector<std::string> create_language_model(const std::string& text) const;
-
 public:
     LanguageAutodetect();
     LanguageAutodetect(std::vector<std::string> languages_);
+
+    std::vector<std::string> create_language_model(const std::string& text) const;
 
     std::string get_language(const std::string& text) const;
 };
