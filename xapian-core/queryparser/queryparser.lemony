@@ -1441,6 +1441,13 @@ class TermGroup {
 
     void apply_synonyms(State* state, vector<Query>& subqs) const;
 
+    void find_spelling(State* state,
+                       const vector<string>& correction_terms,
+                       const vector<Query>& terms_queries,
+                       const vector<termpos>& terms_pos,
+                       const set<string>& prefixes,
+                       vector<Query>& subqs, size_t distance) const;
+
     void apply_spelling(State* state, vector<Query>& subqs, size_t distance) const;
 
     virtual void apply_features(State* state, vector<Query>& subqs) const;
@@ -1551,10 +1558,60 @@ TermGroup::apply_synonyms(State* state, vector<Query>& subqs) const
 }
 
 void
+TermGroup::find_spelling(State* state,
+                         const vector<string>& correction_terms,
+                         const vector<Query>& terms_queries,
+                         const vector<termpos>& terms_pos,
+                         const set<string>& prefixes,
+                         vector<Query>& subqs, size_t distance) const
+{
+    Database db = state->get_database();
+    Query::op default_op = state->default_op();
+    bool default_op_is_positional = is_positional(state->default_op());
+
+    Query result_query;
+    if (default_op_is_positional) {
+	result_query = Query(default_op,
+			     terms_queries.begin(),
+			     terms_queries.end(),
+			     terms_queries.size() + 9);
+    } else {
+	result_query = Query(default_op,
+			     terms_queries.begin(),
+			     terms_queries.end());
+    }
+
+    const unsigned SUGGESTIONS_COUNT = 2;
+
+    vector<Query> terms_subqueries;
+    set<string>::const_iterator p_it;
+    for (p_it = prefixes.begin(); p_it != prefixes.end(); ++p_it) {
+
+	vector<vector<string> > suggestion_terms = distance > 0 ?
+        db.get_spelling_suggestions(correction_terms, *p_it,
+                                    SUGGESTIONS_COUNT, state->get_language(*p_it), distance) :
+	    db.get_spelling_suggestions(correction_terms, *p_it,
+	                                SUGGESTIONS_COUNT, state->get_language(*p_it));
+
+	for (unsigned v_i = 0; v_i < suggestion_terms.size(); ++v_i) {
+	    terms_subqueries.clear();
+	    for (unsigned s_i = 0; s_i < suggestion_terms[v_i].size(); ++s_i) {
+		termpos pos = terms_pos[min(s_i, terms_pos.size() - 1)];
+		terms_subqueries.push_back(Query(suggestion_terms[v_i][s_i], 1, pos));
+	    }
+
+	    if (!terms_subqueries.empty())
+		result_query = Query(Query::OP_SYNONYM, result_query, Query(default_op,
+				           terms_subqueries.begin(), terms_subqueries.end()));
+	}
+    }
+    subqs.push_back(result_query);
+}
+
+void
 TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) const
 {
     const Xapian::Stopper * stopper = state->get_stopper();
-    Query::op default_op = state->default_op();
     bool default_op_is_positional = is_positional(state->default_op());
 
     Database db = state->get_database();
@@ -1575,47 +1632,39 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 	Term* term = *i;
 	if (stopper && (*stopper)(term->name)) {
 	    state->add_to_stoplist(term);
-	} else {
-		if (default_op_is_positional)
-		    term->need_positions();
-	    correction_terms.push_back(term->name);
-	    terms_queries.push_back(term->get_query());
-	    terms_pos.push_back(term->get_termpos());
+	    continue;
+	}
+
+	if (default_op_is_positional)
+	    term->need_positions();
+
+	bool prefixes_equal = term->prefix_info->prefixes.size() == prefixes.size();
+	list<string>::const_iterator it = term->prefix_info->prefixes.begin();
+	for (; it != term->prefix_info->prefixes.end() && prefixes_equal; ++it)
+	    if (prefixes.find(*it) == prefixes.end()) prefixes_equal = false;
+
+	if (!prefixes_equal && !correction_terms.empty()) {
+
+	    find_spelling(state, correction_terms, terms_queries,
+	                  terms_pos, prefixes, subqs, distance);
+
+	    correction_terms.clear();
+	    terms_queries.clear();
+	    terms_pos.clear();
+	    prefixes.clear();
+
 	    prefixes.insert(term->prefix_info->prefixes.begin(),
 			    term->prefix_info->prefixes.end());
 	}
+
+	correction_terms.push_back(term->name);
+	terms_queries.push_back(term->get_query());
+	terms_pos.push_back(term->get_termpos());
     }
 
-    Query result_query;
-    if (is_positional(default_op)) {
-	result_query = Query(default_op,
-			     terms_queries.begin(),
-			     terms_queries.end(),
-			     terms_queries.size() + 9);
-    } else {
-	result_query = Query(default_op,
-			     terms_queries.begin(),
-			     terms_queries.end());
-    }
-
-    set<string>::const_iterator p_it;
-    for (p_it = prefixes.begin(); p_it != prefixes.end(); ++p_it) {
-
-	vector<string> suggestion_terms = distance > 0 ?
-        db.get_spelling_suggestion(correction_terms, *p_it, state->get_language(*p_it), distance) :
-	    db.get_spelling_suggestion(correction_terms, *p_it, state->get_language(*p_it));
-
-	terms_queries.clear();
-	for (unsigned s_i = 0; s_i < suggestion_terms.size(); ++s_i) {
-	    termpos pos = terms_pos[min(s_i, terms_pos.size() - 1)];
-	    terms_queries.push_back(Query(suggestion_terms[s_i], 1, pos));
-	}
-
-	if (!terms_queries.empty())
-	    result_query = Query(Query::OP_SYNONYM, result_query,
-				 Query(default_op, terms_queries.begin(), terms_queries.end()));
-    }
-    subqs.push_back(result_query);
+    if (!correction_terms.empty())
+	    find_spelling(state, correction_terms, terms_queries,
+	                  terms_pos, prefixes, subqs, distance);
 }
 
 void
