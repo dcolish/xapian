@@ -172,6 +172,8 @@ class Term {
 	: name(a), unstemmed(b), pos(slot) { }
 
     string make_term(const string & prefix) const;
+    
+    Query make_query(const string & prefix) const;
 
     void need_positions() {
 	if (stem == QueryParser::STEM_SOME) stem = QueryParser::STEM_NONE;
@@ -226,6 +228,12 @@ class State {
     string stem_term(const string &term) {
 	return qpi->stemmer(term);
     }
+    
+    string phonetic_term(const string& prefix, const string& term) {
+	SpellingPhonetic phonetic(get_spelling_language(prefix,
+	                                                QueryParser::FLAG_SPELLING_PHONETIC));
+	return phonetic.get_phonetic(term);
+    }
 
     void add_to_stoplist(const Term * term) {
 	qpi->stoplist.push_back(term->name);
@@ -270,9 +278,21 @@ class State {
 	qpi->stoplist.resize(s);
     }
 
-    string get_language(const string& prefix) {
-	map<string, string>::const_iterator it = qpi->language_prefixes.find(prefix);
-	return it != qpi->language_prefixes.end() ? it->second : string();
+    bool is_spelling_enabled(const string& prefix, QueryParser::feature_spelling_flag flag) {
+	map<string, pair<QueryParser::feature_spelling_flag, string> >::const_iterator it = 
+		qpi->spelling_prefixes.find(prefix);
+
+	return (it != qpi->spelling_prefixes.end() && (it->second.first & flag));
+    }
+
+    string get_spelling_language(const string& prefix, QueryParser::feature_spelling_flag flag) {
+	map<string, pair<QueryParser::feature_spelling_flag, string> >::const_iterator it = 
+		qpi->spelling_prefixes.find(prefix);
+
+	if (it != qpi->spelling_prefixes.end() && (it->second.first & flag))
+	    return it->second.second;
+
+	return string();
     }
 
     Xapian::termcount get_max_wildcard_expansion() const {
@@ -298,6 +318,20 @@ Term::make_term(const string & prefix) const
     if (!unstemmed.empty())
 	state->add_to_unstem(term, unstemmed);
     return term;
+}
+
+Query
+Term::make_query(const string & prefix) const
+{
+    string term = make_term(prefix);
+    string phonetic = state->phonetic_term(prefix, name);
+
+    Query result(term, 1, pos);
+    if (!phonetic.empty()) {
+	string phonetic_term = "P" + prefix + phonetic;
+	result = Query(Query::OP_SYNONYM, result, Query(phonetic_term, 1, pos));
+    }
+    return result;
 }
 
 Query
@@ -331,6 +365,13 @@ Term::get_query_with_synonyms() const
 	    syn = db.synonyms_begin(term);
 	    end = db.synonyms_end(term);
 	}
+
+	string phonetic = state->phonetic_term(*piter, name);
+	if (!phonetic.empty()) {
+	    string phonetic_term = "P" + *piter + phonetic;
+	    q = Query(Query::OP_SYNONYM, q, Query(phonetic_term, 1, pos));
+	}
+
 	while (syn != end) {
 	    q = Query(Query::OP_SYNONYM, q, Query(*syn, 1, pos));
 	    ++syn;
@@ -358,7 +399,9 @@ Term::get_query_with_spelling() const
     const list<string> & prefixes = prefix_info->prefixes;
     list<string>::const_iterator piter;
     for (piter = prefixes.begin(); piter != prefixes.end(); ++piter) {
-	string suggestion = db.get_spelling_suggestion(name, *piter, state->get_language(*piter));
+	string suggestion = db.get_spelling_suggestion(
+		name, *piter, 
+		state->get_spelling_language(*piter, QueryParser::FLAG_SPELLING));
 	if (!suggestion.empty())
 	    q = Query(Query::OP_SYNONYM, q, Query(suggestion, 1, pos));
     }
@@ -420,9 +463,9 @@ Term::get_query() const
     const list<string> & prefixes = prefix_info->prefixes;
     Assert(prefixes.size() >= 1);
     list<string>::const_iterator piter = prefixes.begin();
-    Query q(make_term(*piter), 1, pos);
+    Query q = make_query(*piter);
     while (++piter != prefixes.end()) {
-	q = Query(Query::OP_OR, q, Query(make_term(*piter), 1, pos));
+	q = Query(Query::OP_OR, q, make_query(*piter));
     }
     return q;
 }
@@ -477,7 +520,7 @@ Term::as_partial_query(State * state_) const
 	    ++t;
 	}
 	// Add the term, as it would normally be handled, as an alternative.
-	subqs_full.push_back(Query(make_term(*piter), 1, pos));
+	subqs_full.push_back(make_query(*piter));
     }
     Query * q = new Query(Query::OP_OR,
 			  Query(Query::OP_SYNONYM,
@@ -706,7 +749,8 @@ QueryParser::Internal::apply_spelling(State* state, vector<string>& prefixes,
 	for (unsigned prefix_i = 0; prefix_i < prefixes.size(); ++prefix_i) {
 
 	    vector<string> suggestion = db.get_spelling_suggestion(terms_sequence, prefixes[prefix_i],
-	                                                           state->get_language(prefixes[prefix_i]));
+	                                                           state->get_spelling_language(prefixes[prefix_i],
+	                                                                                        QueryParser::FLAG_SPELLING));
 
 	    if (!suggestion.empty()) {
 		for (unsigned i = 0; i < min(terms.size(), suggestion.size()); ++i) {
@@ -1582,16 +1626,18 @@ TermGroup::find_spelling(State* state,
     }
 
     const unsigned SUGGESTIONS_COUNT = 2;
+    const unsigned SUGGESTION_DISTANCE = 2;
+
+    if (distance == 0) distance = SUGGESTION_DISTANCE;
 
     vector<Query> terms_subqueries;
     set<string>::const_iterator p_it;
     for (p_it = prefixes.begin(); p_it != prefixes.end(); ++p_it) {
 
-	vector<vector<string> > suggestion_terms = distance > 0 ?
-        db.get_spelling_suggestions(correction_terms, *p_it,
-                                    SUGGESTIONS_COUNT, state->get_language(*p_it), distance) :
-	    db.get_spelling_suggestions(correction_terms, *p_it,
-	                                SUGGESTIONS_COUNT, state->get_language(*p_it));
+	vector<vector<string> > suggestion_terms = db.get_spelling_suggestions(
+		correction_terms, *p_it, SUGGESTIONS_COUNT,
+		state->get_spelling_language(*p_it, QueryParser::FLAG_SPELLING),
+		distance);
 
 	for (unsigned v_i = 0; v_i < suggestion_terms.size(); ++v_i) {
 	    terms_subqueries.clear();
@@ -1813,7 +1859,7 @@ class Terms {
 		    vector<Term *>::const_iterator titer;
 		    for (titer = terms.begin(); titer != terms.end(); ++titer) {
 			Term * t = *titer;
-			subqs.push_back(Query(t->make_term(*piter), 1, t->pos));
+			subqs.push_back(t->make_query(*piter));
 		    }
 		    add_to_query(q, Query::OP_OR,
 				 Query(op, subqs.begin(), subqs.end(), w));

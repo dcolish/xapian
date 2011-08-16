@@ -56,12 +56,6 @@ TermGenerator::set_stopper(const Xapian::Stopper * stopper)
 }
 
 void
-TermGenerator::set_phonetic(const Xapian::SpellingPhonetic& phonetic)
-{
-    internal->phonetic = phonetic;
-}
-
-void
 TermGenerator::set_document(const Xapian::Document & doc)
 {
     internal->doc = doc;
@@ -89,9 +83,15 @@ TermGenerator::set_flags(flags toggle, flags mask)
 }
 
 void
-TermGenerator::set_phonetic_prefixes(const map<string, string>& prefixes)
+TermGenerator::add_spelling_prefix(const string& prefix, const string& group)
 {
-    internal->phonetic_prefixes = prefixes;
+    internal->spelling_prefixes.insert(make_pair(prefix, group));
+}
+
+void
+TermGenerator::add_phonetic_prefix(const string& prefix, const string& language)
+{
+    internal->phonetic_prefixes.insert(make_pair(prefix, language));
 }
 
 void

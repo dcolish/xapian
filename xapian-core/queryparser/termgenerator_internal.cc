@@ -144,6 +144,17 @@ TermGenerator::Internal::index_text(Utf8Iterator itor, termcount wdf_inc,
 
     if (!stopper) stop_mode = STOPWORDS_NONE;
 
+    map<string, string>::const_iterator sp_it = spelling_prefixes.find(prefix);
+    if (sp_it != spelling_prefixes.end())
+	db.enable_spelling(sp_it->first, sp_it->second);
+
+    string phonetic_language;
+    map<string, string>::const_iterator ph_it = phonetic_prefixes.find(prefix);
+    if (ph_it != phonetic_prefixes.end())
+	phonetic_language = ph_it->second;
+
+    SpellingPhonetic phonetic(phonetic_language);
+
     string last_term;
     string last_last_term;
 
@@ -247,10 +258,9 @@ endofterm:
 	}
 
 	if (!(*stopper)(term) && should_phone(term)) {
-	    map<string, string>::const_iterator it = phonetic_prefixes.find(prefix);
-	    if (it != phonetic_prefixes.end()) {
+	    if (!phonetic_language.empty()) {
 		string phon("P");
-		phon += it->second;
+		phon += prefix;
 		phon += phonetic.get_phonetic(term);
 		doc.add_term(phon, wdf_inc);
 	    }

@@ -73,9 +73,7 @@ class QueryParser::Internal : public Xapian::Internal::intrusive_base {
     list<string> stoplist;
     multimap<string, string> unstem;
 
-    SpellingPhonetic phonetic;
-    set<string> phonetic_prefixes;
-    map<string, string> language_prefixes;
+    map<string, pair<feature_spelling_flag, string> > spelling_prefixes;
 
     // Map "from" -> "A" ; "subject" -> "C" ; "newsgroups" -> "G" ;
     // "foobar" -> "XFOO". FIXME: it does more than this now!

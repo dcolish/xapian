@@ -35,9 +35,6 @@ namespace Xapian {
 
 class Database;
 class Stem;
-class SpellingPhonetic;
-class SpellingKeyboard;
-class SpellingTransliteration;
 
 /// Base class for stop-word decision functor.
 class XAPIAN_VISIBILITY_DEFAULT Stopper {
@@ -396,6 +393,12 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
 
     typedef enum { STEM_NONE, STEM_SOME, STEM_ALL } stem_strategy;
 
+    typedef enum {
+	FLAG_SPELLING = 1,
+	FLAG_SPELLING_PHONETIC = 2,
+	FLAG_SPELLING_DEFAULT = 0
+    } feature_spelling_flag;
+
     /// Copy constructor.
     QueryParser(const QueryParser & o);
 
@@ -439,10 +442,6 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
 
     /// Set the stopper.
     void set_stopper(const Stopper *stop = NULL);
-
-    void set_phonetic(const Xapian::SpellingPhonetic& phonetic);
-
-    void add_language(const std::string& prefix, const std::string& language);
 
     /** Set the default operator.
      *
@@ -601,7 +600,12 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
     void add_boolean_prefix(const std::string &field, const std::string &prefix,
 			    bool exclusive = true);
 
-    void add_phonetic_prefix(const std::string& field);
+    void set_spelling(feature_spelling_flag flag = FLAG_SPELLING_DEFAULT,
+                      const std::string& language = std::string());
+
+    void add_spelling_prefix(const std::string& prefix,
+                             feature_spelling_flag flag = FLAG_SPELLING_DEFAULT,
+                             const std::string& language = std::string());
 
     /// Iterate over terms omitted from the query as stopwords.
     TermIterator stoplist_begin() const;
