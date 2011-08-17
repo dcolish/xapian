@@ -100,8 +100,32 @@ class XAPIAN_VISIBILITY_DEFAULT TermGenerator {
      */
     flags set_flags(flags toggle, flags mask = flags(0));
 
+    /** Enable spelling for the given prefixes.
+     *  Spelling for the unprefixed terms is already enabled.
+     *
+     *  @param prefix	The given prefix for the terms.
+     *  @param group	The group prefix with which the given prefix
+     *  		should have common spelling data.
+     *
+     *  		Cases:
+     *  		1. group == prefix - new prefix group is created.
+     *  		   The given prefix has separate spelling data.
+     *
+     *  		2. group == other_prefix - the given prefix has
+     *  		   common spelling data with other_prefix.
+     *
+     *  		3. group is empty - the given prefix has common
+     *  		   spelling data with unprefixed terms.
+     */
     void add_spelling_prefix(const std::string& prefix, const std::string& group);
 
+    /** Enable phonetic keys generation for the given prefix.
+     *
+     *	@param prefix	The given prefix for the terms.
+     *	@param language	The given language for the phonetic algorithm.
+     *			If the language is empty, phonetic algorithm is disabled
+     *			for the given prefix.
+     */
     void add_phonetic_prefix(const std::string& prefix, const std::string& language);
 
     /** Index some text.

@@ -600,9 +600,27 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
     void add_boolean_prefix(const std::string &field, const std::string &prefix,
 			    bool exclusive = true);
 
+    /** Set default spelling features and language for unprefixed terms
+     *
+     *  @param flag 	The spelling features flags for unprefixed terms
+     *  @param language	The language for the enabled spelling features.
+     *  		Language is used for phonetic algorithms,
+     *  		transliteration and keyboard layout corrections.
+     *
+     */
     void set_spelling(feature_spelling_flag flag = FLAG_SPELLING_DEFAULT,
                       const std::string& language = std::string());
 
+    /** Set spelling features and language for terms with the given prefix
+     *
+     *	@param prefix	The prefix of terms for which spelling features
+     *			are added.
+     *  @param flag 	The spelling features flags for terms with the
+     *  		given prefix.
+     *  @param language	The language for the enabled spelling features.
+     *  		Language is used for phonetic algorithms,
+     *  		transliteration and keyboard layout corrections.
+     */
     void add_spelling_prefix(const std::string& prefix,
                              feature_spelling_flag flag = FLAG_SPELLING_DEFAULT,
                              const std::string& language = std::string());
