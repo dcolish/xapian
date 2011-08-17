@@ -20,7 +20,7 @@
 
 #include <fstream>
 #include <xapian/unicode.h>
-#include "language_autodetect.h"
+#include <xapian/language_autodetect.h>
 
 using namespace std;
 using namespace Xapian;

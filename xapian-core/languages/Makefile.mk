@@ -5,8 +5,7 @@ INCLUDES += -I$(top_srcdir)/languages -Ilanguages
 endif
 
 noinst_HEADERS +=\
-	languages/steminternal.h\
-	languages/language_autodetect.h
+	languages/steminternal.h
 
 snowball_algorithms =\
 	languages/armenian.sbl\
