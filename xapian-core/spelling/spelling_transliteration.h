@@ -85,8 +85,12 @@ public:
     SpellingTransliteration(const std::string& name);
     SpellingTransliteration(SpellingTransliterationImpl* impl = NULL);
 
+    //Return one variant of the given word transliterated from the
+    //selected to the latin alphabet.
     std::string get_transliteration(const std::string& word) const;
 
+    //Return variants of the given word transliterated to and from the
+    //selected alphabet. (Limited by the MAX_TRANSLITERATIONS const)
     std::vector<std::string> get_transliterations(const std::string& word) const;
 };
 

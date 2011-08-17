@@ -78,9 +78,11 @@ public:
 	add_mapping("\u0449", "sch"); // Щ
 	add_mapping("\u0449", "shch"); // Щ (alt)
 	add_mapping("\u044A", ""); // Ъ
+	add_mapping("\u044A", "'"); // Ъ (alt)
 	add_mapping("\u044B", "y"); // Ы
 	add_mapping("\u044B", "i"); // Ы (alt)
 	add_mapping("\u044C", ""); // Ь
+	add_mapping("\u044C", "'"); // Ь (alt)
 	add_mapping("\u044D", "e"); // Э
 	add_mapping("\u044E", "iu"); // Ю
 	add_mapping("\u044E", "yu"); // Ю (alt)
