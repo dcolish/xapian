@@ -1,4 +1,5 @@
 .. Copyright (C) 2007 Olly Betts
+.. Copyright (C) 2011 Nikita Smetanin
 
 ========================================
 Xapian 1.0 Term Indexing/Querying Scheme
@@ -43,6 +44,32 @@ The special handling of a trailing ``.`` in the QueryParser (which would often
 mistakenly trigger for pasted text) has been removed.  This feature was there to
 support Omega's topterms adding stemmed forms, but Omega no longer needs to do this
 as it can suggest unstemmed forms instead.
+
+Spelling
+========
+
+Spelling data is obtained from text in the next way - each word is added to a spelling data
+(associated with its prefix) by using Database::add_spelling(word, ...) method. Each triple
+of words (triples overlaps - "the quick brown", "quick brown fox", "brown fox jumps") is
+added by using Database::add_spelling(first, second, third, ...). Internally, this triple
+is interpreted as two pairs of words - (first, second) and (first, third). The second pair
+is a gapped pair. For the each word spelling data is generated, and for the each pair
+frequency is stored.
+
+To enable spelling for a certain prefix, use add_spelling_prefix(...) method.
+
+Phonetic algorithms
+===================
+
+It is possible to enable generation of phonetic keys, which is stored in the same way as
+stemmed terms - prefixed ('P') and side-by-side with usual terms. Each prefix can has its
+own language for a phonetic algorithm. Use add_phonetic_prefix(...) method to enable this
+feature.
+
+Phonetic algorithms is used to match words by their phonetic pronunciation. Phonetic
+algorithms generate key for the given word - it may be sequence of digits, letters or
+something else. Such an algorithm always tries to generate same keys for words with
+similar pronunciation.
 
 Word Characters
 ===============

@@ -1,3 +1,5 @@
+.. Copyright (C) 2011 Nikita Smetanin
+
 Xapian::QueryParser Syntax
 ==========================
 
@@ -38,6 +40,8 @@ XOR
 or other of the subexpressions, but not both. XOR is probably a bit
 esoteric.
 
+
+
 Bracketed expressions
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -77,6 +81,14 @@ same order as in the query. So ``one ADJ two ADJ three`` matches
 documents containing those three words in that order and within 10 words
 of each other. You can set the threshold to *n* by using ``ADJ/n`` like
 so: ``one ADJ/6 two``.
+
+FUZZY
+~~~~~
+
+``FUZZY one two three`` matches documents which are matched by this
+word sequence or by one of spelling suggestions for this word sequence.
+You can set the spelling correction edit distance to *n* by using 
+``FUZZY/n`` like ``FUZZY/2 one two three``
 
 Phrase searches
 ~~~~~~~~~~~~~~~
@@ -122,6 +134,19 @@ The QueryParser can be configured to support synonyms, which can either
 be used when explicitly specified (using the syntax ``~term``) or
 implicitly (synonyms will be used for all terms or groups of terms for
 which they have been specified).
+
+Spelling
+~~~~~~~~
+
+The QueryParser can be configured to support spelling corrections,
+which can either be used when explicitly specified 
+(using the syntax ``#term``) or implicitly (corrections will be used
+for all terms or groups of terms for which they have been specified).
+
+Spelling suggestions for prefixes and additional features like phonetic
+algorithms, transliteration and keyboard layouts may be enabled using
+the add_spelling_prefix(...) method.
+To set these features for unstemmed terms, use set_spelling(...) method.
 
 Wildcards
 ~~~~~~~~~
