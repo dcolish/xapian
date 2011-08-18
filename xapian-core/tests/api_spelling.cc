@@ -394,6 +394,8 @@ DEFINE_TESTCASE(spell9, spelling) {
 
     db.disable_spelling("prefix3");
     TEST_EQUAL(db.get_spelling_suggestion("wordwithprefixthirdZ", "prefix3"), "");
+    return true;
+}
 
 /// Regression test - repeated trigrams cancelled in 1.2.5 and earlier.
 DEFINE_TESTCASE(spell10, spelling) {
@@ -404,5 +406,44 @@ DEFINE_TESTCASE(spell10, spelling) {
     db.add_spelling("stinking", 1);
     db.commit();
     TEST_EQUAL(db.get_spelling_suggestion("scimkin", 3), "skinking");
+    return true;
+}
+
+// Multiple spelling suggestions test
+DEFINE_TESTCASE(spell11, spelling) {
+    Xapian::WritableDatabase db = get_writable_database();
+
+    db.add_spelling("ducking");
+    db.add_spelling("duck");
+    db.add_spelling("the");
+    db.add_spelling("ingthe");
+    db.add_spelling("docking", 2);
+
+    vector<string> words = split_string("ducking the ducking the");
+
+    vector<vector<string> > result = db.get_spelling_suggestions(words, 2);
+    //Test that the first variant is the most frequent one
+    TEST_EQUAL(merge_strings(result[0]), "docking the docking the");
+    //Test that the second variant is distanced from the first one.
+    TEST_EQUAL(merge_strings(result[1]), "duck ingthe duck ingthe");
+
+    return true;
+}
+
+// Transliteration and keyboard layouts test
+DEFINE_TESTCASE(spell12, spelling) {
+    Xapian::WritableDatabase db = get_writable_database();
+
+    db.add_spelling("privet");
+    db.add_spelling("how");
+    db.add_spelling("are");
+    db.add_spelling("ti");
+    db.add_spelling("поживаешь");
+
+    vector<string> words = split_string("привет how are ты pozhivaesh'");
+
+    vector<string> result = db.get_spelling_suggestion(words, string(), "russian");
+    TEST_EQUAL(merge_strings(result), "privet how are ti поживаешь");
+
     return true;
 }
