@@ -230,9 +230,10 @@ class State {
     }
     
     string phonetic_term(const string& prefix, const string& term) {
-	SpellingPhonetic phonetic(get_spelling_language(prefix,
-	                                                QueryParser::FLAG_SPELLING_PHONETIC));
-	return phonetic.get_phonetic(term);
+	string language = get_spelling_language(prefix, QueryParser::FLAG_SPELLING_PHONETIC);
+	if (language.empty()) return string();
+
+	return SpellingPhonetic(language).get_phonetic(term);
     }
 
     void add_to_stoplist(const Term * term) {
@@ -1689,10 +1690,11 @@ TermGroup::apply_spelling(State* state, vector<Query>& subqs, size_t distance) c
 	for (; it != term->prefix_info->prefixes.end() && prefixes_equal; ++it)
 	    if (prefixes.find(*it) == prefixes.end()) prefixes_equal = false;
 
-	if (!prefixes_equal && !correction_terms.empty()) {
+	if (!prefixes_equal) {
 
-	    find_spelling(state, correction_terms, terms_queries,
-	                  terms_pos, prefixes, subqs, distance);
+	    if (!correction_terms.empty())
+		find_spelling(state, correction_terms, terms_queries,
+		              terms_pos, prefixes, subqs, distance);
 
 	    correction_terms.clear();
 	    terms_queries.clear();
