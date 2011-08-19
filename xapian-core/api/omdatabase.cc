@@ -641,17 +641,20 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
     for (it = result_map.begin(), p_it = it; it != result_map.end(); ++it) {
 	//Remove duplicates
 	if (p_it != it && it->second == p_it->second) continue;
+	if (it->second == words) continue;
 
 	value_list.push_back(it->second);
 	value_freq.push_back(it->first);
 	p_it = it;
     }
 
+    vector<vector<string> > result;
+    result.reserve(min(count, value_list.size()));
+    if (value_list.empty()) return result;
+
     vector<double> value_distance(value_list.size(), 0);
     vector<bool> value_excluded(value_list.size(), false);
 
-    vector<vector<string> > result;
-    result.reserve(min(count, value_list.size()));
     result.push_back(value_list.front());
     value_excluded.front() = true;
 
