@@ -46,12 +46,6 @@ class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Int
     bool is_default(unsigned ch) const;
 
 protected:
-    SpellingTransliterationImpl(const std::string& language_name_, const std::string& language_code_);
-
-    void add_mapping(const char* source, const char* translit);
-
-    void add_reverse_mapping(const char* source, const char* translit);
-
     void make_reverse_mapping();
 
     void get_transliterations(const std::string& word,
@@ -60,6 +54,12 @@ protected:
                               std::vector<std::string>& transliterations) const;
 
 public:
+    SpellingTransliterationImpl(const std::string& language_name_, const std::string& language_code_);
+
+    void add_mapping(const std::string& source, const std::string& translit);
+
+    void add_reverse_mapping(const std::string& source, const std::string& translit);
+
     std::string get_transliteration(const std::string& word) const;
 
     std::vector<std::string> get_transliterations(const std::string& word) const;
@@ -74,6 +74,9 @@ class XAPIAN_VISIBILITY_DEFAULT SpellingTransliteration {
     struct SpellingTransliterationStatic {
 	Xapian::Internal::intrusive_ptr<SpellingTransliterationImpl> default_internal;
 	std::vector< Xapian::Internal::intrusive_ptr<SpellingTransliterationImpl> > internals;
+
+	SpellingTransliterationImpl* load_transliteration(const std::string& language_name,
+	                                                  const std::string& language_code) const;
 
 	SpellingTransliterationStatic();
     };

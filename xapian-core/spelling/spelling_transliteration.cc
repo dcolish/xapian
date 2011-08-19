@@ -21,6 +21,8 @@
 #include <config.h>
 #include <vector>
 #include <xapian/unicode.h>
+#include <fstream>
+#include <sstream>
 
 #include "spelling_transliteration.h"
 #include "spelling_transliteration_alphabets.h"
@@ -44,13 +46,13 @@ SpellingTransliterationImpl::is_default(unsigned ch) const
 }
 
 void
-SpellingTransliterationImpl::add_mapping(const char* source, const char* translit)
+SpellingTransliterationImpl::add_mapping(const string& source, const string& translit)
 {
     translit_map[source].push_back(translit);
 }
 
 void
-SpellingTransliterationImpl::add_reverse_mapping(const char* source, const char* translit)
+SpellingTransliterationImpl::add_reverse_mapping(const string& source, const string& translit)
 {
     reverse_translit_map[source].push_back(translit);
 }
@@ -151,10 +153,80 @@ SpellingTransliterationImpl::get_lang_code() const
     return language_code;
 }
 
+string unicode_from_string(const string& data);
+
+string unicode_from_string(const string& data)
+{
+    string result;
+    stringstream datastream(data);
+    stringstream stream;
+
+    string unicode_ch;
+    while (getline(datastream, unicode_ch, '|')) {
+	unsigned ch;
+	stream << hex << unicode_ch;
+	stream >> ch;
+	Unicode::append_utf8(result, ch);
+    }
+
+    return result;
+}
+
+SpellingTransliterationImpl*
+SpellingTransliteration::SpellingTransliterationStatic::load_transliteration(const string& language_name,
+                                                                             const string& language_code) const
+{
+    ifstream lm(("../languages/transliteration/" + language_name + ".tr").c_str(), ifstream::in);
+    if (!lm.good()) return NULL;
+
+    SpellingTransliterationImpl* result = new SpellingTransliterationImpl(language_name,
+                                                                          language_code);
+
+    string line;
+    string key;
+    string value;
+    while (getline(lm, line)) {
+	key.clear();
+	value.clear();
+
+	Utf8Iterator it(line);
+	Utf8Iterator end_it;
+
+	while (it != end_it && Unicode::is_wordchar(*it))
+	    Unicode::append_utf8(key, *it++);
+
+	while (it != end_it && *it != '(') ++it;
+	if (key.empty() || it == end_it) continue;
+
+	++it;
+	while (it != end_it && *it != ')')
+	    Unicode::append_utf8(value, *it++);
+
+	if (key[0] != '~')
+	    result->add_mapping(unicode_from_string(key), value);
+	else result->add_reverse_mapping(key.substr(1), unicode_from_string(value));
+    }
+    lm.close();
+
+    return result;
+}
+
 SpellingTransliteration::SpellingTransliterationStatic::SpellingTransliterationStatic()
 {
-    internals.push_back(new RussianSpellingTransliteration);
     default_internal = new EnglishSpellingTransliteration;
+
+    ifstream lm("../languages/transliteration/languages", ifstream::in);
+    if (lm.good()) {
+	string language;
+	string language_name;
+	string language_code;
+
+	while (getline(lm, language)) {
+	    stringstream stream(language);
+	    stream >> language_name >> language_code;
+	    internals.push_back(load_transliteration(language_name, language_code));
+	}
+    }
 }
 
 SpellingTransliteration::SpellingTransliteration(const string& name) : internal(NULL)
