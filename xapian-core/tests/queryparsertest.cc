@@ -1935,6 +1935,85 @@ static bool test_qp_spellpartial1()
     return true;
 }
 
+static const test test_spell_operator_queries_single_auto[] = {
+    { "serachind", "(serachind:(pos=1) SYNONYM searching:(pos=1))" }, //Auto single word
+    { NULL, NULL }
+};
+
+static const test test_spell_operator_queries_single_explicit[] = {
+    { "serachind", "serachind:(pos=1)" }, //Auto single word
+    { "#serachind", "(serachind:(pos=1) SYNONYM searching:(pos=1))" }, //Explicit single word
+    { NULL, NULL }
+};
+
+static const test test_spell_operator_queries_multiple_auto[] = {
+    { "brick grown box", "(brick:(pos=1) OR grown:(pos=2) OR box:(pos=3) OR ("
+	    "(brick:(pos=1) OR grown:(pos=2) OR box:(pos=3)) SYNONYM "
+	    "(quick:(pos=1) OR brown:(pos=2) OR fox:(pos=3)) SYNONYM "
+	    "(brick:(pos=1) OR brown:(pos=2) OR fox:(pos=3))))" }, //Auto sequence
+    { NULL, NULL }
+};
+
+static const test test_spell_operator_queries_multiple_explicit[] = {
+    { "FUZZY/2 ju mpsover crazy", "((ju:(pos=1) OR mpsover:(pos=2) OR crazy:(pos=3)) SYNONYM "
+	    "(jumps:(pos=1) OR over:(pos=2) OR lazy:(pos=3)) SYNONYM "
+	    "(juk:(pos=1) OR mpsover:(pos=2) OR lazy:(pos=3)))" }, //Explicit sequence
+    { NULL, NULL }
+};
+
+static bool test_qp_spelloperator()
+{
+    mkdir(".brass", 0755);
+    string dbdir = ".brass/qp_spelloperator";
+    Xapian::WritableDatabase db(dbdir, Xapian::DB_CREATE_OR_OVERWRITE);
+
+    db.add_spelling("searching");
+    db.add_spelling("the");
+    db.add_spelling("quick");
+    db.add_spelling("brown");
+    db.add_spelling("fox");
+    db.add_spelling("jumps");
+    db.add_spelling("over");
+    db.add_spelling("lazy");
+    db.add_spelling("dog");
+    db.add_spelling("juk");
+
+    Xapian::QueryParser qp;
+    qp.set_database(db);
+
+    for (const test *p = test_spell_operator_queries_single_auto; p->query; ++p) {
+	Xapian::Query q;
+	q = qp.parse_query(p->query, qp.FLAG_SPELLING_CORRECTION |
+	                   qp.FLAG_AUTO_SPELLING_CORRECTION | qp.FLAG_DEFAULT);
+	tout << "Query: " << p->query << endl;
+	TEST_STRINGS_EQUAL(q.get_description(), string("Xapian::Query(") + p->expect + ")");
+    }
+
+    for (const test *p = test_spell_operator_queries_single_explicit; p->query; ++p) {
+	Xapian::Query q;
+	q = qp.parse_query(p->query, qp.FLAG_SPELLING_CORRECTION | qp.FLAG_DEFAULT);
+	tout << "Query: " << p->query << endl;
+	TEST_STRINGS_EQUAL(q.get_description(), string("Xapian::Query(") + p->expect + ")");
+    }
+
+    for (const test *p = test_spell_operator_queries_multiple_auto; p->query; ++p) {
+	Xapian::Query q;
+	q = qp.parse_query(p->query, qp.FLAG_SPELLING_CORRECTION |
+	                   qp.FLAG_AUTO_MULTIWORD_SPELLING_CORRECTION | qp.FLAG_DEFAULT);
+	tout << "Query: " << p->query << endl;
+	TEST_STRINGS_EQUAL(q.get_description(), string("Xapian::Query(") + p->expect + ")");
+    }
+
+    for (const test *p = test_spell_operator_queries_multiple_explicit; p->query; ++p) {
+	Xapian::Query q;
+	q = qp.parse_query(p->query, qp.FLAG_SPELLING_CORRECTION | qp.FLAG_DEFAULT);
+	tout << "Query: " << p->query << endl;
+	TEST_STRINGS_EQUAL(q.get_description(), string("Xapian::Query(") + p->expect + ")");
+    }
+
+    return true;
+}
+
 static const test test_synonym_queries[] = {
     { "searching", "(Zsearch:(pos=1) SYNONYM Zfind:(pos=1) SYNONYM Zlocate:(pos=1))" },
     { "search", "(Zsearch:(pos=1) SYNONYM find:(pos=1))" },
@@ -2493,6 +2572,7 @@ static const test_desc tests[] = {
     TESTCASE(qp_spell2),
     TESTCASE(qp_spellwild1),
     TESTCASE(qp_spellpartial1),
+    TESTCASE(qp_spelloperator),
     TESTCASE(qp_synonym1),
     TESTCASE(qp_synonym2),
     TESTCASE(qp_synonym3),
