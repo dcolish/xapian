@@ -161,9 +161,10 @@ string unicode_from_string(const string& data)
     stringstream datastream(data);
     stringstream stream;
 
+    unsigned ch;
     string unicode_ch;
-    while (getline(datastream, unicode_ch, '|')) {
-	unsigned ch;
+    while (getline(datastream, unicode_ch, 'u')) {
+	if (unicode_ch.empty()) continue;
 	stream << hex << unicode_ch;
 	stream >> ch;
 	Unicode::append_utf8(result, ch);
@@ -224,7 +225,9 @@ SpellingTransliteration::SpellingTransliterationStatic::SpellingTransliterationS
 	while (getline(lm, language)) {
 	    stringstream stream(language);
 	    stream >> language_name >> language_code;
-	    internals.push_back(load_transliteration(language_name, language_code));
+	    SpellingTransliterationImpl internal = load_transliteration(language_name,
+	                                                                language_code);
+	    if (internal != NULL) internals.push_back(internal);
 	}
     }
 }
