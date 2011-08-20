@@ -200,8 +200,11 @@ SpellingTransliteration::SpellingTransliterationStatic::load_transliteration(con
 	if (key.empty() || it == end_it) continue;
 
 	++it;
-	while (it != end_it && *it != ')')
-	    Unicode::append_utf8(value, *it++);
+	while (it != end_it && *it != ')') {
+	    unsigned ch = *it++;
+	    if (ch == '_') ch = ' ';
+	    Unicode::append_utf8(value, ch);
+	}
 
 	if (key[0] != '~')
 	    result->add_mapping(unicode_from_string(key), value);
@@ -225,11 +228,12 @@ SpellingTransliteration::SpellingTransliterationStatic::SpellingTransliterationS
 	while (getline(lm, language)) {
 	    stringstream stream(language);
 	    stream >> language_name >> language_code;
-	    SpellingTransliterationImpl internal = load_transliteration(language_name,
+	    SpellingTransliterationImpl* internal = load_transliteration(language_name,
 	                                                                language_code);
 	    if (internal != NULL) internals.push_back(internal);
 	}
     }
+    lm.close();
 }
 
 SpellingTransliteration::SpellingTransliteration(const string& name) : internal(NULL)

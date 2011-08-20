@@ -1,0 +1,28 @@
+Languages file
+==============
+The 'languages' file contains a list of active languages (alphabets) which is used for a transliteration.
+
+File format:
+
+    "language_name language_code"
+
+The "language_name" token is a full language name like "english".
+The "language_code" token is a short language name like "en".
+
+.tr files
+=========
+
+The "language_name.tr" files contain rules for a transliteration to and from a certain language (alphabet).
+
+Each line may define a usual rule or a reverse rule.
+
+A usual rule adds a transliteration from a substring in native alphabet to a substring in latin alphabet, and has the following format:
+
+    "native_substring (latin_substring) # comment"
+
+A reverse rule adds a transliteration from a substring in latin alphabet to a substring in native alphabet, and has the following format:
+
+    "latin_substring (native_substring) # comment"
+
+Where the native_substring is a string with unicode character hex codes separated by "u" char, for example "01ACu7AFE",
+and the latin_substring is a simple string in latin alphabet "abc". The "_" character defines the space character.
