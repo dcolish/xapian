@@ -35,7 +35,7 @@ namespace Xapian {
  */
 class XAPIAN_VISIBILITY_DEFAULT SpellingTransliterationImpl : public Xapian::Internal::intrusive_base {
 
-    static const unsigned MAX_TRANSLITERATIONS = 1 << 7;
+    static const unsigned MAX_TRANSLITERATIONS = 100;
 
     std::map<std::string, std::vector<std::string> > translit_map;
     std::map<std::string, std::vector<std::string> > reverse_translit_map;

@@ -1,0 +1,18 @@
+Languages file
+==============
+The 'languages' file contains a list of active languages (alphabets) which is used for a text classification.
+
+Each line contains "language_name" token which is a full language name like "english" 
+and should match the file "language_name.lm".
+
+.lm files
+=========
+
+The "language_name.lm" files contain language models - n-grams for a classification algortithm.
+File format is similar to TextCat but it uses unicode characters.
+
+Each line contains the n-gram and (optionally, not used in algorithm) the frequency of this
+n-gram in source text which was used to generate this file.
+
+Lines ordered from the most frequent n-gram to the least frequent. 
+The "_" character means space character.
