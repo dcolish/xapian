@@ -159,12 +159,12 @@ string unicode_from_string(const string& data)
 {
     string result;
     stringstream datastream(data);
-    stringstream stream;
 
     unsigned ch;
     string unicode_ch;
     while (getline(datastream, unicode_ch, 'u')) {
 	if (unicode_ch.empty()) continue;
+	stringstream stream;
 	stream << hex << unicode_ch;
 	stream >> ch;
 	Unicode::append_utf8(result, ch);
@@ -217,7 +217,7 @@ SpellingTransliteration::SpellingTransliterationStatic::load_transliteration(con
 
 SpellingTransliteration::SpellingTransliterationStatic::SpellingTransliterationStatic()
 {
-    default_internal = new EnglishSpellingTransliteration;
+    default_internal = new SpellingTransliterationImpl("english", "en");
 
     ifstream lm("../languages/transliteration/languages", ifstream::in);
     if (lm.good()) {
