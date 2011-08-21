@@ -5,7 +5,10 @@ The 'languages' file contains a list of active languages (alphabets) which is us
 Each line contains "language_name" token which is a full language name like "english" 
 and should match the file "language_name.lm".
 
-Optionally, the unicode ranges that include all characters for the language may be declared after language_name.
+Optionally, the unicode ranges that include all characters for the language may be declared after the language_name.
+Range may be "optional" or "required". Optional range defines the possible range of the alphabet and 
+has the following format "01AB-01AF". Required range defines that at least one character from input should match this range.
+It has the following format "!01AB-01AF". Ranges should not overlap.
 
 .lm files
 =========

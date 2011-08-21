@@ -31,6 +31,12 @@ namespace Xapian {
 //Class for automatic language detection using n-gram based TextCat method and unicode ranges
 class XAPIAN_VISIBILITY_DEFAULT LanguageAutodetect {
 
+    struct range {
+	unsigned start;
+	unsigned end;
+	bool required;
+    };
+
     //Maximum n-gram length.
     static const unsigned MAX_N = 5;
     //Maximum n-grams count to check and include in language model.
@@ -41,7 +47,10 @@ class XAPIAN_VISIBILITY_DEFAULT LanguageAutodetect {
     //Map of languages, n-grams and its scores (less score - better result).
     std::map<std::string, std::map<std::string, unsigned> > languages;
     //Map of language ranges.
-    std::map<std::string, std::vector<std::pair<unsigned, unsigned> > > language_ranges;
+    std::map<std::string, std::vector<range> > language_ranges;
+
+    //Convert string to range object
+    range range_from_string(const std::string& data) const;
 
     //Return if character may be word character - not 0-9, \t, \n
     bool is_word_char(unsigned int ch) const;

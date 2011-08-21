@@ -26,29 +26,35 @@
 using namespace std;
 using namespace Xapian;
 
-pair<unsigned, unsigned> range_from_string(const string& data);
-
-pair<unsigned, unsigned> range_from_string(const string& data)
+LanguageAutodetect::range
+LanguageAutodetect::range_from_string(const string& data) const
 {
-    string result;
-    stringstream datastream(data);
+    range result;
+    result.start = 0;
+    result.end = 0;
+    if (data.empty()) return result;
 
-    unsigned start_ch = 0;
-    unsigned end_ch = 0;
+    stringstream datastream(data);
+    result.required = (data[0] == '!');
+
+    if (result.required) {
+	char dummy;
+	datastream >> dummy;
+    }
 
     string unicode_ch;
     if (getline(datastream, unicode_ch, '-')) {
 	stringstream start_stream;
 	start_stream << hex << unicode_ch;
-	start_stream >> start_ch;
+	start_stream >> result.start;
 	if (getline(datastream, unicode_ch)) {
 	    stringstream end_stream;
 	    end_stream << hex << unicode_ch;
-	    end_stream >> end_ch;
+	    end_stream >> result.end;
 	}
-	else start_ch = 0;
+	else result.start = 0;
     }
-    return make_pair(start_ch, end_ch);
+    return result;
 }
 
 LanguageAutodetect::LanguageAutodetect()
@@ -64,9 +70,9 @@ LanguageAutodetect::LanguageAutodetect()
 	    string value;
 	    while (stream >> value) {
 		if (value.empty()) continue;
-		pair<unsigned, unsigned > range = range_from_string(value);
-		if (range.second >= range.first && range.second != 0)
-		    language_ranges[language].push_back(range);
+		range r = range_from_string(value);
+		if (r.end >= r.start && r.end > 0)
+		    language_ranges[language].push_back(r);
 	    }
 	    load_language(language, languages[language]);
 	}
@@ -112,21 +118,30 @@ unsigned
 LanguageAutodetect::check_language(const vector<string>& unknown,
                                    const std::string& language) const
 {
-    map<string, vector<pair<unsigned, unsigned> > >::const_iterator rit = language_ranges.find(language);
+    map<string, vector<range> >::const_iterator rit = language_ranges.find(language);
     if (rit != language_ranges.end()) {
+	const vector<range>& ranges = rit->second;
 	Utf8Iterator end_cit;
+	bool required_match = true;
+
+	for (unsigned i = 0; i < ranges.size() && required_match; ++i)
+	    required_match = required_match && !ranges[i].required;
+
 	for (unsigned i = 0; i < unknown.size(); ++i) {
 	    for (Utf8Iterator cit(unknown[i]); cit != end_cit; ++cit) {
 		unsigned ch = *cit;
 		if (ch == '_') continue;
 
 		bool match = false;
-		for (unsigned k = 0; k < rit->second.size() && !match; ++k)
-		    match = match || (ch >= rit->second[k].first && ch < rit->second[k].second);
-
+		for (unsigned k = 0; k < ranges.size() && !match; ++k) {
+		    bool m = (ch >= ranges[k].start && ch <= ranges[k].end);
+		    required_match = required_match || (ranges[k].required && m);
+		    match = match || m;
+		}
 		if (!match) return unknown.size() * MAX_N_COUNT;
 	    }
 	}
+	if (!required_match) return unknown.size() * MAX_N_COUNT;
     }
 
     const map<string, unsigned>& language_map = languages.at(language);

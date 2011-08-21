@@ -15,7 +15,7 @@ french
 german
 hebrew 0590-05FF
 italian
-japanese 30A0-30FF 3040-309F 4E00-9FBF
+japanese !30A0-30FF !3040-309F 4E00-9FBF
 polish
 russian 0430-044F 0410-042F 0401-0401 0451-0451
 spanish
