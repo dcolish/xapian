@@ -979,6 +979,30 @@ WritableDatabase::disable_spelling(const string& prefix) const
 }
 
 void
+WritableDatabase::add_spelling_feedback(const vector<string>& words, Xapian::termcount freqinc,
+                                        const string& prefix) const
+{
+    LOGCALL_VOID(API, "WritableDatabase::add_spelling_feedback", prefix | freqinc);
+    if (internal.size() != 1) only_one_subdatabase_allowed();
+
+    bool last = false;
+    bool last_last = false;
+    for (unsigned i = 0; i < words.size(); ++i) {
+	 Xapian::doccount freq = internal[0]->get_spelling_frequency(words[i]);
+	 if (freq > 0) {
+	    add_spelling(words[i], freqinc, prefix);
+	    if (last) {
+		if (last_last)
+		    add_spelling(words[i], words[i - 1], words[i - 2], freqinc, prefix);
+		else add_spelling(words[i], words[i - 1], freqinc, prefix);
+	    }
+	    last_last = last;
+	    last = true;
+	} else last_last = last = false;
+    }
+}
+
+void
 WritableDatabase::add_synonym(const string & term,
 			      const string & synonym) const
 {

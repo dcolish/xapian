@@ -987,8 +987,21 @@ class XAPIAN_VISIBILITY_DEFAULT WritableDatabase : public Database {
 
 	/**
 	 * Disable spelling for the given prefix.
+	 *
+	 * @param prefix	The prefix.
 	 */
 	void disable_spelling(const std::string& prefix) const;
+
+	/**
+	 * Add a spelling feedback which will increase the total freq of the words to make it returns
+	 * higher in results at the next queries.
+	 *
+	 * @param words		The spelling suggestion which was returned by get_spelling_suggestion[s].
+	 * @param freqinc	How much to increase the frequencies by (default 1).
+	 * @param prefix	The prefix.
+	 */
+	void add_spelling_feedback(const std::vector<std::string>& words, Xapian::termcount freqinc = 1,
+	                           const std::string & prefix = std::string()) const;
 
 	/** Add a synonym for a term.
 	 *
