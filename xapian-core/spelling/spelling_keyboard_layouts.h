@@ -183,7 +183,7 @@ public:
 class SpainSpellingKeyboard : public SpellingKeyboardImpl {
 
 public:
-    SpainSpellingKeyboard() : SpellingKeyboardImpl("spain", "sp")
+    SpainSpellingKeyboard() : SpellingKeyboardImpl("spanish", "sp")
     {
 	add_char_mapping(0x0027, 0x002d);
 	add_char_mapping(0x00a1, 0x003d);

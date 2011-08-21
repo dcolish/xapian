@@ -46,6 +46,8 @@ SpellingPhonetic::~SpellingPhonetic()
 
 string SpellingPhonetic::get_phonetic(const string& input) const
 {
+    if (internal.get() == NULL) return string();
+
     string word = translit.get_transliteration(input);
     if (word.empty()) word = input;
 
