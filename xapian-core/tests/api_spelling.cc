@@ -488,7 +488,7 @@ DEFINE_TESTCASE(spell12, spelling) {
     db.add_spelling("wilkinson");
 
     words = split_string(";qdeleine ou zilkinson");
-    result = db.get_spelling_suggestion(words, string(), "french");
+    result = db.get_spelling_suggestion(words, string(), "french", 0);
     TEST_EQUAL(merge_strings(result), "madeleine ou wilkinson");
 
     return true;
