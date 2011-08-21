@@ -42,7 +42,8 @@ SpellingTransliterationImpl::SpellingTransliterationImpl(const string& language_
 bool
 SpellingTransliterationImpl::is_default(unsigned ch) const
 {
-    return ch >= 'a' && ch <= 'z';
+    return (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') ||
+	   (ch == '.') || (ch == ',') || (ch == '!') || (ch == '?');
 }
 
 void
@@ -192,8 +193,12 @@ SpellingTransliteration::SpellingTransliterationStatic::load_transliteration(con
 
 	Utf8Iterator it(line);
 	Utf8Iterator end_it;
+	if (it == end_it) continue;
 
-	while (it != end_it && Unicode::is_wordchar(*it))
+	bool reverse = false;
+	if ((reverse = (*it == '~'))) ++it;
+
+	while (it != end_it && !Unicode::is_whitespace(*it))
 	    Unicode::append_utf8(key, *it++);
 
 	while (it != end_it && *it != '(') ++it;
@@ -206,9 +211,9 @@ SpellingTransliteration::SpellingTransliterationStatic::load_transliteration(con
 	    Unicode::append_utf8(value, ch);
 	}
 
-	if (key[0] != '~')
+	if (!reverse)
 	    result->add_mapping(unicode_from_string(key), value);
-	else result->add_reverse_mapping(key.substr(1), unicode_from_string(value));
+	else result->add_reverse_mapping(key, unicode_from_string(value));
     }
     lm.close();
 

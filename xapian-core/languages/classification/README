@@ -5,6 +5,8 @@ The 'languages' file contains a list of active languages (alphabets) which is us
 Each line contains "language_name" token which is a full language name like "english" 
 and should match the file "language_name.lm".
 
+Optionally, the unicode ranges that include all characters for the language may be declared after language_name.
+
 .lm files
 =========
 

@@ -405,7 +405,7 @@ DEFINE_TESTCASE(spell10, spelling) {
     db.add_spelling("skinking", 2);
     db.add_spelling("stinking", 1);
     db.commit();
-    TEST_EQUAL(db.get_spelling_suggestion("scimkin", 3), "skinking");
+    TEST_EQUAL(db.get_spelling_suggestion("scimking", 2), "skinking");
     return true;
 }
 
@@ -434,6 +434,7 @@ DEFINE_TESTCASE(spell11, spelling) {
 DEFINE_TESTCASE(spell12, spelling) {
     Xapian::WritableDatabase db = get_writable_database();
 
+    //Russain transliteration
     db.add_spelling("privet");
     db.add_spelling("how");
     db.add_spelling("are");
@@ -441,9 +442,34 @@ DEFINE_TESTCASE(spell12, spelling) {
     db.add_spelling("поживаешь");
 
     vector<string> words = split_string("привет how are ты pozhivaesh'");
-
     vector<string> result = db.get_spelling_suggestion(words, string(), "russian");
     TEST_EQUAL(merge_strings(result), "privet how are ti поживаешь");
+
+    //Japanese transliteration
+    db.add_spelling("mitsubishi");
+    db.add_spelling("otsukaresan");
+
+    words = split_string("みつびし お疲れさん");
+    result = db.get_spelling_suggestion(words, string(), "japanese");
+    TEST_EQUAL(merge_strings(result), "mitsubishi otsukaresan");
+
+    //Chinese transliteration
+    db.add_spelling("pinyin");
+    db.add_spelling("hanzi");
+    db.add_spelling("guanhua");
+
+    words = split_string("拼音 漢字 汉字 官話");
+    result = db.get_spelling_suggestion(words, string(), "chinese");
+    TEST_EQUAL(merge_strings(result), "pinyin hanzi hanzi guanhua");
+
+    //Arabic transliteartion
+    db.add_spelling("alti");
+    db.add_spelling("aystti");
+    db.add_spelling("aljmi");
+
+    words = split_string("التي يستطيع الجميع");
+    result = db.get_spelling_suggestion(words, string(), "arabic");
+    TEST_EQUAL(merge_strings(result), "alti aystti aljmi");
 
     return true;
 }
