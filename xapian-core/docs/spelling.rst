@@ -190,8 +190,40 @@ indexed and queried words allow one substitution. Letter skip in indexed
 word allows one deletion. Letter skip in queried word allows one insertion.
 Letter skips at the adjacent positions allows one transposition.
 
+For example:
+- Insertion / Deletion - Match "three" and "tree"
+
+    One skip in "three" - "t_ree". Exact "tree" - "tree".
+
+- Substitution - Match "test" and "tent":
+
+    One skip in "test" - "te_t". One skip in "tent" - "te_t".
+
+- Transposition - Match "trail" and "trial":
+
+    One skip in "trail" - "tra_l". One skip in "trial" - "tr_al".
+
+The implementation assigns numeric indexes to words, and then use these indexes
+in spelling data: word index and the mask of character skips are packed into 
+one 32-bit integer value and stored sorted (by comparing of two word taking 
+char skips into account) in lists. These lists are stored separately by keys - 
+prefixes of N-character length.
+
+There are the INDEXMAX and the INDEXSTACK values. INDEXMAX keeps value for the 
+next new word. It is increased by 1 each time a new word was added if the 
+INDEXSTACK is empty. INDEXSTACK keeps free indexes which were released after the
+corresponding word was removed. Last value from this stack is used as index for
+a newly added word.
+
+There is the LIMIT constant which limits the only first LIMIT chars to be 
+skipped in entry construction. The constant MAX_DISTANCE defines max available 
+error count, which would be used in spelling data construction.
+
 This algorithm has a very high speed - up to 10 times faster than original
 n-gram. But it requires significantly more memory to store index.
+
+The most appropriate prefix-key length (PREFIX_LENGTH constant) - 4 characters.
+It allows about 8x faster search than the usual ngram approach. 
 
 Unicode Support
 ---------------
@@ -204,6 +236,9 @@ Word sequence suggestions algorithm
 
 Resulting suggestion sequence is chosen among different variants with
 maximum total relative freq - the sum of relative freqs of all word pairs.
+
+	result = relative_freq(the, quick) + relative_freq(quick, brown)
+		 + relative_freq(brown, fox) + ...
 
 Word corrections
 ----------------
@@ -255,6 +290,11 @@ latin alphabet back to the native) for the given word.
 Each word may has a lot of variants because each letter of group of letters
 involved in transliteration may has alternative mappings.
 
+Transliteration schemes are stored in languages/transliteration/*.tr files.
+List of active schemes is defined in languages/transliteration/languages file.
+
+The file format definition is present in languages/transliteration/README file.
+
 Keyboard layouts module provides different layouts to allow word's convertion
 between them, which is helpful in "keyboard layout error", when the word was
 typed using a wrong layout.
@@ -267,12 +307,26 @@ Extended edit distance
 ======================
 
 Extedned edit distance provide more precise and logically implied
-Damerau-Levenshtein distance. It defines custom variable costs for 
+Damerau-Levenshtein distance. It defines custom variable costs for
 insertions / deletions, substitutions and transpositions. Each cost is
 calculated using base value and index cost (relative letter position in a word).
 
 Extended edit distance also supports keyboard layouts and may adjust the
 substitution cost taking into account distance between keys on keyboard.
+
+Resulting distance is computed using insertion/deletion/substitution/transposition
+costs, which is calculated, respectively, by the following methods:
+	
+	get_insert_cost(index, length, character)
+	get_delete_cost(index, length, character)
+	get_replace_cost(index, length, first character, second character)
+	get_transposition_cost(index, length, first character, second character)
+
+Each cost calculation method uses the passed arguments (index of character in the
+word, length of the word, character itself) to make result more precise and related
+to the intuitive meaning.
+Each cost can be about from 0.75 to 1.25.
+The farther from the beginning the character in a word, the higher its cost. 
 
 Current Limitations
 ===================
@@ -316,6 +370,24 @@ QueryParser changed word locations
 The QueryParser doesn't currently report the locations of changed words in
 the query string, so it's a bit fiddly to mark up the altered words specially
 in HTML output, for example.
+
+Language autodetection
+----------------------
+
+Provides n-gram based TextCat-like approach together with unicode ranges to
+identify the language of the given text.
+
+It uses language models in TextCat format (but everything in unicode) which stored 
+in languages/classification/ with .lm extension.
+
+The list of available languages and unicode range mapping is strored in 
+languages/classification/languages file.
+
+The file format is described in langauges/classification/README.
+
+N-Gram classification method counts n-grams in given text that match n-grams
+for each language. N-Gram in language model are sorted by frequency, and this
+frequency is also used in result calculation.
 
 References
 ==========
