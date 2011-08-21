@@ -30,6 +30,8 @@
 #include "testutils.h"
 
 #include <string>
+#include "../spelling/spelling_phonetic.h"
+#include <xapian/language_autodetect.h>
 
 using namespace std;
 
@@ -462,7 +464,7 @@ DEFINE_TESTCASE(spell12, spelling) {
     result = db.get_spelling_suggestion(words, string(), "chinese");
     TEST_EQUAL(merge_strings(result), "pinyin hanzi hanzi guanhua");
 
-    //Arabic transliteartion
+    //Arabic transliteration
     db.add_spelling("alti");
     db.add_spelling("aystti");
     db.add_spelling("aljmi");
@@ -470,6 +472,67 @@ DEFINE_TESTCASE(spell12, spelling) {
     words = split_string("التي يستطيع الجميع");
     result = db.get_spelling_suggestion(words, string(), "arabic");
     TEST_EQUAL(merge_strings(result), "alti aystti aljmi");
+
+    //Russian keyboard layout
+    db.add_spelling("екатеринбург");
+    db.add_spelling("is");
+    db.add_spelling("depressing");
+
+    words = split_string("trfnthby,ehu is вузкуыыштп");
+    result = db.get_spelling_suggestion(words, string(), "russian");
+    TEST_EQUAL(merge_strings(result), "екатеринбург is depressing");
+
+    //French keyboard layout
+    db.add_spelling("madeleine");
+    db.add_spelling("ou");
+    db.add_spelling("wilkinson");
+
+    words = split_string(";qdeleine ou zilkinson");
+    result = db.get_spelling_suggestion(words, string(), "french");
+    TEST_EQUAL(merge_strings(result), "madeleine ou wilkinson");
+
+    return true;
+}
+
+//Phonetic tests
+DEFINE_TESTCASE(spell13, spelling) {
+    Xapian::SpellingPhonetic phonetic("english");
+    TEST_EQUAL(phonetic.get_phonetic("gammon"), phonetic.get_phonetic("gamin"));
+
+    Xapian::SpellingPhonetic russian_phonetic("russian");
+    TEST_EQUAL(russian_phonetic.get_phonetic("шварцнегер"),
+               russian_phonetic.get_phonetic("швэртснегир"));
+
+    return true;
+}
+
+//LanguageAutodetect tests
+DEFINE_TESTCASE(spell14, spelling) {
+    Xapian::LanguageAutodetect lang;
+
+    TEST_EQUAL(lang.get_language("london is the capital of great britain"), "english");
+    TEST_EQUAL(lang.get_language("мама мыла раму"), "russian");
+    TEST_EQUAL(lang.get_language("みつびし お疲れさん"), "japanese");
+    TEST_EQUAL(lang.get_language("拼音 漢字 汉字 官話"), "chinese");
+    TEST_EQUAL(lang.get_language("ek het nie geweet dat hy sou kom nie."), "afrikaans");
+    TEST_EQUAL(lang.get_language("мова корінного населення України"), "ukrainian");
+    TEST_EQUAL(lang.get_language("што тутака зьявілася новага Беларус газ"), "belarus");
+    TEST_EQUAL(lang.get_language("constituido en estado social y democrático de derecho"), "spanish");
+    TEST_EQUAL(lang.get_language("mony writers nou evites apostrophes whaur thay're thocht tae shaw letters fae"), "scots");
+    TEST_EQUAL(lang.get_language("الموسوعة الحرة التي يستطيع الجميع"), "arabic");
+    TEST_EQUAL(lang.get_language("това означава, че те са свободни и винаги ще бъдат такива"), "bulgarian");
+    TEST_EQUAL(lang.get_language("ויקיפדיה היא מיזם רב לשוני לחיבור אנציקלופדיה"), "hebrew");
+    TEST_EQUAL(lang.get_language("w ostatnich latach, w związku z utworzeniem"), "polish");
+    TEST_EQUAL(lang.get_language("l'espressione italiana più corretta per questa lingua è"), "italian");
+    TEST_EQUAL(lang.get_language("am besten haben sich die traditionellen, das heißt ein"), "german");
+    TEST_EQUAL(lang.get_language("en raison de différences existant entre les dialectes du scots et de la"), "french");
+    TEST_EQUAL(lang.get_language("foneettisesti suomen kieli on melko yksinkertainen"), "finnish");
+    TEST_EQUAL(lang.get_language("võrdlevgrammatiliste uurimuste kohaselt on eesti keel maailma"), "estonian");
+    TEST_EQUAL(lang.get_language("taalvormen die sterk verwant zijn aan het Standaardnederlands zijn"), "dutch");
+    TEST_EQUAL(lang.get_language("euskararen jatorria ezezaguna da. Gaur egun, euskararen hizkuntzalaritza"), "basque");
+    TEST_EQUAL(lang.get_language("bošnjaci su izvorni govornici nekoliko dijalekata štokavskog narječja"), "bosnian");
+    TEST_EQUAL(lang.get_language("Hrvatski jezik obuhvaća standardni, odnosno književni ili opći hrvatski"), "croatian");
+    TEST_EQUAL(lang.get_language("Čeština je blízká a vzájemně srozumitelná se slovenštinou"), "czech");
 
     return true;
 }
