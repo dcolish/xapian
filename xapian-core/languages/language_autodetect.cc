@@ -19,19 +19,57 @@
  */
 
 #include <fstream>
+#include <sstream>
 #include <xapian/unicode.h>
 #include <xapian/language_autodetect.h>
-
+#include <iostream>
 using namespace std;
 using namespace Xapian;
+
+pair<unsigned, unsigned> range_from_string(const string& data);
+
+pair<unsigned, unsigned> range_from_string(const string& data)
+{
+    string result;
+    stringstream datastream(data);
+
+    unsigned start_ch = 0;
+    unsigned end_ch = 0;
+
+    string unicode_ch;
+    if (getline(datastream, unicode_ch, '-')) {
+	stringstream start_stream;
+	start_stream << hex << unicode_ch;
+	start_stream >> start_ch;
+	if (getline(datastream, unicode_ch)) {
+	    stringstream end_stream;
+	    end_stream << hex << unicode_ch;
+	    end_stream >> end_ch;
+	}
+	else start_ch = 0;
+    }
+    return make_pair(start_ch, end_ch);
+}
 
 LanguageAutodetect::LanguageAutodetect()
 {
     ifstream lm("../languages/classification/languages", ifstream::in);
     if (lm.good()) {
-	string language;
-	while (getline(lm, language))
+	string language_line;
+	while (getline(lm, language_line)) {
+	    stringstream stream(language_line);
+	    string language;
+	    stream >> language;
+
+	    string value;
+	    while (stream >> value) {
+		if (value.empty()) continue;
+		pair<unsigned, unsigned > range = range_from_string(value);
+		if (range.second >= range.first && range.second != 0)
+		    language_ranges[language].push_back(range);
+	    }
 	    load_language(language, languages[language]);
+	}
     }
 }
 
@@ -72,8 +110,27 @@ LanguageAutodetect::load_language(const string& language, map<string, unsigned>&
 
 unsigned
 LanguageAutodetect::check_language(const vector<string>& unknown,
-                                   const map<string, unsigned>& language_map) const
+                                   const std::string& language) const
 {
+    map<string, vector<pair<unsigned, unsigned> > >::const_iterator rit = language_ranges.find(language);
+    if (rit != language_ranges.end()) {
+	Utf8Iterator end_cit;
+	for (unsigned i = 0; i < unknown.size(); ++i) {
+	    for (Utf8Iterator cit(unknown[i]); cit != end_cit; ++cit) {
+		unsigned ch = *cit;
+		if (ch == '_') continue;
+
+		bool match = false;
+		for (unsigned k = 0; k < rit->second.size() && !match; ++k)
+		    match = match || (ch >= rit->second[k].first && ch < rit->second[k].second);
+
+		if (!match) return unknown.size() * MAX_N_COUNT;
+	    }
+	}
+    }
+
+    const map<string, unsigned>& language_map = languages.at(language);
+
     unsigned result = 0;
     for (unsigned i = 0; i < unknown.size(); ++i) {
 	map<string, unsigned>::const_iterator it = language_map.find(unknown[i]);
@@ -150,7 +207,7 @@ LanguageAutodetect::get_language(const string& text) const
 
     map<string, map<string, unsigned> >::const_iterator it;
     for (it = languages.begin(); it != languages.end(); ++it) {
-	unsigned score = check_language(unknown, it->second);
+	unsigned score = check_language(unknown, it->first);
 	result_map.insert(make_pair(score, it->first));
     }
     return !result_map.empty() ? result_map.begin()->second : string();

@@ -28,27 +28,44 @@
 
 namespace Xapian {
 
+//Class for automatic language detection using n-gram based TextCat method and unicode ranges
 class XAPIAN_VISIBILITY_DEFAULT LanguageAutodetect {
 
+    //Maximum n-gram length.
     static const unsigned MAX_N = 5;
+    //Maximum n-grams count to check and include in language model.
     static const unsigned MAX_N_COUNT = 400;
+    //Minimum n-gram frequency to include it in language model.
     static const unsigned MIN_N_FREQ = 1;
 
+    //Map of languages, n-grams and its scores (less score - better result).
     std::map<std::string, std::map<std::string, unsigned> > languages;
+    //Map of language ranges.
+    std::map<std::string, std::vector<std::pair<unsigned, unsigned> > > language_ranges;
 
+    //Return if character may be word character - not 0-9, \t, \n
     bool is_word_char(unsigned int ch) const;
 
+    //Load language model (n-grams) from file with language.lm name into result map.
     bool load_language(const std::string& language, std::map<std::string, unsigned>& result) const;
 
+    //Check language and return its score related to the given unknown language model
+    //(which is generated from query string).
     unsigned check_language(const std::vector<std::string>& unknown,
-                            const std::map<std::string, unsigned>& language_map) const;
+                            const std::string& language) const;
 
-public:
-    LanguageAutodetect();
-    LanguageAutodetect(std::vector<std::string> languages_);
-
+    //Create language model (i.e. n-grams list) for the given text.
     std::vector<std::string> create_language_model(const std::string& text) const;
 
+public:
+    //Construct LanguageAutodetect object with all available languages, which described
+    //in "languages" file.
+    LanguageAutodetect();
+
+    //Construct LanguageAutodetect object with the given languages.
+    LanguageAutodetect(std::vector<std::string> languages_);
+
+    //Get most possible language for the given text
     std::string get_language(const std::string& text) const;
 };
 

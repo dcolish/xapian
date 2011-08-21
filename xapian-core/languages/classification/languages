@@ -1,22 +1,22 @@
 afrikaans
-arabic
+arabic 0600-06FF
 basque
 belrus
 bosnian
 bulgarian
-chinese
+chinese 4E00-9FFF
 croatian
 czech
 dutch
-english
+english 0041-005A 0061-007A
 estonian
 finnish
 french
 german
-hebrew
+hebrew 0590-05FF
 italian
-japanese
+japanese 30A0-30FF 3040-309F 4E00-9FBF
 polish
-russian
+russian 0430-044F 0410-042F 0401-0401 0451-0451
 spanish
-ukrainian
+ukrainian 0404-0457 0490-0491
