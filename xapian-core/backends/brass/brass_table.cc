@@ -1566,8 +1566,7 @@ BrassTable::BrassTable(const char * tablename_, const string & path_,
 	  cursor_version(0),
 	  split_p(0),
 	  compress_strategy(compress_strategy_),
-	  deflate_zstream(NULL),
-	  inflate_zstream(NULL),
+
 	  lazy(lazy_)
 {
     LOGCALL_CTOR(DB, "BrassTable", tablename_ | path_ | readonly_ | compress_strategy_ | lazy_);
@@ -1728,20 +1727,6 @@ BrassTable::create_and_open(unsigned int block_size_)
 BrassTable::~BrassTable() {
     LOGCALL_DTOR(DB, "BrassTable");
     BrassTable::close();
-
-    if (deflate_zstream) {
-	// Errors which we care about have already been handled, so just ignore
-	// any which get returned here.
-	(void) deflateEnd(deflate_zstream);
-	delete deflate_zstream;
-    }
-
-    if (inflate_zstream) {
-	// Errors which we care about have already been handled, so just ignore
-	// any which get returned here.
-	(void) inflateEnd(inflate_zstream);
-	delete inflate_zstream;
-    }
 }
 
 void BrassTable::close(bool permanent) {
@@ -1895,18 +1880,34 @@ BrassTable::commit(brass_revision_number_t revision, int changes_fd,
 }
 
 void
-BrassTable::write_changed_blocks(int changes_fd)
+BrassTable::write_changed_blocks(int changes_fd, bool compressed)
 {
     LOGCALL_VOID(DB, "BrassTable::write_changed_blocks", changes_fd);
     Assert(changes_fd >= 0);
     if (handle < 0) return;
     if (faked_root_block) return;
 
+    // TODO:dc: Use zlib to compress block data for changesets iff compressed ==
+    // true
+
     string buf;
     pack_uint(buf, 2u); // Indicate the item is a list of blocks
     pack_string(buf, tablename);
     pack_uint(buf, block_size);
-    io_write(changes_fd, buf.data(), buf.size());
+
+    lazy_alloc_deflate_zstream();
+
+
+    deflate_zstream->next_in = (Bytef *)const_cast<char *>(buf.data());
+    deflate_zstream->avail_in = (uInt)buf.size();
+    int err = deflate(deflate_zstream, Z_FINISH);
+    if (err == Z_STREAM_END) {
+	io_write(changes_fd, reinterpret_cast<const char *>(buf.data()),
+		 deflate_zstream->total_out);
+    } else {
+	// The deflate failed, try to write data uncompressed
+	io_write(changes_fd, buf.data(), buf.size());
+    }
 
     // Compare the old and new bitmaps to find blocks which have changed, and
     // write them to the file descriptor.
