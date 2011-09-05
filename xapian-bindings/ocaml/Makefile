@@ -1,6 +1,6 @@
 SWIG=../../swig/preinst-swig
-INCLUDE=-I. -I./../generic $(shell xapian-config --cxxflags)
-LINK=$(shell xapian-config --libs)
+INCLUDE=-I. -I./../generic $(shell xapian-config-1.3 --cxxflags)
+LINK=$(shell xapian-config-1.3 --libs)
 
 all: static
 

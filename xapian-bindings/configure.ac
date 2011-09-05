@@ -1121,7 +1121,6 @@ AC_CONFIG_FILES([Makefile
  csharp/Makefile csharp/AssemblyInfo.cs
  ruby/Makefile
  perl/Makefile perl/util.i
- ocaml/Makefile
  lua/Makefile
  xapian-bindings.spec
  ])
