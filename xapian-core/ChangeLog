@@ -1,3 +1,63 @@
+Thu Sep 01 12:50:43 GMT 2011  Olly Betts <olly@survex.com>
+
+	* include/xapian/enquire.h: Clarify "sort by date" with BoolWeight
+	  example.
+
+Tue Aug 30 13:51:48 GMT 2011  Olly Betts <olly@survex.com>
+
+	* docs/index.rst: Add link to apidoc.pdf.
+
+Wed Aug 24 14:12:05 GMT 2011  Olly Betts <olly@survex.com>
+
+	* queryparser/queryparser.lemony: Fix memory leak (caught by existing
+	  testcase queryparser1 when run under valgrind).
+
+Wed Aug 24 12:47:49 GMT 2011  Olly Betts <olly@survex.com>
+
+	* queryparser/,tests/queryparsertest.cc,tests/termgentest.cc: Add
+	  support for indexing and searching CJK text using n-grams.  Currently
+	  this is only enabled if environmental variable XAPIAN_CJK_NGRAM is
+	  set to a non-empty value.
+
+Tue Aug 23 03:49:27 GMT 2011  Olly Betts <olly@survex.com>
+
+	* api/vectortermlist.cc,api/vectortermlist.h: Change so that p == NULL
+	  represents at_end, and p == data.data() means we've yet to start.
+
+Mon Aug 22 15:30:51 GMT 2011  Olly Betts <olly@survex.com>
+
+	* api/vectortermlist.cc: Add new source file missed from last commit.
+
+Mon Aug 22 14:32:50 GMT 2011  Olly Betts <olly@survex.com>
+
+	* api/,backends/brass/brass_synonym.cc,backends/chert/chert_synonym.cc,
+	  common/Makefile.mk,common/vectortermlist.h,
+	  queryparser/queryparser.cc: Reimplement VectorTermList to store the
+	  list of terms encoded into a single std::string, which is a lot more
+	  memory efficient that std::vector<std::string>.
+
+Mon Aug 22 12:22:49 GMT 2011  Olly Betts <olly@survex.com>
+
+	* common/Makefile.mk,common/const_database_wrapper.cc,
+	  common/const_database_wrapper.h,matcher/Makefile.mk,
+	  matcher/const_database_wrapper.cc,matcher/const_database_wrapper.h:
+	  Move const_database_wrapper.h and const_database_wrapper.cc from
+	  common/ to matcher/.
+
+Sun Aug 21 12:43:38 GMT 2011  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Since we require GNU find for the coverage-check target,
+	  make use of its -delete option, so we no longer also need GNU xargs.
+
+Thu Aug 18 06:28:11 GMT 2011  Olly Betts <olly@survex.com>
+
+	* queryparser/queryparser.lemony: Reorder header includes to be more
+	  standard.
+
+Thu Aug 18 01:06:00 GMT 2011  Olly Betts <olly@survex.com>
+
+	* queryparser/queryparser.lemony: <cstring> not <string.h>.
+
 Tue Aug 16 04:56:20 GMT 2011  Olly Betts <olly@survex.com>
 
 	* bin/xapian-check.cc: Throw Xapian::FeatureUnavailableError if
