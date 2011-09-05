@@ -108,6 +108,9 @@ class XapianSmoketest < Test::Unit::TestCase
                   Xapian::Term.new("tuple", 1)], xorQuery.terms())
 
     assert_equal(Xapian::Query::OP_ELITE_SET, 10)
+
+    assert_equal("Xapian::Query(<alldocuments>)", Xapian::Query::MatchAll.description())
+    assert_equal("Xapian::Query()", Xapian::Query::MatchNothing.description())
   end # test_queries
 
   def test_003_enquire
@@ -242,6 +245,10 @@ class XapianSmoketest < Test::Unit::TestCase
   end
 
   def test_016_compactor
+    if ! Dir.respond_to?("mktmpdir")
+      # Older Ruby 1.8.x doesn't have Dir.mktmpdir() - just skip if so.
+      return
+    end
     Dir.mktmpdir("smokerb") {|tmpdir|
         db1path = "#{tmpdir}db1"
         db2path = "#{tmpdir}db2"

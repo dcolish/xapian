@@ -12,12 +12,21 @@ endif
 
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = xapian.i xapian-head.i generic/except.i \
+EXTRA_DIST = xapian.i xapian-head.i xapian-headers.i generic/except.i \
     xapian-bindings.spec skiptest \
     HACKING
 
-SUBDIRS = @BINDINGS@
-DIST_SUBDIRS = python php java-swig java ruby tcl8 csharp perl
+SUBDIRS = . @BINDINGS@
+DIST_SUBDIRS = python php java ruby tcl8 csharp perl lua
+
+if MAINTAINER_MODE
+if !MAINTAINER_NO_DOCS
+BUILT_SOURCES = doxygen-xml/index.xml
+
+doxygen-xml/index.xml: $(XAPIAN_HEADERS)
+	$(DOXYGEN) doxygen_xml.conf
+endif
+endif
 
 DISTCHECK_CONFIGURE_FLAGS = XAPIAN_CONFIG="$(XAPIAN_CONFIG)" \
 	PYTHON_LIB="`pwd`/../_inst/tmp_pylib" \
@@ -25,4 +34,5 @@ DISTCHECK_CONFIGURE_FLAGS = XAPIAN_CONFIG="$(XAPIAN_CONFIG)" \
 	RUBY_LIB="`pwd`/../_inst/tmp_rubylib" \
 	RUBY_LIB_ARCH="`pwd`/../_inst/tmp_rubylibarch" \
 	TCL_LIB="`pwd`/../_inst/tmp_tcllib" \
-	PERL_LIB="`pwd`/../_inst/tmp_perllib"
+	PERL_LIB="`pwd`/../_inst/tmp_perllib" \
+	LUA_LIB="`pwd`/../_inst/tmp_lualib"

@@ -1,12 +1,15 @@
 Remote Backend Protocol
 =======================
 
-This document describes *version 35.1* of the protocol used by Xapian's
-remote backend. The major protocol version increased to 35 in Xapian
-1.1.5, and the minor protocol version to 1 in Xapian 1.2.4. Clients and
-servers must support matching major protocol versions and the client's
-minor protocol version must be the same or lower. This means that for a
-minor protocol version change, you can upgrade first servers and then
+This document describes *version 36.0* of the protocol used by Xapian's
+remote backend. The major protocol version increased to 36 in Xapian
+1.3.0.
+
+.. , and the minor protocol version to 1 in Xapian 1.2.4.
+
+Clients and servers must support matching major protocol versions and the
+client's minor protocol version must be the same or lower. This means that for
+a minor protocol version change, you can upgrade first servers and then
 clients and everything should work during the upgrades.
 
 The protocol assumes a reliable two-way connection across which
@@ -19,7 +22,8 @@ All messages start with a single byte identifying code. A message from
 client to server has a ``MSG_XXX`` identifying code, while a message
 from server to client has a ``REPLY_XXX`` identifying code (but note
 that a reply might not actually be in response to a message -
-REPLY\_GREETING isn't - and some messages result in multiple replies).
+REPLY\_UPDATE is sent by the server when the connection is opened - and some
+messages result in multiple replies).
 
 The identifying code is followed by the encoded length of the contents
 followed by the contents themselves.
@@ -41,17 +45,17 @@ to some power of 2). This is indicated by ``F<...>`` below.
 Boolean values are passed as a single byte which is the ASCII character
 value for ``0`` or ``1``. This is indicated by ``B<...>`` below.
 
-Server greeting and statistics
-------------------------------
+Server statistics
+-----------------
 
--  ``REPLY_GREETING <protocol major version> <protocol minor version> I<db doc count> I<last docid> B<has positions?> I<db total length> <UUID>``
+-  ``REPLY_UPDATE <protocol major version> <protocol minor version> I<db doc count> I(<last docid> - <db doc count>) I<doclen lower bound> I(<doclen upper bound> - <doclen lower bound>) B<has positions?> I<db total length> <UUID>``
 
 The protocol major and minor versions are passed as a single byte each
 (e.g. ``'\x1e\x01'`` for version 30.1). The server and client must
 understand the same protocol major version, and the server protocol
 minor version must be greater than or equal to that of the client (this
-means that the server understands newer MSG\_*XXX*, but will only send
-newer REPLY\_*YYY* in response to an appropriate client message.
+means that the server understands newer MSG\_\ *XXX*, but will only send
+newer REPLY\_\ *YYY* in response to an appropriate client message.
 
 Exception
 ---------
@@ -69,18 +73,20 @@ Write Access
 ------------
 
 -  ``MSG_WRITEACCESS``
--  ``REPLY_UPDATE I<db doc count> I<last docid> B<has positions?> I<db total length> <UUID>``
+-  ``REPLY_UPDATE [...]``
 
-The reply is the same as for ``MSG_UPDATE``. If write access isn't
-supported or the database is locked by another writer, then an exception
-is thrown.
+The reply message is the same format as the server's opening greeting given
+above.
+
+If write access isn't supported or the database is locked by another writer,
+then an exception is thrown.
 
 By default the server is also read-only, even if writing is supported.
 If the client wants to be able to write, it needs to request this
 explicitly. We do this so that the same server can support multiple
 read-only clients and one writing client at once, without the protocol
 for read-only clients requiring an extra message. The overhead of an
-extra message exchange for a writer is likely to matter as indexing is
+extra message exchange for a writer is unlikely to matter as indexing is
 rarely so real-time critical as searching.
 
 All Terms
@@ -134,9 +140,12 @@ Reopen
 ------
 
 -  ``MSG_REOPEN``
--  ``REPLY_UPDATE I<db doc count> I<last docid> B<has positions?> I<db total length> <UUID>``
+-  ``REPLY_DONE`` or ``REPLY_UPDATE [...]``
 
-The reply is the same as for ``MSG_UPDATE``.
+If the database was already at the latest version, ``REPLY_DONE`` is returned.
+
+If it was reopened, then the reply message is the same format as the server's
+opening greeting given above.
 
 Query
 -----
@@ -144,7 +153,7 @@ Query
 -  ``MSG_QUERY L<serialised Xapian::Query object> I<query length> I<collapse max> [I<collapse key number> (if collapse_max non-zero)] <docid order> I<sort key number> <sort by> B<sort value forward> <percent cutoff> F<weight cutoff> <serialised Xapian::Weight object> <serialised Xapian::RSet object> [L<serialised Xapian::MatchSpy object>...]``
 -  ``REPLY_STATS <serialised Stats object>``
 -  ``MSG_GETMSET I<first> I<max items> I<check at least> <serialised global Stats object>``
--  ``REPLY_RESULTS  L<the result of calling serialise_results() on each Xapian::MatchSpy> <serialised Xapian::MSet object>``
+-  ``REPLY_RESULTS L<the result of calling serialise_results() on each Xapian::MatchSpy> <serialised Xapian::MSet object>``
 
 docid order is ``'0'``, ``'1'`` or ``'2'``.
 
@@ -168,7 +177,7 @@ Positionlist
 -  ``REPLY_DONE``
 
 Since positions must be strictly monotonically increasing, we encode
-``(pos - lastpos - 1)`` so that small differences between large position
+``(pos - lastpos - 1)`` so that small differences between large position
 values can still be encoded compactly. The first position is encoded as
 its true value.
 
@@ -182,7 +191,7 @@ Postlist
 -  ``REPLY_DONE``
 
 Since document IDs in postlists must be strictly monotonically
-increasing, we encode ``(docid - lastdocid - 1)`` so that small
+increasing, we encode ``(docid - lastdocid - 1)`` so that small
 differences between large document IDs can still be encoded compactly.
 The first document ID is encoded as its true value - 1 (since document
 IDs are always > 0).

@@ -11,14 +11,38 @@ endif
 # being run.  For "make all", "make check", etc we carefully skip any docs
 # which we don't have the tools to generate.
 
-RSTDOCS = admin_notes.rst bm25.rst code_structure.rst collapsing.rst \
- deprecation.rst facets.rst index.rst internals.rst install.rst intro_ir.rst \
- glossary.rstoverview.rst postingsource.rst quickstartindex.cc.rst \
- quickstartsearch.cc.rst stemming.rst quickstart.rst matcherdesign.rst
- queryparser.rst quickstartexpand.cc.rst remote.rst remote_protocol.rst \
- replication.rts replication_protocol.rst sorting.rst serialisation.rst \
- spelling.rst scalability.rst synonyms.rst termgenerator.rst tests.rst \
- valueranges.rst
+HTMLDOCS = code_structure.html \
+ quickstartexpand.cc.html quickstartindex.cc.html quickstartsearch.cc.html
+
+RSTDOCS = \
+	admin_notes.rst \
+	bm25.rst \
+	collapsing.rst \
+	deprecation.rst \
+	facets.rst \
+	glossary.rst \
+	index.rst \
+	install.rst \
+	internals.rst \
+	intro_ir.rst \
+	matcherdesign.rst \
+	overview.rst \
+	postingsource.rst \
+	queryparser.rst \
+	quickstart.rst \
+	remote_protocol.rst \
+	remote.rst \
+	replication_protocol.rst \
+	replication.rst \
+	scalability.rst \
+	serialisation.rst \
+	sorting.rst \
+	spelling.rst \
+	stemming.rst \
+	synonyms.rst \
+	termgenerator.rst \
+	tests.rst \
+	valueranges.rst
 
 RSTHTML = $(RSTDOCS:.rst=.html)
 
@@ -55,7 +79,7 @@ if !MAINTAINER_NO_DOCS
 # Build API docs with doxygen
 all-local: doxygen_api_docs
 
-dist_doc_DATA = $(RSTHTML) apidoc.pdf
+dist_doc_DATA = $(HTMLDOCS) $(RSTHTML) apidoc.pdf
 
 install-data-local: doxygen_api_docs
 	$(mkinstalldirs) $(DESTDIR)$(docdir)/apidoc/html

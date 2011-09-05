@@ -2,7 +2,7 @@
  *
  * Copyright 1999,2000,2001 BrightStation PLC
  * Copyright 2001,2002 Ananova Ltd
- * Copyright 2002,2003,2004,2005,2006,2007,2008,2009,2010 Olly Betts
+ * Copyright 2002,2003,2004,2005,2006,2007,2008,2009,2010,2011 Olly Betts
  * Copyright 2007,2009 Lemur Consulting Ltd
  * Copyright 2011, Action Without Borders
  *
@@ -544,12 +544,16 @@ ESet::get_description() const
 const string &
 ESetIterator::operator *() const
 {
+    Assert(eset.internal.get());
+    AssertRel(index,<,eset.internal->items.size());
     return eset.internal->items[index].term;
 }
 
 Xapian::weight
 ESetIterator::get_weight() const
 {
+    Assert(eset.internal.get());
+    AssertRel(index,<,eset.internal->items.size());
     return eset.internal->items[index].wt;
 }
 
@@ -564,30 +568,40 @@ ESetIterator::get_description() const
 Xapian::docid
 MSetIterator::operator *() const
 {
+    Assert(mset.internal.get());
+    AssertRel(index,<,mset.internal->items.size());
     return mset.internal->items[index].did;
 }
 
 Document
 MSetIterator::get_document() const
 {
+    Assert(mset.internal.get());
+    AssertRel(index,<,mset.internal->items.size());
     return mset.internal->get_doc_by_index(index);
 }
 
 Xapian::weight
 MSetIterator::get_weight() const
 {
+    Assert(mset.internal.get());
+    AssertRel(index,<,mset.internal->items.size());
     return mset.internal->items[index].wt;
 }
 
 std::string
 MSetIterator::get_collapse_key() const
 {
+    Assert(mset.internal.get());
+    AssertRel(index,<,mset.internal->items.size());
     return mset.internal->items[index].collapse_key;
 }
 
 Xapian::doccount
 MSetIterator::get_collapse_count() const
 {
+    Assert(mset.internal.get());
+    AssertRel(index,<,mset.internal->items.size());
     return mset.internal->items[index].collapse_count;
 }
 
@@ -639,10 +653,9 @@ Enquire::Internal::get_query()
 MSet
 Enquire::Internal::get_mset(Xapian::doccount first, Xapian::doccount maxitems,
 			    Xapian::doccount check_at_least, const RSet *rset,
-			    const MatchDecider *mdecider,
-			    const MatchDecider *matchspy_legacy) const
+			    const MatchDecider *mdecider) const
 {
-    LOGCALL(MATCH, MSet, "Enquire::Internal::get_mset", first | maxitems | check_at_least | rset | mdecider | matchspy_legacy);
+    LOGCALL(MATCH, MSet, "Enquire::Internal::get_mset", first | maxitems | check_at_least | rset | mdecider);
 
     if (percent_cutoff && (sort_by == VAL || sort_by == VAL_REL)) {
 	throw Xapian::UnimplementedError("Use of a percentage cutoff while sorting primary by value isn't currently supported");
@@ -668,11 +681,11 @@ Enquire::Internal::get_mset(Xapian::doccount first, Xapian::doccount maxitems,
 		       order, sort_key, sort_by, sort_value_forward,
 		       errorhandler, stats, weight, spies,
 		       (sorter != NULL),
-		       (mdecider != NULL || matchspy_legacy != NULL));
+		       (mdecider != NULL));
     // Run query and put results into supplied Xapian::MSet object.
     MSet retval;
     match.get_mset(first, maxitems, check_at_least, retval,
-		   stats, mdecider, matchspy_legacy, sorter);
+		   stats, mdecider, sorter);
     if (first_orig != first && retval.internal.get()) {
 	retval.internal->firstitem = first_orig;
     }
@@ -754,19 +767,17 @@ TermIterator
 Enquire::Internal::get_matching_terms(Xapian::docid did) const
 {
     if (query.empty())
-	throw Xapian::InvalidArgumentError("get_matching_terms with empty query");
-	//return TermIterator(NULL);
+	return TermIterator();
 
     // The ordered list of terms in the query.
     TermIterator qt = query.get_terms_begin();
-    TermIterator qt_end = query.get_terms_end();
 
     // copy the list of query terms into a map for faster access.
     // FIXME: a hash would be faster than a map, if this becomes
     // a problem.
     map<string, unsigned int> tmap;
     unsigned int index = 1;
-    for ( ; qt != qt_end; ++qt) {
+    for ( ; qt != query.get_terms_end(); ++qt) {
 	if (tmap.find(*qt) == tmap.end())
 	    tmap[*qt] = index++;
     }
@@ -848,17 +859,11 @@ Enquire::Internal::read_doc(const Xapian::Internal::MSetItem &item) const
     }
 }
 
-void
-Enquire::Internal::register_match_decider(const string &,
-	const MatchDecider *)
-{
-}
-
 // Methods of Xapian::Enquire
 
 Enquire::Enquire(const Enquire & other) : internal(other.internal)
 {
-    LOGCALL_VOID(API, "Xapian::Enquire::Enquire", other);
+    LOGCALL_CTOR(API, "Enquire", other);
 }
 
 void
@@ -871,12 +876,12 @@ Enquire::operator=(const Enquire & other)
 Enquire::Enquire(const Database &databases, ErrorHandler * errorhandler)
     : internal(new Internal(databases, errorhandler))
 {
-    LOGCALL_VOID(API, "Xapian::Enquire::Enquire", databases);
+    LOGCALL_CTOR(API, "Enquire", databases);
 }
 
 Enquire::~Enquire()
 {
-    LOGCALL_VOID(API, "Xapian::Enquire::~Enquire", NO_ARGS);
+    LOGCALL_DTOR(API, "Enquire");
 }
 
 void
@@ -906,7 +911,7 @@ Enquire::add_matchspy(MatchSpy * spy) {
 
 void
 Enquire::clear_matchspies() {
-    LOGCALL(API, const Xapian::Query &, "Xapian::Enquire::clear_matchspies", NO_ARGS);
+    LOGCALL_VOID(API, "Xapian::Enquire::clear_matchspies", NO_ARGS);
     internal->spies.clear();
 }
 
@@ -1007,30 +1012,13 @@ Enquire::set_sort_by_relevance_then_key(KeyMaker * sorter, bool ascending)
 MSet
 Enquire::get_mset(Xapian::doccount first, Xapian::doccount maxitems,
 		  Xapian::doccount check_at_least, const RSet *rset,
-		  const MatchDecider *mdecider,
-		  const MatchDecider *matchspy) const
-{
-    LOGCALL(API, Xapian::MSet, "Xapian::Enquire::get_mset", first | maxitems | check_at_least | rset | mdecider | matchspy);
-
-    try {
-	RETURN(internal->get_mset(first, maxitems, check_at_least, rset,
-				  mdecider, matchspy));
-    } catch (Error & e) {
-	if (internal->errorhandler) (*internal->errorhandler)(e);
-	throw;
-    }
-}
-
-MSet
-Enquire::get_mset(Xapian::doccount first, Xapian::doccount maxitems,
-		  Xapian::doccount check_at_least, const RSet *rset,
 		  const MatchDecider *mdecider) const
 {
     LOGCALL(API, Xapian::MSet, "Xapian::Enquire::get_mset", first | maxitems | check_at_least | rset | mdecider);
 
     try {
 	RETURN(internal->get_mset(first, maxitems, check_at_least, rset,
-				  mdecider, NULL));
+				  mdecider));
     } catch (Error & e) {
 	if (internal->errorhandler) (*internal->errorhandler)(e);
 	throw;
@@ -1068,7 +1056,7 @@ Enquire::get_eset(Xapian::termcount maxitems, const RSet & rset, int flags,
 TermIterator
 Enquire::get_matching_terms_begin(const MSetIterator &it) const
 {
-    LOGCALL(API, Xapian::TermIterator, "Xapian::Enquire::get_matching_terms", it);
+    LOGCALL(API, Xapian::TermIterator, "Xapian::Enquire::get_matching_terms_begin", it);
     try {
 	RETURN(internal->get_matching_terms(it));
     } catch (Error & e) {
@@ -1080,7 +1068,7 @@ Enquire::get_matching_terms_begin(const MSetIterator &it) const
 TermIterator
 Enquire::get_matching_terms_begin(Xapian::docid did) const
 {
-    LOGCALL(API, Xapian::TermIterator, "Xapian::Enquire::get_matching_terms", did);
+    LOGCALL(API, Xapian::TermIterator, "Xapian::Enquire::get_matching_terms_begin", did);
     try {
 	RETURN(internal->get_matching_terms(did));
     } catch (Error & e) {

@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2007 Lemur Consulting Ltd
 # Copyright (C) 2008,2009,2010,2011 Olly Betts
-# Copyright (C) 2010 Richard Boulton
+# Copyright (C) 2010,2011 Richard Boulton
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,7 +19,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 
-import gc
 import os
 import random
 import shutil
@@ -220,10 +219,7 @@ def test_matchingterms_iter():
     db = setup_database()
     query = xapian.Query(xapian.Query.OP_OR, ("was", "it", "warm", "two"))
 
-    # Check for memory leaks: Prior to 1.2.4 Enquire.matching_terms()
-    # leaked references to its members.
-    gc.collect()
-    object_count = len(gc.get_objects())
+    # Prior to 1.2.4 Enquire.matching_terms() leaked references to its members.
 
     enquire = xapian.Enquire(db)
     enquire.set_query(query)
@@ -237,10 +233,6 @@ def test_matchingterms_iter():
 
     mterms = [term for term in enquire.matching_terms(mset.get_hit(0))]
     expect(mterms, ['it', 'two', 'warm', 'was'])
-
-    del mterms, mterms2, term, item, enquire, mset
-    gc.collect()
-    expect(object_count, len(gc.get_objects()))
 
 def test_queryterms_iter():
     """Test Query term iterator.
@@ -1291,7 +1283,7 @@ def test_serialise_query():
     q2 = xapian.Query.unserialise(q.serialise())
     expect(str(q), str(q2))
     expect(str(q), 'Xapian::Query()')
- 
+
     q = xapian.Query('hello')
     q2 = xapian.Query.unserialise(q.serialise())
     expect(str(q), str(q2))
@@ -1316,7 +1308,7 @@ def test_preserve_query_parser_stopper():
         return queryparser
     queryparser = make_qp()
     query = queryparser.parse_query('to be')
-    expect([term for term in queryparser.stoplist()], ['to']) 
+    expect([term for term in queryparser.stoplist()], ['to'])
 
 def test_preserve_term_generator_stopper():
     """Test preservation of stopper set on term generator.
@@ -1337,7 +1329,7 @@ def test_preserve_term_generator_stopper():
     doc = termgen.get_document()
     terms = [term.term for term in doc.termlist()]
     terms.sort()
-    expect(terms, ['Zbe', 'be', 'to']) 
+    expect(terms, ['Zbe', 'be', 'to'])
 
 def test_preserve_enquire_sorter():
     """Test preservation of sorter set on enquire.
@@ -1352,8 +1344,8 @@ def test_preserve_enquire_sorter():
 
     def make_enq1(db):
         enq = xapian.Enquire(db)
-        sorter = xapian.MultiValueSorter()
-        enq.set_sort_by_key(sorter, True)
+        sorter = xapian.MultiValueKeyMaker()
+        enq.set_sort_by_key(sorter, False)
         del sorter
         return enq
     enq = make_enq1(db)
@@ -1362,8 +1354,8 @@ def test_preserve_enquire_sorter():
 
     def make_enq2(db):
         enq = xapian.Enquire(db)
-        sorter = xapian.MultiValueSorter()
-        enq.set_sort_by_key_then_relevance(sorter, True)
+        sorter = xapian.MultiValueKeyMaker()
+        enq.set_sort_by_key_then_relevance(sorter, False)
         del sorter
         return enq
     enq = make_enq2(db)
@@ -1372,8 +1364,8 @@ def test_preserve_enquire_sorter():
 
     def make_enq3(db):
         enq = xapian.Enquire(db)
-        sorter = xapian.MultiValueSorter()
-        enq.set_sort_by_relevance_then_key(sorter, True)
+        sorter = xapian.MultiValueKeyMaker()
+        enq.set_sort_by_relevance_then_key(sorter, False)
         del sorter
         return enq
     enq = make_enq3(db)
@@ -1531,13 +1523,8 @@ def test_leak_mset_items():
     enq.set_query(xapian.Query('drip'))
     mset = enq.get_mset(0, 10)
 
-    gc.collect()
-    object_count = len(gc.get_objects())
     # Prior to 1.2.4 this next line leaked an object.
     mset.items
-    gc.collect()
-
-    expect(object_count, len(gc.get_objects()))
 
 def test_custom_matchspy():
     class MSpy(xapian.MatchSpy):
@@ -1560,8 +1547,68 @@ def test_custom_matchspy():
     expect(len(mset), 1)
     expect(mspy.count >= 1, True)
 
-# Run all tests (ie, callables with names starting "test_").
     expect(db.get_doccount(), 5)
+
+def test_removed_features():
+    ok = True
+    db = xapian.inmemory_open()
+    doc = xapian.Document()
+    enq = xapian.Enquire(db)
+    eset = xapian.ESet()
+    mset = xapian.MSet()
+    query = xapian.Query()
+    qp = xapian.QueryParser()
+    titer = xapian._TermIterator()
+    postiter = xapian._PostingIterator()
+
+    def check_missing(obj, attr):
+        expect_exception(AttributeError, None, getattr, obj, attr)
+
+    check_missing(xapian, 'Stem_get_available_languages')
+    check_missing(xapian, 'TermIterator')
+    check_missing(xapian, 'PositionIterator')
+    check_missing(xapian, 'PostingIterator')
+    check_missing(xapian, 'ValueIterator')
+    check_missing(xapian, 'MSetIterator')
+    check_missing(xapian, 'ESetIterator')
+    check_missing(db, 'allterms_begin')
+    check_missing(db, 'allterms_end')
+    check_missing(db, 'metadata_keys_begin')
+    check_missing(db, 'metadata_keys_end')
+    check_missing(db, 'synonym_keys_begin')
+    check_missing(db, 'synonym_keys_end')
+    check_missing(db, 'synonyms_begin')
+    check_missing(db, 'synonyms_end')
+    check_missing(db, 'spellings_begin')
+    check_missing(db, 'spellings_end')
+    check_missing(db, 'positionlist_begin')
+    check_missing(db, 'positionlist_end')
+    check_missing(db, 'postlist_begin')
+    check_missing(db, 'postlist_end')
+    check_missing(db, 'termlist_begin')
+    check_missing(db, 'termlist_end')
+    check_missing(doc, 'termlist_begin')
+    check_missing(doc, 'termlist_end')
+    check_missing(doc, 'values_begin')
+    check_missing(doc, 'values_end')
+    check_missing(enq, 'get_matching_terms_begin')
+    check_missing(enq, 'get_matching_terms_end')
+    check_missing(eset, 'begin')
+    check_missing(eset, 'end')
+    check_missing(mset, 'begin')
+    check_missing(mset, 'end')
+    check_missing(postiter, 'positionlist_begin')
+    check_missing(postiter, 'positionlist_end')
+    check_missing(query, 'get_terms_begin')
+    check_missing(query, 'get_terms_end')
+    check_missing(qp, 'stoplist_begin')
+    check_missing(qp, 'stoplist_end')
+    check_missing(qp, 'unstem_begin')
+    check_missing(qp, 'unstem_end')
+    check_missing(titer, 'positionlist_begin')
+    check_missing(titer, 'positionlist_end')
+
+# Run all tests (ie, callables with names starting "test_").
 if not runtests(globals(), sys.argv[1:]):
     sys.exit(1)
 

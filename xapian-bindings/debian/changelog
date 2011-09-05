@@ -1,3 +1,32 @@
+xapian-bindings (1.2.6-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+    + Includes fixes for #625679 and Ruby Dir.mktmpdir() issue so drop patches
+      for these.
+  * debian/rules: Use single quotes for substituting into debian/control.in to
+    stop the shell from attempting to expand ${python:Versions}.
+  * debian/rules: Use build-stamp and configure-stamp in the top level rather
+    than in the debian subdirectory - this is consistent with where other
+    packages put these files, and means dh_clean removes them for us
+    automatically.
+
+ -- Olly Betts <olly@survex.com>  Tue, 28 Jun 2011 14:42:53 +0000
+
+xapian-bindings (1.2.5-2) unstable; urgency=low
+
+  * Use dh_python2 instead of pycentral for Debian >= squeeze and Ubuntu >=
+    natty.  (Closes: #617149)
+  * python/pythontest2.py: With Python 2.7, gc.collect() doesn't always
+    collect all the garbage, so repeat until no further objects are
+    freed.  (Closes: #625679)
+  * ruby/smoketest.rb: Older Ruby 1.8.x doesn't have Dir.mktmpdir() -
+    just skip the compaction tests for these versions.
+  * debian/rules: Don't force building against tcl 8.5 in experimental - that
+    was just for the transition to tcl 8.5 being the default.
+  * debian/control.in: Standards-Version: 3.9.2 (no changes required).
+
+ -- Olly Betts <olly@survex.com>  Tue, 17 May 2011 02:54:08 +0000
+
 xapian-bindings (1.2.5-1) unstable; urgency=low
 
   * New upstream release.
