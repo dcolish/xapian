@@ -1,5 +1,5 @@
 SWIG=../../swig/preinst-swig
-INCLUDE=-I. -I./../generic $(shell xapian-config-1.3 --cxxflags)
+INCLUDE=-I. -I../generic -I../ $(shell xapian-config-1.3 --swigflags --cxxflags)
 LINK=$(shell xapian-config-1.3 --libs)
 
 all: static
@@ -24,8 +24,8 @@ swig:
 
 
 libs: swig
-	$(SWIG) -Wall $(INCLUDE) -c++ -ocaml    \
-		-outdir . -o xapian_wrap.c ../xapian.i		
+	$(SWIG) -Wall $(INCLUDE) -c++ -ocaml -v \
+		-outdir . -o xapian_wrap.c ocaml.i		
 	ocamlc -cc 'g++ -Wno-write-strings' -g -c -ccopt	\
 		-g -ccopt '-xc++' -ccopt '$(INCLUDE)'		\
 		xapian_wrap.c					
