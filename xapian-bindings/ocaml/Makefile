@@ -25,7 +25,7 @@ swig:
 
 libs: swig
 	$(SWIG) -Wall $(INCLUDE) -c++ -ocaml -v \
-		-outdir . -o xapian_wrap.c ocaml.i		
+		-outdir . -o xapian_wrap.c xapian-ocaml.i		
 	ocamlc -cc 'g++ -Wno-write-strings' -g -c -ccopt	\
 		-g -ccopt '-xc++' -ccopt '$(INCLUDE)'		\
 		xapian_wrap.c					

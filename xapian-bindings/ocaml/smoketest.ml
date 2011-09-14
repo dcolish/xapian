@@ -5,7 +5,7 @@ open Unix
 (* Quick test to ensure the module is loaded *)
 let () = 
   assert (Xapian.module_name =  "xapian");
-  assert ((Xapian.version_string '() as string) = "1.2.5")
+  assert ((Xapian.version_string '() as string) = "1.3.0")
 ;;
 
 (* Basis document test *)
