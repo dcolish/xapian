@@ -1,6 +1,8 @@
 noinst_HEADERS +=\
 	api/documentvaluelist.h\
-	api/maptermlist.h
+	api/editdistance.h\
+	api/maptermlist.h\
+	api/vectortermlist.h
 
 EXTRA_DIST +=\
 	api/dir_contents\
@@ -34,4 +36,5 @@ lib_src +=\
 	api/valueiterator.cc\
 	api/valuerangeproc.cc\
 	api/valuesetmatchdecider.cc\
+	api/vectortermlist.cc\
 	api/version.cc

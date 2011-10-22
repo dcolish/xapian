@@ -1,7 +1,7 @@
 /* queryparser_internal.h: The non-lemon-generated parts of the QueryParser
  * class.
  *
- * Copyright (C) 2005,2006,2007,2010 Olly Betts
+ * Copyright (C) 2005,2006,2007,2010,2011 Olly Betts
  * Copyright (C) 2010 Adam Sjøgren
  * Copyright (C) 2011 Nikita Smetanin
  *
@@ -89,6 +89,7 @@ class QueryParser::Internal : public Xapian::Internal::intrusive_base {
 		    filter_type type);
 
     std::string parse_term(Utf8Iterator &it, const Utf8Iterator &end,
+			   bool cjk_ngram, bool &is_cjk_term,
 			   bool &was_acronym);
 
     void apply_spelling(State* state, std::vector<std::string>& prefixes,
