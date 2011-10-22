@@ -13,6 +13,7 @@ static: libs
 		xapian_wrap.o					\
 		-cc 'g++ -Wno-write-strings $(INCLUDE) $(LINK)'
 
+
 swig:
 	$(SWIG) -ocaml -co swigp4.ml
 	$(SWIG) -ocaml -co swig.mli

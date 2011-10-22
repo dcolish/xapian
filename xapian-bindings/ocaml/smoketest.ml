@@ -35,14 +35,17 @@ let () =
       ignore (qp -> set_database(db));
       let pq = build_parsed_query qp "hello" in
         enq -> set_query(pq);
-        let matches = enq -> get_mset((make_int32 0), (make_int32 10)) in
+        let matches = enq -> get_mset(0, 10) in
           Printf.printf "Found %d\n" (matches -> size() as int);
           assert ((matches -> size() as int) = 1);
           let tb = pq -> get_terms_begin() in
             assert (pq -> empty() as bool = false);
-            assert ((tb -> get_term() as string) = "hello");
+            assert ((tb -> get_term() as string) = "hello")
 ;;
 
+
+(* add a number of documents to a db then pull put one into an Rset and use
+get_eset *)
 
 let _ = 
   ignore (
