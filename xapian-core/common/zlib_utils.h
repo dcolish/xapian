@@ -1,4 +1,7 @@
+
 #include <zlib.h>
+
+#include "xapian/error.h"
 
 #include "debuglog.h"
 #include "utils.h"
@@ -8,8 +11,13 @@ using namespace std;
 #define DONT_COMPRESS -1
 
 class CompressionStream {
+
  public:
-    CompressionStream() {};
+    CompressionStream(int);
+
+    ~CompressionStream();
+
+    int compress_strategy;
 
     /// Zlib state object for deflating
     mutable z_stream *deflate_zstream;

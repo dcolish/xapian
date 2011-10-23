@@ -72,7 +72,8 @@ noinst_HEADERS +=\
 	common/valuelist.h\
 	common/valuestats.h\
 	common/vectortermlist.h\
-	common/weightinternal.h
+	common/weightinternal.h\
+	common/zlib_utils.h
 
 EXTRA_DIST +=\
 	common/dir_contents\
@@ -95,7 +96,8 @@ lib_src +=\
 	common/socket_utils.cc\
 	common/str.cc\
 	common/stringutils.cc\
-	common/utils.cc
+	common/utils.cc\
+	common/zlib_utils.cc
 
 if USE_WIN32_UUID_API
 lib_src +=\

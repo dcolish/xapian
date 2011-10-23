@@ -36,6 +36,8 @@
 #include "stringutils.h"
 #include "unaligned.h"
 
+#include "common/zlib_utils.h"
+
 #include <algorithm>
 #include <string>
 
