@@ -23,7 +23,9 @@
 
 #include "xapian/visibility.h"
 
+#include <map>
 #include <string>
+
 
 namespace Xapian {
 namespace Internal {

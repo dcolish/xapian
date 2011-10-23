@@ -51,11 +51,23 @@ using tr1::unordered_map;
 #elif defined __GNUC__ && __GNUC__ >= 3
 // For GCC >= 3 use <ext/hash_map>.
 #include <ext/hash_map>
+#include<string>
 namespace std {
 using __gnu_cxx::hash_map;
 using __gnu_cxx::hash;
 }
 #define unordered_map hash_map
+
+#ifndef XAPIAN_HASH_STR
+#define XAPIAN_HASH_STR
+namespace __gnu_cxx {
+    template<> struct hash< std::string > {
+	size_t operator()( const std::string& s ) const {
+	    return __stl_hash_string( s.c_str( ) );
+	}
+    };
+}
+#endif
 
 #elif defined _MSC_VER
 // For MSVC use <hash_map>.

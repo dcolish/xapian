@@ -69,6 +69,8 @@ class XAPIAN_VISIBILITY_DEFAULT Utf8Iterator {
 	    seqlen = 0;
 	} else {
 	    p = NULL;
+	    end = NULL;
+	    seqlen = NULL;
 	}
     }
 

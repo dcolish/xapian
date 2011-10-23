@@ -152,7 +152,7 @@ SpellingSplitter::recursive_select_words(const word_splitter_data& data,
 	//Sort suggestions by their "unlikeness" (and then by a frequency) to provide a variety of results.
 	//The first element is the most frequent one. The second element is the most dissimilar to the first one.
 	//The third element is the most dissimilar to the both first and second ones, and so on.
-	for (unsigned i = 1; i < min(value_list.size(), data.result_count); ++i) {
+	for (unsigned i = 1; i < min<size_t>(value_list.size(), data.result_count); ++i) {
 	    word_splitter_value value = temp.value_vector.back();
 
 	    unsigned max_index = INF;
@@ -207,7 +207,7 @@ SpellingSplitter::find_existing_words(const word_splitter_data& data,
 	unsigned length = data.word_lengths[index];
 	unsigned merge_length = length;
 
-	for (unsigned i = 1; i <= min(MAX_MERGE_COUNT, data.word_count - index - 1); ++i)
+	for (unsigned i = 1; i <= min<size_t>(MAX_MERGE_COUNT, data.word_count - index - 1); ++i)
 	    merge_length += data.word_lengths[index + i];
 
 	unsigned offset = data.word_starts[index];
@@ -278,11 +278,11 @@ SpellingSplitter::find_spelling(const std::vector<std::string>& words,
 	unsigned word_length = 0;
 
 	Utf8Iterator word_begin(words[i]);
-	Utf8Iterator word_end;
 
-	for (Utf8Iterator word_it = word_begin; word_it != word_end; ++word_it) {
+	for (Utf8Iterator word_it = word_begin; word_it != Utf8Iterator();) {
 	    unsigned byte_i = word_it.raw() - word_begin.raw();
 	    data.word_utf_map.push_back(byte_start + byte_i);
+	    ++word_it;
 	    ++word_length;
 	}
 

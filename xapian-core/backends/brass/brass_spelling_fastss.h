@@ -21,15 +21,15 @@
 #ifndef XAPIAN_INCLUDED_BRASS_SPELLING_FASTSS_H
 #define XAPIAN_INCLUDED_BRASS_SPELLING_FASTSS_H
 
-#include <xapian/types.h>
-
 #include "brass_spelling.h"
+
+#include "xapian/types.h"
+#include "common/unordered_set.h"
 #include "termlist.h"
 
-#include <vector>
-#include <xapian/unordered_set.h>
-
 #include <string>
+#include <vector>
+
 
 class BrassSpellingTableFastSS : public BrassSpellingTable {
 

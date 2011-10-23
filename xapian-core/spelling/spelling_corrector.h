@@ -49,10 +49,13 @@ class SpellingCorrector : public SpellingBase {
 
 	bool operator<(const word_spelling_key& other) const
 	{
-	    return first_word_index < other.first_word_index || (first_word_index == other.first_word_index && (
-		   first_spelling_index < other.first_spelling_index || (first_spelling_index == other.first_spelling_index && (
-		   second_word_index < other.second_word_index || (second_word_index == other.second_word_index && (
-		   second_spelling_index < other.second_spelling_index))))));
+	    return first_word_index < other.first_word_index ||
+		(first_word_index == other.first_word_index && 
+		 (first_spelling_index < other.first_spelling_index ||
+		  (first_spelling_index == other.first_spelling_index &&
+		   (second_word_index < other.second_word_index ||
+		    (second_word_index == other.second_word_index &&
+		     (second_spelling_index < other.second_spelling_index))))));
 	}
     };
 

@@ -160,7 +160,7 @@ DMSoundexSpellingPhonetic::add_entry(const char* str, bool vowel, const char* fi
 
     string key(str);
     entry_map.insert(make_pair(key, entry));
-    max_entry_length = max(key.length(), max_entry_length);
+    max_entry_length = max<size_t>(key.length(), max_entry_length);
 }
 
 unsigned
@@ -169,7 +169,7 @@ DMSoundexSpellingPhonetic::find_entry(const string& word, unsigned offset, Entry
     buffer.clear();
 
     unsigned entry_length = 0;
-    for (unsigned i = offset; i < min(offset + max_entry_length, word.length()); ++i)
+    for (unsigned i = offset; i < min<size_t>(offset + max_entry_length, word.length()); ++i)
     {
 	buffer.push_back(word[i]);
 

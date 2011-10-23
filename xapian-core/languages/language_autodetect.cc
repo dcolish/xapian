@@ -178,7 +178,7 @@ LanguageAutodetect::create_language_model(const string& text) const
 		unicode_map.push_back(word.size());
 
 		for (unsigned w = 0; w < unicode_map.size() - 1; ++w)
-		    for (unsigned l = 1; l <= min(MAX_N, unicode_map.size() - w - 1); ++l)
+		    for (unsigned l = 1; l <= min<size_t>(MAX_N, unicode_map.size() - w - 1); ++l)
 			++language_map[word.substr(unicode_map[w],
 			                           unicode_map[w + l] - unicode_map[w])];
 

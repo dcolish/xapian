@@ -19,19 +19,22 @@
  */
 
 #include <config.h>
-#include <limits>
-#include <vector>
-#include <map>
-#include <set>
-#include <algorithm>
-#include <xapian/unicode.h>
 
-#include "database.h"
 #include "spelling_corrector.h"
+
+#include "xapian/unicode.h"
+
 #include "autoptr.h"
-#include "ortermlist.h"
+#include "database.h"
 #include "editdistance.h"
 #include "extended_edit_distance.h"
+#include "ortermlist.h"
+
+#include <algorithm>
+#include <limits>
+#include <map>
+#include <set>
+#include <vector>
 
 using namespace std;
 using namespace Xapian;
@@ -209,7 +212,7 @@ SpellingCorrector::recursive_spelling_corrections(const word_corrector_data& dat
 	//Sort suggestions by their "unlikeness" (and then by a frequency) to provide a variety of results.
 	//The first element is the most frequent one. The second element is the most dissimilar to the first one.
 	//The third element is the most dissimilar to the both first and second ones, and so on.
-	for (unsigned i = 1; i < min(value_list.size(), data.result_count); ++i) {
+	for (unsigned i = 1; i < min<size_t>(value_list.size(), data.result_count); ++i) {
 	    word_corrector_value value = temp.value_vector.back();
 
 	    unsigned max_index = INF;

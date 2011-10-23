@@ -23,7 +23,7 @@
 
 #include <vector>
 #include <string>
-#include <xapian/unordered_map.h>
+#include <common/unordered_map.h>
 #include "spelling_phonetic.h"
 
 namespace Xapian {

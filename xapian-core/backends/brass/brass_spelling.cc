@@ -23,7 +23,7 @@
 
 #include <xapian/error.h>
 #include <xapian/types.h>
-#include <xapian/unordered_set.h>
+#include "common/unordered_set.h"
 
 #include "expandweight.h"
 #include "brass_spelling.h"
@@ -189,7 +189,7 @@ BrassSpellingTable::pack_words(const string& prefix,
     unsigned prefix_group = get_spelling_group(prefix);
     if (prefix_group == PREFIX_DISABLED) return string();
 
-    hash<const string&> hasher;
+    hash<string> hasher;
 
     string value;
     unsigned first_hash = hasher(first_word);

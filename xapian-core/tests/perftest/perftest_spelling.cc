@@ -42,7 +42,7 @@ DEFINE_TESTCASE(spelling, spelling)
 	//Skip some words to allow misspelled words in queries.
 	if (lines.size() % skip == 0) {
 	    db.add_spelling(line);
-	    for (unsigned i = 1; i < min(lines.size() / skip, pairs); ++i)
+	    for (unsigned i = 1; i < min<size_t>(lines.size() / skip, pairs); ++i)
 		db.add_spelling(lines[lines.size() - i * skip - 1], line);
 	}
     }

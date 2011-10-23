@@ -24,10 +24,11 @@
 #include <vector>
 #include <string>
 
+#include <common/unordered_map.h>
+#include <common/unordered_set.h>
+
 #include <xapian/intrusive_ptr.h>
 #include <xapian/visibility.h>
-#include <xapian/unordered_map.h>
-#include <xapian/unordered_set.h>
 
 namespace Xapian {
 

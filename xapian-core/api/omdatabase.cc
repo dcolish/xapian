@@ -649,7 +649,7 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
     }
 
     vector<vector<string> > result;
-    result.reserve(min(count, value_list.size()));
+    result.reserve(min<size_t>(count, value_list.size()));
     if (value_list.empty()) return result;
 
     vector<double> value_distance(value_list.size(), 0);
@@ -661,7 +661,7 @@ Database::get_spelling_suggestions(const vector<string>& words, const string& pr
     const unsigned INF = numeric_limits<unsigned>::max();
 
     set<string> unlikeness_set;
-    for (unsigned i = 1; i < min(value_list.size(), count); ++i) {
+    for (unsigned i = 1; i < min<size_t>(value_list.size(), count); ++i) {
 	const vector<string>& value = result.back();
 
 	unlikeness_set.clear();

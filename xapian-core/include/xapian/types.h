@@ -23,6 +23,7 @@
 
 #include <xapian/deprecated.h>
 
+
 namespace Xapian {
 
 /** A count of documents.

@@ -1687,7 +1687,7 @@ TermGroup::find_spelling(State* state,
 	for (unsigned v_i = 0; v_i < suggestion_terms.size(); ++v_i) {
 	    terms_subqueries.clear();
 	    for (unsigned s_i = 0; s_i < suggestion_terms[v_i].size(); ++s_i) {
-		termpos pos = terms_pos[min(s_i, terms_pos.size() - 1)];
+		termpos pos = terms_pos[min<size_t>(s_i, terms_pos.size() - 1)];
 		terms_subqueries.push_back(Query(suggestion_terms[v_i][s_i], 1, pos));
 	    }
 

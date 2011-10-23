@@ -27,10 +27,13 @@
 #include "brass_lazytable.h"
 #include "termlist.h"
 
+#include <ext/hash_map>
 #include <map>
 #include <set>
-#include <vector>
 #include <string>
+#include <vector>
+
+
 
 class BrassSpellingTable : public BrassLazyTable {
     static const char WORDS_SIGNATURE = 'M';
