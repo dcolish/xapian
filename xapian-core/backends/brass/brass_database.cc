@@ -446,8 +446,9 @@ BrassDatabase::set_revision_number(brass_revision_number_t new_revision)
 	    // table last, so that ends up cached the most, if the cache
 	    // available is limited.  Do the position table just before that
 	    // as having that cached will also improve search performance.
-	    bool compressed = CHANGES_VERSION == 1 ? false : true;
+	    bool compressed = CHANGES_VERSION != 1;
 
+	    //FIXME:dc: this is the wrong place to define the compression
 	    termlist_table.write_changed_blocks(changes_fd, compressed);
 	    synonym_table.write_changed_blocks(changes_fd, compressed);
 	    spelling_table.write_changed_blocks(changes_fd, compressed);

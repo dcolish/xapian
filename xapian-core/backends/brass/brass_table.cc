@@ -1566,7 +1566,7 @@ BrassTable::BrassTable(const char * tablename_, const string & path_,
 	  cursor_version(0),
 	  split_p(0),
 	  compress_strategy(compress_strategy_),
-	  comp_stream(compress_strategy),
+	  comp_stream(compress_strategy_),
 	  lazy(lazy_)
 {
     LOGCALL_CTOR(DB, "BrassTable", tablename_ | path_ | readonly_ | compress_strategy_ | lazy_);
@@ -1845,13 +1845,45 @@ BrassTable::write_changed_blocks(int changes_fd, bool compressed)
 	while (base.find_changed_block(&n)) {
 	    buf.resize(0);
 	    pack_uint(buf, n + 1);
-	    io_write(changes_fd, buf.data(), buf.size());
+	    if (compressed) { 
+		comp_stream.lazy_alloc_deflate_zstream();
+
+		comp_stream.deflate_zstream->next_in = (Bytef *)const_cast<char *>(buf.data());
+		comp_stream.deflate_zstream->avail_in = (uInt)buf.size();
+		int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
+		if (err == Z_STREAM_END) {
+		    io_write(changes_fd, reinterpret_cast<const char *>(buf.data()),
+			     comp_stream.deflate_zstream->total_out);
+		} else {
+		    // The deflate failed, try to write data uncompressed
+		    io_write(changes_fd, buf.data(), buf.size());
+		}
+	    }
+	    else {
+		io_write(changes_fd, buf.data(), buf.size());
+	    }
 
 	    // Read block n.
 	    read_block(n, p);
 
 	    // Write block n to the file.
-	    io_write(changes_fd, reinterpret_cast<const char *>(p), block_size);
+	    if (compressed) { 
+		comp_stream.lazy_alloc_deflate_zstream();
+
+		comp_stream.deflate_zstream->next_in = (Bytef *)(p);
+		comp_stream.deflate_zstream->avail_in = (uInt)block_size;
+		int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
+		if (err == Z_STREAM_END) {
+		    io_write(changes_fd, reinterpret_cast<const char *>(p),
+			     comp_stream.deflate_zstream->total_out);
+		} else {
+		    // The deflate failed, try to write data uncompressed
+		    io_write(changes_fd, reinterpret_cast<const char *>(p), block_size);
+		}
+	    }
+	    else {
+		io_write(changes_fd, reinterpret_cast<const char *>(p), block_size);
+	    }
 	    ++n;
 	}
 	delete[] p;
@@ -1862,7 +1894,24 @@ BrassTable::write_changed_blocks(int changes_fd, bool compressed)
     }
     buf.resize(0);
     pack_uint(buf, 0u);
-    io_write(changes_fd, buf.data(), buf.size());
+
+    if (compressed) { 
+	comp_stream.lazy_alloc_deflate_zstream();
+
+	comp_stream.deflate_zstream->next_in = (Bytef *)const_cast<char *>(buf.data());
+	comp_stream.deflate_zstream->avail_in = (uInt)buf.size();
+	int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
+	if (err == Z_STREAM_END) {
+	    io_write(changes_fd, reinterpret_cast<const char *>(buf.data()),
+		     comp_stream.deflate_zstream->total_out);
+	} else {
+	    // The deflate failed, try to write data uncompressed
+	    io_write(changes_fd, buf.data(), buf.size());
+	}
+    }
+    else {
+	io_write(changes_fd, buf.data(), buf.size());
+    }
 }
 
 void

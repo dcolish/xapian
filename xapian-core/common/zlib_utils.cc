@@ -45,8 +45,9 @@ CompressionStream::lazy_alloc_deflate_zstream() const {
     // -15 means raw deflate with 32K LZ77 window (largest)
     // memLevel 9 is the highest (8 is default)
     int err;
+    // FIXME:dc: this needs to really use compress_strategy if set
     err = deflateInit2(deflate_zstream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-		       -15, 9, compress_strategy);
+		       -15, 9, Z_DEFAULT_STRATEGY);
     if (rare(err != Z_OK)) {
 	if (err == Z_MEM_ERROR) {
 	    delete deflate_zstream;
