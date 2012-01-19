@@ -26,8 +26,15 @@ XAPIAN_SWIG_CS_SRCS=\
 	generated-csharp/ExpandDecider.cs \
 	generated-csharp/ExpandDeciderAnd.cs \
 	generated-csharp/FixedWeightPostingSource.cs \
+	generated-csharp/GreatCircleMetric.cs \
 	generated-csharp/InMemory.cs \
 	generated-csharp/KeyMaker.cs \
+	generated-csharp/LatLongCoord.cs \
+	generated-csharp/LatLongCoords.cs \
+	generated-csharp/LatLongCoordsIterator.cs \
+	generated-csharp/LatLongDistanceKeyMaker.cs \
+	generated-csharp/LatLongDistancePostingSource.cs \
+	generated-csharp/LatLongMetric.cs \
 	generated-csharp/MatchDecider.cs \
 	generated-csharp/MatchSpy.cs \
 	generated-csharp/MSet.cs \
@@ -42,8 +49,6 @@ XAPIAN_SWIG_CS_SRCS=\
 	generated-csharp/Remote.cs \
 	generated-csharp/RSet.cs \
 	generated-csharp/SWIGTYPE_p_std__string.cs \
-	generated-csharp/SWIGTYPE_p_std__vectorT_std__string_t.cs \
-	generated-csharp/SWIGTYPE_p_std__vectorT_Xapian__Query_t.cs \
 	generated-csharp/Registry.cs \
 	generated-csharp/SimpleStopper.cs \
 	generated-csharp/Stem.cs \

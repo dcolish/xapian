@@ -60,8 +60,8 @@ coverage-reconfigure-maintainer-mode: distclean
 	$(COVERAGE_CONFIGURE) --enable-maintainer-mode
 
 coverage-check:
-	## GNU find and xargs specific.
-	find . -name '*.gcda' -print0|xargs -0 rm -f
+	## GNU find specific.
+	find . -name '*.gcda' -delete
 	## Don't run under valgrind even if configure was run by hand.
 	$(MAKE) $(AM_MAKEFLAGS) check VALGRIND=
 	rm -f xapian-core.lcov
@@ -72,7 +72,8 @@ coverage-check:
 	done
 	cd tests && lcov -c -b `pwd` -d `pwd` -o ../tmp.lcov
 	sed '/^SF:\/usr/,/^end_of_record/{d};s,^\(SF:/.*/xapian-core/\)\([^t]\),\1tests/\2,' tmp.lcov > xapian-core.lcov
-	genhtml -q -t "Test Coverage for xapian-core r`svn info|sed 's/^Revision: //p;d'`" -o lcov xapian-core.lcov
+	rm -rf lcov
+	genhtml --demangle-cpp --html-gzip -q -p "`pwd`" -t "Test Coverage for xapian-core r`svn info|sed 's/^Revision: //p;d'`" -o lcov xapian-core.lcov
 
 bin_SCRIPTS = xapian-config
 
@@ -111,6 +112,7 @@ include backends/Makefile.mk
 include common/Makefile.mk
 include examples/Makefile.mk
 include expand/Makefile.mk
+include geospatial/Makefile.mk
 include include/Makefile.mk
 include languages/Makefile.mk
 include matcher/Makefile.mk
