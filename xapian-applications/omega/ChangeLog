@@ -1,3 +1,25 @@
+Mon Feb 20 02:45:12 GMT 2012  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst,omindex.cc: More extensions to ignore by default:
+	  fon pyd ttf
+
+Sun Feb 19 22:20:49 GMT 2012  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst: Wrap over-long line.
+
+Thu Feb 16 06:52:24 GMT 2012  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst,omindex.cc: Add more extensions to the default
+	  ignore list: bin dat db jar lnk pyc pyo sqlite sqlite3 sqlite-journal
+	  tmp
+
+Fri Jan 27 03:36:10 GMT 2012  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst,htmlparse.cc,htmlparsetest.cc: Add support for
+	  ignoring sections bracketed by <!--UdmComment--> and
+	  <!--/UdmComment--> like we already do for <!--htdig_noindex-->.
+	  Patch from Raphael Geissert.
+
 Fri Dec 23 05:44:08 GMT 2011  Olly Betts <olly@survex.com>
 
 	* docs/overview.rst: Document that libmagic is used to determine

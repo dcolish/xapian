@@ -177,8 +177,8 @@ sites '/products' and '/products/large', or similar.)
 omindex has built-in support for indexing HTML, PHP, text files, CSV
 (Comma-Separated Values) files, and AbiWord documents.  It can also index a
 number of other formats using external programs.  Filter programs are run with
-CPU, time and memory limits to prevent a runaway filter from blocking indexing of
-other files.
+CPU, time and memory limits to prevent a runaway filter from blocking indexing
+of other files.
 
 The way omindex decides how to index a file is based around MIME content-types.
 First of all omindex will look up a file's extension in its extension to MIME
@@ -293,15 +293,29 @@ string, but to be useful there either needs to be a filter set for that type
 By default, files with the following extensions are marked as 'ignore'::
 
    - a
+   - bin
    - css
+   - dat
+   - db
    - dll
    - dylib
    - exe
+   - fon
+   - jar
    - js
    - lib
+   - lnk
    - o
    - obj
+   - pyc
+   - pyd
+   - pyo
    - so
+   - sqlite
+   - sqlite3
+   - sqlite-journal
+   - tmp
+   - ttf
 
 If you wish to remove a MIME mapping, you can do this by omitting the type -
 for example to not index .doc files, use: ``--mime-type=doc:``
@@ -378,10 +392,15 @@ which are marked as ``noindex`` or ``none``, for example any of the following::
 
 Sometimes it is useful to be able to exclude just part of a page from being
 indexed (for example you may not want to index navigation links, or a footer
-which appears on every page).  To allow this, the parser also understands
-ht://dig-style comments to mark sections of the document to not index::
+which appears on every page).  To allow this, the parser supports "magic"
+comments to mark sections of the document to not index.  Two formats are
+supported - htdig_noindex (used by ht://Dig) and UdmComment (used by
+mnoGoSearch)::
 
     Index this bit <!--htdig_noindex-->but <b>not</b> this<!--/htdig_noindex-->
+
+::
+    <!--UdmComment--><div>Boring copyright notice</div><!--/UdmComment-->
 
 Boolean terms
 =============

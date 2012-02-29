@@ -1,3 +1,17 @@
+Thu Jan 26 03:49:24 GMT 2012  Olly Betts <olly@survex.com>
+
+	* queryparser/queryparser.lemony,tests/queryparsertest.cc: Allow
+	  Unicode curly double quote characters to start and/or end phrases.
+
+Sun Jan 22 13:28:30 GMT 2012  Olly Betts <olly@survex.com>
+
+	* bin/xapian-delve.cc: Send errors to stderr not stdout.
+
+Sun Jan 22 13:16:21 GMT 2012  Olly Betts <olly@survex.com>
+
+	* HACKING: Update details of versions of doxygen, automake and libtool
+	  used to bootstrap snapshots and releases.
+
 Fri Jan 20 21:35:38 GMT 2012  Olly Betts <olly@survex.com>
 
 	* tests/Makefile.am: unittest needs getopt for non-glibc platforms.

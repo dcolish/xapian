@@ -1,3 +1,21 @@
+Fri Jan 27 01:21:18 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/t/10query.t: Check that Search::Xapian::Query->new("") works.
+
+Fri Jan 27 01:19:45 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/perl.i: Fix Search::Xapian->new() to work.
+	* perl/t/10query.t: Add testcase for this.
+
+Thu Jan 26 23:41:55 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/perl.i: Add "use Carp;" where we use functions from that module.
+	* perl/t/10query.t: Add regression test.
+
+Fri Jan 20 23:53:12 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/t/document.t,perl/t/index.t: Add tests of Document::get_docid().
+
 Thu Jan 19 00:19:52 GMT 2012  Olly Betts <olly@survex.com>
 
 	* java/Makefile.am: Update list of generated files for the geospatial
