@@ -66,7 +66,7 @@ DEFINE_TESTCASE(overload1, !backend) {
     Xapian::Query q;
     q = Xapian::Query("foo") & Xapian::Query("bar");
     TEST_STRINGS_EQUAL(q.get_description(), "Query((foo AND bar))");
-    q = Xapian::Query("foo") &~ Xapian::Query("bar");
+    q = Xapian::Query("foo") & (~Xapian::Query("bar"));
     TEST_STRINGS_EQUAL(q.get_description(), "Query((foo AND_NOT bar))");
     q = ~Xapian::Query("bar");
     TEST_STRINGS_EQUAL(q.get_description(), "Query((<alldocuments> AND_NOT bar))");

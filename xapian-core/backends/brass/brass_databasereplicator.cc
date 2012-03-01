@@ -20,6 +20,7 @@
  * USA
  */
 
+#include <iostream>
 #include <config.h>
 
 #include "brass_databasereplicator.h"
@@ -34,6 +35,7 @@
 #include "debuglog.h"
 #include "fd.h"
 #include "filetests.h"
+#include "internaltypes.h"
 #include "io_utils.h"
 #include "pack.h"
 #include "net/remoteconnection.h"
@@ -41,6 +43,7 @@
 #include "safeerrno.h"
 #include "str.h"
 #include "stringutils.h"
+
 
 #ifdef __WIN32__
 # include "msvc_posix_wrapper.h"
@@ -52,7 +55,8 @@ using namespace std;
 using namespace Xapian;
 
 BrassDatabaseReplicator::BrassDatabaseReplicator(const string & db_dir_)
-	: db_dir(db_dir_)
+    : db_dir(db_dir_),
+      comp_stream(Z_DEFAULT_STRATEGY)
 {
 }
 
@@ -191,12 +195,11 @@ BrassDatabaseReplicator::process_changeset_chunk_blocks(const string & tablename
     }
     {
 	FD closer(fd);
-
+	Bytef out[8192];
 	while (true) {
 	    conn.get_message_chunk(buf, REASONABLE_CHANGESET_SIZE, end_time);
 	    ptr = buf.data();
 	    end = ptr + buf.size();
-
 	    uint4 block_number;
 	    if (!unpack_uint(&ptr, end, &block_number))
 		throw NetworkError("Invalid block number in changeset");
@@ -205,7 +208,32 @@ BrassDatabaseReplicator::process_changeset_chunk_blocks(const string & tablename
 		break;
 	    --block_number;
 
-	    conn.get_message_chunk(buf, changeset_blocksize, end_time);
+	    conn.get_message_chunk(buf, REASONABLE_CHANGESET_SIZE, end_time);
+	    ptr = buf.data();
+	    end = ptr + buf.size();
+	    unsigned int compressed_block_size;
+	    if(!unpack_uint(&ptr, end, &compressed_block_size))
+		throw NetworkError("Invalid v2 cphangeset");
+	    buf.erase(0, ptr - buf.data());
+
+	    if (compressed_block_size > 0) {
+		string ubuf;
+		ubuf.reserve(changeset_blocksize);
+		conn.get_message_chunk(buf, changeset_blocksize, end_time);
+		comp_stream.lazy_alloc_inflate_zstream();
+		comp_stream.inflate_zstream->next_in = (Bytef*)const_cast<char *>(buf.data());
+		comp_stream.inflate_zstream->avail_in = (uInt)(buf.size());
+		comp_stream.inflate_zstream->next_out = out;
+		comp_stream.inflate_zstream->avail_out = (uInt)sizeof(out);
+		int err = inflate(comp_stream.inflate_zstream, Z_FINISH);
+		if (err == Z_STREAM_END) {
+		    ubuf.append(reinterpret_cast<const char *>(out),
+				comp_stream.inflate_zstream->next_out - out);
+ 		    swap(buf, ubuf);
+		}
+	    } else {
+		conn.get_message_chunk(buf, changeset_blocksize, end_time);
+	    }
 	    if (buf.size() < changeset_blocksize)
 		throw NetworkError("Incomplete block in changeset");
 
@@ -255,7 +283,6 @@ BrassDatabaseReplicator::apply_changeset_from_conn(RemoteConnection & conn,
     buf.erase(0, 12);
     const char *ptr = buf.data();
     const char *end = ptr + buf.size();
-
     unsigned int changes_version;
     if (!unpack_uint(&ptr, end, &changes_version))
 	throw NetworkError("Couldn't read a valid version number from changeset");

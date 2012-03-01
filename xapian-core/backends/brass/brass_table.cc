@@ -1818,23 +1818,8 @@ BrassTable::write_changed_blocks(int changes_fd, bool compressed)
     pack_string(buf, tablename);
     pack_uint(buf, block_size);
 
-    if (compressed) { 
-	comp_stream.lazy_alloc_deflate_zstream();
-
-	comp_stream.deflate_zstream->next_in = (Bytef *)const_cast<char *>(buf.data());
-	comp_stream.deflate_zstream->avail_in = (uInt)buf.size();
-	int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
-	if (err == Z_STREAM_END) {
-	    io_write(changes_fd, reinterpret_cast<const char *>(buf.data()),
-		     comp_stream.deflate_zstream->total_out);
-	} else {
-	    // The deflate failed, try to write data uncompressed
-	    io_write(changes_fd, buf.data(), buf.size());
-	}
-    }
-    else {
-	io_write(changes_fd, buf.data(), buf.size());
-    }
+    // Write the table name and block size to the file
+    io_write(changes_fd, buf.data(), buf.size());
 	
     // Compare the old and new bitmaps to find blocks which have changed, and
     // write them to the file descriptor.
@@ -1845,23 +1830,8 @@ BrassTable::write_changed_blocks(int changes_fd, bool compressed)
 	while (base.find_changed_block(&n)) {
 	    buf.resize(0);
 	    pack_uint(buf, n + 1);
-	    if (compressed) { 
-		comp_stream.lazy_alloc_deflate_zstream();
-
-		comp_stream.deflate_zstream->next_in = (Bytef *)const_cast<char *>(buf.data());
-		comp_stream.deflate_zstream->avail_in = (uInt)buf.size();
-		int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
-		if (err == Z_STREAM_END) {
-		    io_write(changes_fd, reinterpret_cast<const char *>(buf.data()),
-			     comp_stream.deflate_zstream->total_out);
-		} else {
-		    // The deflate failed, try to write data uncompressed
-		    io_write(changes_fd, buf.data(), buf.size());
-		}
-	    }
-	    else {
-		io_write(changes_fd, buf.data(), buf.size());
-	    }
+	    // Write the block number to the file
+	    io_write(changes_fd, buf.data(), buf.size());
 
 	    // Read block n.
 	    read_block(n, p);
@@ -1869,19 +1839,25 @@ BrassTable::write_changed_blocks(int changes_fd, bool compressed)
 	    // Write block n to the file.
 	    if (compressed) { 
 		comp_stream.lazy_alloc_deflate_zstream();
-
-		comp_stream.deflate_zstream->next_in = (Bytef *)(p);
-		comp_stream.deflate_zstream->avail_in = (uInt)block_size;
-		int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
-		if (err == Z_STREAM_END) {
-		    io_write(changes_fd, reinterpret_cast<const char *>(p),
+		comp_stream.compress(p, block_size);
+		if (comp_stream.zerr == Z_STREAM_END) {
+		    buf.resize(0);
+		    pack_uint(buf, comp_stream.deflate_zstream->total_out);
+		    io_write(changes_fd, buf.data(), buf.size());
+		    io_write(changes_fd, reinterpret_cast<const char *>(comp_stream.out),
 			     comp_stream.deflate_zstream->total_out);
 		} else {
 		    // The deflate failed, try to write data uncompressed
+		    buf.resize(0);
+		    pack_uint(buf, 0u);
+		    io_write(changes_fd, buf.data(), buf.size());
 		    io_write(changes_fd, reinterpret_cast<const char *>(p), block_size);
 		}
 	    }
 	    else {
+		buf.resize(0);
+		pack_uint(buf, 0u);
+		io_write(changes_fd, buf.data(), buf.size());
 		io_write(changes_fd, reinterpret_cast<const char *>(p), block_size);
 	    }
 	    ++n;
@@ -1894,24 +1870,8 @@ BrassTable::write_changed_blocks(int changes_fd, bool compressed)
     }
     buf.resize(0);
     pack_uint(buf, 0u);
-
-    if (compressed) { 
-	comp_stream.lazy_alloc_deflate_zstream();
-
-	comp_stream.deflate_zstream->next_in = (Bytef *)const_cast<char *>(buf.data());
-	comp_stream.deflate_zstream->avail_in = (uInt)buf.size();
-	int err = deflate(comp_stream.deflate_zstream, Z_FINISH);
-	if (err == Z_STREAM_END) {
-	    io_write(changes_fd, reinterpret_cast<const char *>(buf.data()),
-		     comp_stream.deflate_zstream->total_out);
-	} else {
-	    // The deflate failed, try to write data uncompressed
-	    io_write(changes_fd, buf.data(), buf.size());
-	}
-    }
-    else {
-	io_write(changes_fd, buf.data(), buf.size());
-    }
+    // Write 0 for end of blocks
+    io_write(changes_fd, buf.data(), buf.size());
 }
 
 void

@@ -24,12 +24,15 @@
 #define XAPIAN_INCLUDED_BRASS_DATABASEREPLICATOR_H
 
 #include "backends/databasereplicator.h"
+#include "zlib_utils.h"
 
 class BrassDatabaseReplicator : public Xapian::DatabaseReplicator {
     private:
 	/** Path of database.
 	 */
 	std::string db_dir;
+
+	CompressionStream comp_stream;
 
 	/** Process a chunk which holds a base block.
 	 */

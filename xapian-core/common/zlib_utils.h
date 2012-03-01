@@ -1,10 +1,13 @@
+#ifndef XAPIAN_INCLUDED_ZLIB_UTILS_H
+#define XAPIAN_INCLUDED_ZLIB_UTILS_H
 
-#include <zlib.h>
+#include "debuglog.h"
+
+#include "internaltypes.h"
 
 #include "xapian/error.h"
 
-#include "debuglog.h"
-#include "utils.h"
+#include <zlib.h>
 
 using namespace std;
 
@@ -19,6 +22,12 @@ class CompressionStream {
 
     int compress_strategy;
 
+    int zerr;
+
+    unsigned long out_len;
+    
+    unsigned char * out;
+
     /// Zlib state object for deflating
     mutable z_stream *deflate_zstream;
 
@@ -30,4 +39,9 @@ class CompressionStream {
 
     /// Allocate the zstream for inflating, if not already allocated.
     void lazy_alloc_inflate_zstream() const;
+
+    void compress(string &);
+    void compress(byte *, int);
 };
+
+#endif // XAPIAN_INCLUDED_ZLIB_UTILS_H

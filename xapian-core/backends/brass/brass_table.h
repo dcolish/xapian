@@ -41,8 +41,6 @@
 #include <algorithm>
 #include <string>
 
-#include <zlib.h>
-
 #define DONT_COMPRESS -1
 
 /** Even for items of at maximum size, it must be possible to get this number of

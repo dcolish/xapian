@@ -38,13 +38,7 @@ noinst_HEADERS +=\
 	common/stringutils.h\
 	common/submatch.h\
 	common/unaligned.h\
-	common/utils.h\
-	common/valuelist.h\
-	common/valuestats.h\
-	common/vectortermlist.h\
-	common/weightinternal.h\
 	common/zlib_utils.h
-	common/unaligned.h
 
 
 EXTRA_DIST +=\
@@ -67,7 +61,7 @@ lib_src +=\
 	common/serialise-double.cc\
 	common/socket_utils.cc\
 	common/str.cc\
-	common/stringutils.cc
+	common/stringutils.cc\
 	common/zlib_utils.cc
 
 
