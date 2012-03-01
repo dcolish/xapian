@@ -1,0 +1,9 @@
+diffs/
+smoketest
+smoketest.dSYM
+swig.ml
+swig.mli
+swigp4.ml
+xapian.ml
+xapian.mli
+xapian_wrap.c
