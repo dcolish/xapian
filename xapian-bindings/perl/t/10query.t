@@ -5,7 +5,7 @@
 #########################
 
 use Test::More;
-BEGIN { plan tests => 6 };
+BEGIN { plan tests => 10 };
 use Search::Xapian qw(:standard);
 use Config;
 
@@ -19,11 +19,21 @@ my $query = Search::Xapian::Query->new(
 	"bar"
 );
 ok(defined $query, "AND query created");
-is($query->get_description, 'Xapian::Query((foo AND bar))', "AND query contains foo part");
+is($query->get_description, 'Query((foo AND bar))', "AND query contains foo part");
 
 $query = Search::Xapian::Query::MatchAll;
-is($query->get_description, 'Xapian::Query(<alldocuments>)');
+is($query->get_description, 'Query(<alldocuments>)');
+$query = Search::Xapian::Query->new("");
+is($query->get_description, 'Query(<alldocuments>)');
 $query = Search::Xapian::Query::MatchNothing;
-is($query->get_description, 'Xapian::Query()');
+is($query->get_description, 'Query()');
+$query = Search::Xapian::Query->new();
+is($query->get_description, 'Query()');
+
+eval {
+    Search::Xapian::Query->new("hello", 1, 2, 3, 4);
+};
+ok(defined $@, "Bad query ctor threw exception");
+like($@, qr!^USAGE: Search::Xapian::Query->new\('term'\) or Search::Xapian::Query->new\(OP, <args>\) at \S+/10query\.t line \d+$!);
 
 ok(1);

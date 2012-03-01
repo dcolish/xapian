@@ -1,7 +1,7 @@
 %include {
 /* queryparser.lemony: build a Xapian::Query object from a user query string.
  *
- * Copyright (C) 2004,2005,2006,2007,2008,2009,2010,2011 Olly Betts
+ * Copyright (C) 2004,2005,2006,2007,2008,2009,2010,2011,2012 Olly Betts
  * Copyright (C) 2007,2008,2009 Lemur Consulting Ltd
  * Copyright (C) 2010 Adam Sjøgren
  *
@@ -85,6 +85,17 @@ is_digit(unsigned ch) {
 inline bool
 is_suffix(unsigned ch) {
     return ch == '+' || ch == '#';
+}
+
+inline bool
+is_double_quote(unsigned ch) {
+    // We simply treat all double quotes as equivalent, which is a bit crude,
+    // but it isn't clear that it would actually better to require them to
+    // match up exactly.
+    //
+    // 0x201c is Unicode opening double quote.
+    // 0x201d is Unicode closing double quote.
+    return ch == '"' || ch == 0x201c || ch == 0x201d;
 }
 
 inline bool
@@ -296,6 +307,48 @@ Term::make_term(const string & prefix) const
     return term;
 }
 
+// Iterator shim to allow building a synonym query from a TermIterator pair.
+class SynonymIterator {
+    Xapian::TermIterator i;
+
+    Xapian::termpos pos;
+
+    const Xapian::Query * first;
+
+  public:
+    SynonymIterator(const Xapian::TermIterator & i_,
+		    Xapian::termpos pos_ = 0,
+		    const Xapian::Query * first_ = NULL)
+	: i(i_), pos(pos_), first(first_) { }
+
+    SynonymIterator & operator++() {
+	if (first)
+	    first = NULL;
+	else
+	    ++i;
+	return *this;
+    }
+
+    const Xapian::Query operator*() const {
+	if (first) return *first;
+	return Xapian::Query(*i, 1, pos);
+    }
+
+    bool operator==(const SynonymIterator & o) {
+	return i == o.i && first == o.first;
+    }
+
+    bool operator!=(const SynonymIterator & o) {
+	return !(*this == o);
+    }
+
+    typedef std::input_iterator_tag iterator_category;
+    typedef Xapian::Query value_type;
+    typedef Xapian::termcount_diff difference_type;
+    typedef Xapian::Query * pointer;
+    typedef Xapian::Query & reference;
+};
+    
 Query
 Term::get_query_with_synonyms() const
 {
@@ -327,10 +380,9 @@ Term::get_query_with_synonyms() const
 	    syn = db.synonyms_begin(term);
 	    end = db.synonyms_end(term);
 	}
-	while (syn != end) {
-	    q = Query(Query::OP_SYNONYM, q, Query(*syn, 1, pos));
-	    ++syn;
-	}
+	q = Query(q.OP_SYNONYM,
+		  SynonymIterator(syn, pos, &q),
+		  SynonymIterator(end));
     }
     return q;
 }
@@ -338,7 +390,10 @@ Term::get_query_with_synonyms() const
 Query
 Term::get_query_with_auto_synonyms() const
 {
-    if (state->flags & QueryParser::FLAG_AUTO_SYNONYMS)
+    const unsigned MASK_ENABLE_AUTO_SYNONYMS =
+	QueryParser::FLAG_AUTO_SYNONYMS |
+	QueryParser::FLAG_AUTO_MULTIWORD_SYNONYMS;
+    if (state->flags & MASK_ENABLE_AUTO_SYNONYMS)
 	return get_query_with_synonyms();
 
     return get_query();
@@ -793,7 +848,10 @@ just_had_operator_needing_term:
 	    if (mode == IN_GROUP || mode == IN_GROUP2)
 		mode = DEFAULT;
 	    switch (ch) {
-	      case '"': // Quoted phrase.
+	      case '"':
+	      case 0x201c: // Left curly double quote.
+	      case 0x201d: // Right curly double quote.
+		// Quoted phrase.
 		if (mode == DEFAULT) {
 		    // Skip whitespace.
 		    it = find_if(it, end, is_not_whitespace);
@@ -803,7 +861,7 @@ just_had_operator_needing_term:
 			// cause a parse error.
 			goto done;
 		    }
-		    if (*it == '"') {
+		    if (is_double_quote(*it)) {
 			// Ignore empty "" (but only if we're not already
 			// IN_QUOTES as we don't merge two adjacent quoted
 			// phrases!)
@@ -937,7 +995,7 @@ just_had_operator_needing_term:
 			    mode = DEFAULT;
 			it = p;
 			string name;
-			if (it != end && *it == '"') {
+			if (it != end && is_double_quote(*it)) {
 			    // Quoted boolean term (can contain any character).
 			    ++it;
 			    while (it != end) {
@@ -945,6 +1003,9 @@ just_had_operator_needing_term:
 				    // Interpret "" as an escaped ".
 				    if (++it == end || *it != '"')
 					break;
+				} else if (is_double_quote(*it)) {
+				    ++it;
+				    break;
 				}
 				Unicode::append_utf8(name, *it++);
 			    }
@@ -966,7 +1027,7 @@ just_had_operator_needing_term:
 			continue;
 		    }
 
-		    if (ch == '"' && (flags & FLAG_PHRASE)) {
+		    if ((flags & FLAG_PHRASE) && is_double_quote(ch)) {
 			// Prefixed phrase, e.g.: subject:"space flight"
 			mode = IN_PREFIXED_QUOTES;
 			Parse(pParser, QUOTE, NULL, &state);
@@ -1431,16 +1492,12 @@ reprocess:
 	    subqs2.clear();
 
 	    // Use the position of the first term for the synonyms.
-	    Xapian::termpos pos = (*begin)->pos;
+	    Query q(Query::OP_SYNONYM,
+		    SynonymIterator(syn, (*begin)->pos, &q_original_terms),
+		    SynonymIterator(end));
+	    subqs.push_back(q);
+
 	    begin = i;
-	    while (syn != end) {
-		subqs2.push_back(Query(*syn, 1, pos));
-		++syn;
-	    }
-	    Query q_synonym_terms(Query::OP_SYNONYM, subqs2.begin(), subqs2.end());
-	    subqs2.clear();
-	    subqs.push_back(Query(Query::OP_SYNONYM,
-				  q_original_terms, q_synonym_terms));
 	}
     } else {
 	vector<Term*>::const_iterator i;
