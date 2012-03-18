@@ -17,7 +17,7 @@ INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/common -I$(top_srcdir)/include \
 
 CLEANFILES =
 
-libxapian_la = libxapian@LIBRARY_VERSION_SUFFIX@.la
+libxapian_la = libxapian-1.3.la
 
 TESTS_ENVIRONMENT = ./runtest
 
