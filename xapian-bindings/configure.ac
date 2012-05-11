@@ -823,10 +823,15 @@ if test no != "$with_ruby" ; then
       if test -f "$RUBY_INC/ruby.h" ; then
 	AC_MSG_RESULT(yes)
 
-	AC_MSG_CHECKING([ruby/io.h])
+	AC_MSG_CHECKING([for ruby/io.h])
 	rm -f ruby/rubyio.h
 	if test -f "$RUBY_INC/ruby/io.h" ; then
 	  AC_MSG_RESULT(yes)
+
+	  dnl In a VPATH build, the ruby subdirectory won't exist the first
+	  dnl time.
+	  test -d ruby || mkdir ruby
+
 	  dnl Newer Ruby has ruby/io.h - older has rubyio.h.  Ruby doesn't
 	  dnl seem to provide any way to generate code which works with
 	  dnl both (and even the version number isn't a discriminator as
@@ -1015,10 +1020,10 @@ if test no != "$with_lua" ; then
       AC_MSG_CHECKING([for Lua header files])
       AC_ARG_VAR([LUA_INC], [Directory to include for lua headers])
       if test -z "$LUA_INC" ; then
-        dirs="/usr/local/include /usr/local/include/lua* /usr/include/lua* /usr/include"
+        dirs="/usr/include/lua$lua_version /usr/local/include/lua$lua_version"
         for i in $dirs ; do
-          if test -r $i/lua.h; then
-            LUA_INC="$i"
+          if test -r "$i/lua.h"; then
+            LUA_INC=$i
             break
           fi
         done

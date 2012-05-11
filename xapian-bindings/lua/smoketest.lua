@@ -21,20 +21,33 @@
 -- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 -- USA
 
-require("xapian")
-
-function expect(m, n)
+---
+-- m: expected value
+-- n: obtained value
+-- msg: failure message (a string)
+function expect(m, n, msg)
+  msg = msg and msg..': ' or ''
   if type(m) == "table" then
-    assert(#m == #n)
+    assert('table' == type(n), msg..'not a table')
+    assert(#m == #n, msg..'got: '..tostring(#n)..' want: '..tostring(#m))
     for i = 1, #m do
       expect(m[i], n[i])
     end
   else
-    assert(m == n)
+    assert(m == n, msg..'got: '..(tostring(n) or '???')..' want: '..(tostring(m) or '???'))
   end
 end
 
 function run_tests()
+  local xap = require 'xapian'
+  -- Check that require sets global "xapian":
+  expect(true, nil ~= xapian, 'global xapian is nil')
+  expect('table', type(xapian), 'global xapian is not a table')
+  -- Check that require returns the module table (SWIG 2.0.4 returned 'xapian'):
+  expect(true, nil ~= xap, "require 'xapian' returned nil")
+  expect('table', type(xap), "require 'xapian' didn't return a table")
+  expect(xap, xapian, "require 'xapian' return value not the same as global xapian")
+
   stem = xapian.Stem("english")
   doc = xapian.Document()
   doc:set_data("is there anybody out there?")
@@ -63,10 +76,10 @@ function run_tests()
 
   -- Test stem
   expect(tostring(stem), "Xapian::Stem(english)")
-  expect("is", stem("is"))
-  expect("go", stem("going"))
-  expect("want", stem("wanted"))
-  expect("refer", stem("reference"))
+  expect("is", stem("is"), 'stem noop "is" fails')
+  expect("go", stem("going"), 'stem noop "go" fails')
+  expect("want", stem("wanted"), 'stem(english) "wanted" -> "want" fails')
+  expect("refer", stem("reference"), 'stem(english) "reference" -> "refer" fails')
 
   -- Test document
   expect(doc:termlist_count(), 5)
@@ -76,7 +89,7 @@ function run_tests()
 
   -- Test database
   expect(tostring(db), "WritableDatabase()")
-  expect(db:get_doccount(), 1)
+  expect(db:get_doccount(), 1, 'db should have 1 document')
 
   term_count = 0
   for term in db:allterms() do
@@ -193,8 +206,8 @@ function run_tests()
     for j = 0, #a -1 do
       hit = mset:get_hit(j)
       if hit:get_docid() ~= a[j + 1] then
-	print(string.format("Expected MSet[%i] to be %i, got %i.\n", j, a[j + 1], hit:get_docid()))
-	os.exit(-1)
+        print(string.format("Expected MSet[%i] to be %i, got %i.\n", j, a[j + 1], hit:get_docid()))
+        os.exit(-1)
       end
     end
   end
@@ -284,14 +297,14 @@ function run_tests()
   -- Feature tests for Query "term" constructor optional arguments:
   query_wqf = xapian.Query('wqf', 3)
   if tostring(query_wqf) ~= 'Query(wqf#3)' then
-    print "Unexpected \query_wqf->tostring():\n"
+    print "Unexpected query_wqf->tostring():\n"
     print(tostring(query_wqf) .."\n")
     os.exit(-1)
   end
 
   query = xapian.Query(xapian.Query_OP_VALUE_GE, 0, "100")
   if tostring(query) ~= 'Query(VALUE_GE 0 100)' then
-    print "Unexpected \query->tostring():\n"
+    print "Unexpected query->tostring():\n"
     print(tostring(query) .. "\n")
     os.exit(-1)
   end

@@ -402,7 +402,7 @@ Autotools versions
 
   autoconf 2.64 generates smaller configure scripts by using shell functions.
 
-* automake 1.11.2 is used to generate snapshots and releases.
+* automake 1.12 is used to generate snapshots and releases.
 
   automake 1.10.2 is a hard minimum requirement.
 
@@ -960,6 +960,13 @@ MSVC 7.0 or later) this causes compile-time warning messages to be emitted for
 any use of the deprecated feature.  For compilers without support, the macro
 just expands to its argument.
 
+Sometimes a deprecated feature will also be removed from the library itself
+(particularly something like a typedef), but if the feature is still used
+inside the library (for example, so we can define class methods), then use
+XAPIAN_DEPRECATED_EX() or XAPIAN_DEPRECATED_CLASS_EX instead, which will only
+issue a warning in user code (this relies on user code including xapian.h
+and library code including individual headers)
+
 You must add this line to any API header which uses XAPIAN_DEPRECATED() or
 XAPIAN_DEPRECATED_CLASS::
 
@@ -980,6 +987,8 @@ semicolon and any "definition" part, for example::
         XAPIAN_DEPRECATED(int old_method());
 
         XAPIAN_DEPRECATED(int old_const_method() const);
+
+        XAPIAN_DEPRECATED(virtual int old_virt_method()) = 0;
 
         XAPIAN_DEPRECATED(static int old_static_method());
 
@@ -1026,10 +1035,15 @@ on the xapian-devel mailing list first:
 Also, please read the following section on licensing of patches before
 submitting a patch.
 
-We find patches in unified diff format easiest to read.  If you're using a
-SVN checkout just use "svn diff" to generate the diff.  If you're working
-from a tarball, compare against the original versions of files using
-"diff -puN" (-p reports the function name for each chunk).
+We find patches in unified diff format easiest to read.  If you're using
+git, then "git diff" is good (or "git format-patch" for a patch series).  If
+you're using a SVN checkout just use "svn diff" to generate the diff.  If
+you're working from a tarball, you can unpack a second clean copy of the files
+and compare the two versions with "diff -pruN" (-p reports the function name
+for each chunk, -r acts recursively, -u does a unified diff, and -N shows
+new files in the diff).  Alternatively "ptardiff" (which comes with perl, at
+least on Debian and Ubuntu) can diff against the original tarball, unpacking
+it on the fly.
 
 Please set the width of a tab character in your editor to 8 spaces, and use
 Unix line endings (i.e. LF, not CR+LF).  Failing to do so will make it much
@@ -1472,8 +1486,8 @@ This is a (hopefully complete) list of the jobs which need doing:
 
 * Announce the new version on xapian-discuss
 
-* Update the freshmeat entry at:
-  http://freshmeat.net/projects/xapian/releases/new
+* Update the freshcode entry at:
+  http://freecode.com/projects/xapian/releases/new
 
 * Have a nice cup of tea!
 
@@ -1487,9 +1501,7 @@ updated as follows:
 
 * If there are any patch files in "debian/patches", check if these have been
   incorporated into the new release, and if so remove them and update
-  "debian/patches/series".  If there are no patches left and
-  "debian/patches/series" is empty or only contains lines starting with a "#"
-  then the dependency on quilt is automatically omitted.
+  "debian/patches/series".
 
 * Update the debian/changelog file, being sure to keep it in the
   standard Debian format (the easiest way is to use the dch utility
@@ -1518,13 +1530,13 @@ updated as follows:
 
 * For the Ubuntu backports::
 
-   ./backport-source-packages xapian-core 1.0.15-1 jaunty intrepid hardy dapper
-   ./backport-source-packages xapian-omega 1.0.15-1 jaunty intrepid hardy dapper
-   ./backport-source-packages xapian-bindings 1.0.15-1 jaunty intrepid hardy dapper
+   ./backport-source-packages xapian-core 1.0.15-1 ubuntu
+   ./backport-source-packages xapian-omega 1.0.15-1 ubuntu
+   ./backport-source-packages xapian-bindings 1.0.15-1 ubuntu
 
   And once libsearch-xapian-perl is uploaded to Debian unstable::
 
-   ./backport-source-packages libsearch-xapian-perl 1.0.15.0-1 jaunty intrepid hardy
+   ./backport-source-packages libsearch-xapian-perl 1.0.15.0-1 ubuntu
 
   Then sign::
 

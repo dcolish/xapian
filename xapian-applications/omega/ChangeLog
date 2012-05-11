@@ -1,3 +1,37 @@
+Tue May 08 11:39:28 GMT 2012  Olly Betts <olly@survex.com>
+
+	* runfilter.cc: Add cast to rlim_t, required for C++11 compatibility
+	  according to new error from GCC 4.7 (reported by Gaurav Arora).
+
+Tue May 08 11:32:48 GMT 2012  Olly Betts <olly@survex.com>
+
+	* tmpdir.cc: Add safeunistd.h for rmdir, required by GCC 4.7 (reported
+	  by Gaurav Arora).
+
+Sat Apr 14 00:14:58 GMT 2012  Olly Betts <olly@survex.com>
+
+	* atomparse.cc: For type="html", use the charset of the XML rather
+	  than utf-8.
+
+Fri Apr 13 23:36:48 GMT 2012  Olly Betts <olly@survex.com>
+
+	* Makefile.am,atomparse.cc,atomparse.h,overview.rst,omindex.cc: Add
+	  support for atom feed files, patch from Mihai Bivol in ticket#595.
+	* Makefile.am,atomparsetest.cc: Add tests for AtomParser.
+
+Thu Apr 05 14:09:28 GMT 2012  Olly Betts <olly@survex.com>
+
+	* htmlparse.cc,htmlparsetest.cc: Add support for CDATA to HTML parser.
+
+Fri Mar 30 22:35:08 GMT 2012  Olly Betts <olly@survex.com>
+
+	* NEWS: Fix "an warning" to "a warning" in old entry.
+
+Mon Mar 26 08:44:51 GMT 2012  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Add --max-size option, based on patch from ndaley in
+	  ticket#587.
+
 Wed Mar 14 02:27:59 GMT 2012  Olly Betts <olly@survex.com>
 
 	* NEWS: Update for 1.3.0.

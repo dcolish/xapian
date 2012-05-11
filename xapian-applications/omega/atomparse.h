@@ -1,7 +1,8 @@
-/** @file omassert.cc
- * @brief Helper functions for omassert.h
+/** @file atomparse.h
+ * @brief Extract text from an RSS atom file.
  */
-/* Copyright (C) 2007,2012 Olly Betts
+/* Copyright (C) 2010,2011,2012 Olly Betts
+ * Copyright (C) 2012 Mihai Bivol
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +19,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <config.h>
+#ifndef OMEGA_INCLUDED_ATOMPARSE_H
+#define OMEGA_INCLUDED_ATOMPARSE_H
 
-#ifdef XAPIAN_ASSERTIONS
+#include "htmlparse.h"
 
-#include "omassert.h"
+class AtomParser : public HtmlParser {
+    enum { OTHER, TITLE, AUTHOR, KEYWORDS, TEXT } state;
+    bool in_entry, is_ignored;
+    string type;
+  public:
+    AtomParser() : state(OTHER), in_entry(false), is_ignored(false) { }
+    void process_text(const string &text);
+    bool opening_tag(const string &tag);
+    bool closing_tag(const string &tag);
+    string title, keywords, dump, author;
+};
 
-#include <cfloat>
-#include <cmath>
-
-using namespace std;
-
-namespace Xapian {
-namespace Internal {
-
-bool within_DBL_EPSILON(double a, double b) {
-    return fabs(a - b) < DBL_EPSILON;
-}
-
-}
-}
-
-#endif
+#endif // OMEGA_INCLUDED_ATOMPARSE_H
