@@ -25,8 +25,9 @@ AC_SUBST(NO_UNDEFINED)
 dnl Checks for programs.
 AC_PROG_CXX
 
+# Checked: freebsd8.0 openbsd4.6 solaris2.9 solaris2.10
 case $host_os in
-  linux* | k*bsd*-gnu)
+  linux* | k*bsd*-gnu | freebsd* | openbsd* | solaris*)
     dnl Vanilla libtool sets this to "unknown" which it then handles as "yes".
     link_all_deplibs_CXX=no
     ;;
@@ -499,10 +500,10 @@ AC_ARG_ENABLE(quiet,
     *) AC_MSG_ERROR(bad value ${enableval} for --enable-quiet) ;;
   esac])
 
-dnl Pass `--quiet' to libtool if quiet building is requested.  Using an
+dnl Pass '--quiet' to libtool if quiet building is requested.  Using an
 dnl AC_SUBST-ed value like this allows the choice to be easily overridden
 dnl if you want to see exactly what make and libtool are up to - just run
-dnl make like this: `make QUIET='
+dnl make like this: 'make QUIET='
 QUIET=
 if test yes = "$enable_quiet"; then
   QUIET=--quiet

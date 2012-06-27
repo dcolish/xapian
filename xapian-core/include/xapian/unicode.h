@@ -1,7 +1,7 @@
 /** @file unicode.h
  * @brief Unicode and UTF-8 related classes and functions.
  */
-/* Copyright (C) 2006,2007,2008,2009,2010,2011 Olly Betts
+/* Copyright (C) 2006,2007,2008,2009,2010,2011,2012 Olly Betts
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #ifndef XAPIAN_INCLUDED_UNICODE_H
 #define XAPIAN_INCLUDED_UNICODE_H
 
+#include <xapian/attributes.h>
 #include <xapian/visibility.h>
 
 #include <string>
@@ -44,12 +45,12 @@ class XAPIAN_VISIBILITY_DEFAULT Utf8Iterator {
 
   public:
     /** Return the raw const char * pointer for the current position. */
-    const char * raw() const {
+    const char * raw() const XAPIAN_PURE_FUNCTION {
 	return reinterpret_cast<const char *>(p ? p : end);
     }
 
     /** Return the number of bytes left in the iterator's buffer. */
-    size_t left() const { return p ? end - p : 0; }
+    size_t left() const XAPIAN_PURE_FUNCTION { return p ? end - p : 0; }
 
     /** Assign a new string to the iterator.
      *
@@ -122,13 +123,14 @@ class XAPIAN_VISIBILITY_DEFAULT Utf8Iterator {
      *  This can be compared to another iterator to check if the other iterator
      *  has reached its end.
      */
-    Utf8Iterator() : p(NULL), end(0), seqlen(0) { }
+    XAPIAN_NOTHROW(Utf8Iterator())
+	: p(NULL), end(0), seqlen(0) { }
 
     /** Get the current Unicode character value pointed to by the iterator.
      *
      *  Returns unsigned(-1) if the iterator has reached the end of its buffer.
      */
-    unsigned operator*() const;
+    unsigned operator*() const XAPIAN_PURE_FUNCTION;
 
     /** Move forward to the next Unicode character.
      *
@@ -162,14 +164,18 @@ class XAPIAN_VISIBILITY_DEFAULT Utf8Iterator {
      *  @param other	The Utf8Iterator to compare this one with.
      *  @return true iff the iterators point to the same position.
      */
-    bool operator==(const Utf8Iterator &other) const { return p == other.p; }
+    bool XAPIAN_NOTHROW(operator==(const Utf8Iterator &other) const) {
+	return p == other.p;
+    }
 
     /** Test two Utf8Iterators for inequality.
      *
      *  @param other	The Utf8Iterator to compare this one with.
      *  @return true iff the iterators do not point to the same position.
      */
-    bool operator!=(const Utf8Iterator &other) const { return p != other.p; }
+    bool XAPIAN_NOTHROW(operator!=(const Utf8Iterator &other) const) {
+	return p != other.p;
+    }
 
     /// We implement the semantics of an STL input_iterator.
     //@{
@@ -225,7 +231,7 @@ namespace Internal {
      *  ch must be a valid Unicode character value (i.e. < 0x110000)
      */
     XAPIAN_VISIBILITY_DEFAULT
-    int get_character_info(unsigned ch);
+    int get_character_info(unsigned ch) XAPIAN_CONST_FUNCTION;
 
     /** @internal Extract how to convert the case of a Unicode character from
      *  its info.

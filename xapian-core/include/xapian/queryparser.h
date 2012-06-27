@@ -23,6 +23,7 @@
 #ifndef XAPIAN_INCLUDED_QUERYPARSER_H
 #define XAPIAN_INCLUDED_QUERYPARSER_H
 
+#include <xapian/attributes.h>
 #include <xapian/intrusive_ptr.h>
 #include <xapian/query.h>
 #include <xapian/termiterator.h>
@@ -409,7 +410,8 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
 	FLAG_DEFAULT = FLAG_PHRASE|FLAG_BOOLEAN|FLAG_LOVEHATE
     } feature_flag;
 
-    typedef enum { STEM_NONE, STEM_SOME, STEM_ALL } stem_strategy;
+    /// Stemming strategies, for use with set_stemming_strategy().
+    typedef enum { STEM_NONE, STEM_SOME, STEM_ALL, STEM_ALL_Z } stem_strategy;
 
     /// Copy constructor.
     QueryParser(const QueryParser & o);
@@ -444,14 +446,18 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
      *  probabilistic fields - boolean filter terms are never stemmed.
      *
      *  @param strategy	The strategy to use - possible values are:
-     *   - STEM_NONE: Don't perform any stemming.  (default in Xapian <= 1.3.0)
-     *   - STEM_SOME: Search for stemmed forms of terms except for those which
-     *		      start with a capital letter, or are followed by certain
-     *		      characters (currently: (/\@<>=*[{" ), or are used with
-     *		      operators which need positional information.  Stemmed
-     *		      terms are prefixed with 'Z'.  (default in Xapian > 1.3.1)
-     *   - STEM_ALL:  Search for stemmed forms of all words (note: no 'Z'
-     *		      prefix is added).
+     *   - STEM_NONE:	Don't perform any stemming.  (default in Xapian <=
+     *			1.3.0)
+     *   - STEM_SOME:	Search for stemmed forms of terms except for those
+     *			which start with a capital letter, or are followed by
+     *			certain characters (currently: (/\@<>=*[{" ), or are
+     *			used with operators which need positional information.
+     *			Stemmed terms are prefixed with 'Z'.  (default in
+     *			Xapian >= 1.3.1)
+     *   - STEM_ALL:	Search for stemmed forms of all words (note: no 'Z'
+     *			prefix is added).
+     *   - STEM_ALL_Z:	Search for stemmed forms of all words (note: 'Z'
+     *			prefix is added).  (new in Xapian 1.2.11 and 1.3.1)
      */
     void set_stemming_strategy(stem_strategy strategy);
 
@@ -624,13 +630,13 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
 
     /// Iterate over terms omitted from the query as stopwords.
     TermIterator stoplist_begin() const;
-    TermIterator stoplist_end() const {
+    TermIterator XAPIAN_NOTHROW(stoplist_end() const) {
 	return TermIterator();
     }
 
     /// Iterate over unstemmed forms of the given (stemmed) term used in the query.
     TermIterator unstem_begin(const std::string &term) const;
-    TermIterator unstem_end(const std::string &) const {
+    TermIterator XAPIAN_NOTHROW(unstem_end(const std::string &) const) {
 	return TermIterator();
     }
 
@@ -644,10 +650,10 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
      *
      *  If there were no corrections, an empty string is returned.
      */
-    std::string get_corrected_query_string() const;
+    std::string get_corrected_query_string() const XAPIAN_PURE_FUNCTION;
 
     /// Return a string describing this object.
-    std::string get_description() const;
+    std::string get_description() const XAPIAN_PURE_FUNCTION;
 };
 
 /** Convert a floating point number to a string, preserving sort order.
@@ -677,7 +683,7 @@ class XAPIAN_VISIBILITY_DEFAULT QueryParser {
  *  @param value	The number to serialise.
  */
 XAPIAN_VISIBILITY_DEFAULT
-std::string sortable_serialise(double value);
+std::string sortable_serialise(double value) XAPIAN_CONST_FUNCTION;
 
 /** Convert a string encoded using @a sortable_serialise back to a floating
  *  point number.
@@ -694,7 +700,7 @@ std::string sortable_serialise(double value);
  *  @param value	The serialised string to decode.
  */
 XAPIAN_VISIBILITY_DEFAULT
-double sortable_unserialise(const std::string & value);
+double sortable_unserialise(const std::string & value) XAPIAN_CONST_FUNCTION;
 
 }
 

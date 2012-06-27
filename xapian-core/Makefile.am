@@ -3,8 +3,8 @@
 AUTOMAKE_OPTIONS = 1.5 subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
-# `make QUIET=' overrides `./configure --enable-quiet'.
-# `make QUIET=y' overrides `./configure' without `--enable-quiet'.
+# 'make QUIET=' overrides './configure --enable-quiet'.
+# 'make QUIET=y' overrides './configure' without '--enable-quiet'.
 LIBTOOL = @LIBTOOL@ $(QUIET:y=--quiet)
 
 if MAINTAINER_MODE
@@ -73,7 +73,7 @@ coverage-check:
 	cd tests && lcov -c -b `pwd` -d `pwd` -o ../tmp.lcov
 	sed '/^SF:\/usr/,/^end_of_record/{d};s,^\(SF:/.*/xapian-core/\)\([^t]\),\1tests/\2,' tmp.lcov > xapian-core.lcov
 	rm -rf lcov
-	genhtml --demangle-cpp --html-gzip -q -p "`pwd`" -t "Test Coverage for xapian-core `git log -n1 --abbrev-commit --format=%h||svn info|sed 's/^Revision: /r/p;d'`" -o lcov xapian-core.lcov
+	genhtml --demangle-cpp $(GENHTML_ARGS) -q -p "`pwd`" -t "Test Coverage for xapian-core `git log -n1 --abbrev-commit --format=%h||svn info|sed 's/^Revision: /r/p;d'`" -o lcov xapian-core.lcov
 
 bin_SCRIPTS = xapian-config
 

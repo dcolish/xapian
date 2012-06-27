@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-# `make QUIET=' overrides `./configure --enable-quiet'.
-# `make QUIET=y' overrides `./configure' without `--enable-quiet'.
+# 'make QUIET=' overrides './configure --enable-quiet'.
+# 'make QUIET=y' overrides './configure' without '--enable-quiet'.
 LIBTOOL = @LIBTOOL@ $(QUIET:y=--quiet)
 
 if MAINTAINER_MODE
@@ -98,7 +98,8 @@ noinst_HEADERS = omega.h query.h cgiparam.h\
  md5.h md5wrap.h xmlparse.h metaxmlparse.h values.h utf8convert.h\
  namedentities.h pkglibbindir.h datematchdecider.h sample.h strcasecmp.h\
  utf8truncate.h diritor.h runfilter.h freemem.h xpsxmlparse.h transform.h\
- weight.h svgparse.h tmpdir.h urldecode.h urlencode.h unixperm.h atomparse.h
+ weight.h svgparse.h tmpdir.h urldecode.h urlencode.h unixperm.h atomparse.h\
+ xlsxparse.h opendocparse.h
 
 # headers maintained in xapian-core
 noinst_HEADERS +=\
@@ -139,7 +140,8 @@ omindex_SOURCES = omindex.cc myhtmlparse.cc htmlparse.cc\
  common/getopt.cc commonhelp.cc utils.cc hashterm.cc loadfile.cc md5.cc\
  md5wrap.cc xmlparse.cc metaxmlparse.cc utf8convert.cc sample.cc diritor.cc\
  runfilter.cc freemem.cc common/msvc_dirent.cc xpsxmlparse.cc common/str.cc\
- pkglibbindir.cc svgparse.cc tmpdir.cc urlencode.cc atomparse.cc
+ pkglibbindir.cc svgparse.cc tmpdir.cc urlencode.cc atomparse.cc xlsxparse.cc\
+ opendocparse.cc
 if NEED_MKDTEMP
 omindex_SOURCES += portability/mkdtemp.cc
 endif

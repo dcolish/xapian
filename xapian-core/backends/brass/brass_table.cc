@@ -1345,7 +1345,7 @@ BrassTable::basic_open(bool revision_supplied, brass_revision_number_t revision_
 		::close(handle);
 		handle = -1;
 	    }
-	    string message = "Error opening table `";
+	    string message = "Error opening table '";
 	    message += name;
 	    message += "':\n";
 	    message += err_msg;
@@ -1570,20 +1570,6 @@ BrassTable::BrassTable(const char * tablename_, const string & path_,
 	  lazy(lazy_)
 {
     LOGCALL_CTOR(DB, "BrassTable", tablename_ | path_ | readonly_ | compress_strategy_ | lazy_);
-}
-
-bool
-BrassTable::really_empty() const
-{
-    if (handle < 0) {
-	if (handle == -2) {
-	    BrassTable::throw_database_closed();
-	}
-	return true;
-    }
-    BrassCursor cur(const_cast<BrassTable*>(this));
-    cur.find_entry(string());
-    return !cur.next();
 }
 
 bool

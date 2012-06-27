@@ -1,6 +1,6 @@
 /* xmlparse.cc: subclass of HtmlParser for parsing XML.
  *
- * Copyright (C) 2006,2009,2011 Olly Betts
+ * Copyright (C) 2006,2009,2011,2012 Olly Betts
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ XmlParser::opening_tag(const string &)
 bool
 XmlParser::closing_tag(const string &tag)
 {
-    // For OpenDocument, .docx, .xlsx, .pptx respectively.
-    if (tag == "text:p" || tag == "w:t" || tag == "t" || tag == "a:t")
+    // For .docx and .pptx respectively.
+    if (tag == "w:t" || tag == "a:t")
 	pending_space = true;
     return true;
 }

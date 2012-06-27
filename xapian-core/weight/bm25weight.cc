@@ -1,7 +1,7 @@
 /** @file bm25weight.cc
  * @brief Xapian::BM25Weight class - the BM25 probabilistic formula
  */
-/* Copyright (C) 2009,2010,2011 Olly Betts
+/* Copyright (C) 2009,2010,2011,2012 Olly Betts
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -155,7 +155,7 @@ BM25Weight::unserialise(const string & s) const
     double b = unserialise_double(&ptr, end);
     double min_normlen = unserialise_double(&ptr, end);
     if (rare(ptr != end))
-	throw Xapian::NetworkError("Extra data in BM25Weight::unserialise()");
+	throw Xapian::SerialisationError("Extra data in BM25Weight::unserialise()");
     return new BM25Weight(k1, k2, k3, b, min_normlen);
 }
 
@@ -175,10 +175,17 @@ double
 BM25Weight::get_maxpart() const
 {
     LOGCALL(WTCALC, double, "BM25Weight::get_maxpart", NO_ARGS);
-    Xapian::doclength normlen_lb = max(get_doclength_lower_bound() * len_factor,
-				       param_min_normlen);
     double wdf_max(get_wdf_upper_bound());
-    double denom = param_k1 * (normlen_lb * param_b + (1 - param_b)) + wdf_max;
+    double denom = wdf_max;
+    if (param_k1 != 0.0) {
+	if (param_b != 0.0) {
+	    Xapian::doclength normlen_lb =
+		 max(get_doclength_lower_bound() * len_factor, param_min_normlen);
+	    denom += param_k1 * (normlen_lb * param_b + (1 - param_b));
+	} else {
+	    denom += param_k1;
+	}
+    }
     AssertRel(denom,>,0);
     RETURN(termweight * (param_k1 + 1) * (wdf_max / denom));
 }
@@ -204,6 +211,8 @@ double
 BM25Weight::get_maxextra() const
 {
     LOGCALL(WTCALC, double, "BM25Weight::get_maxextra", NO_ARGS);
+    if (param_k2 == 0.0)
+	RETURN(0.0);
     double num = (2.0 * param_k2 * get_query_length());
     RETURN(num / (1.0 + max(double(get_doclength_lower_bound()),
 			    param_min_normlen)));

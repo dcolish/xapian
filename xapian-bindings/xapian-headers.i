@@ -1,7 +1,7 @@
 %{
 /* xapian-headers.i: Getting SWIG to parse Xapian's C++ headers.
  *
- * Copyright 2006,2011,2012 Olly Betts
+ * Copyright 2004,2006,2011,2012 Olly Betts
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
 %enddef
 
 /* A class which is only useful to wrap if the target language allows
- * subclassing of wrapped classes (what SWIG calls "director support".
+ * subclassing of wrapped classes (what SWIG calls "director support").
  */
 #ifdef XAPIAN_SWIG_DIRECTORS
 #define SUBCLASSABLE_ONLY(NS, CLASS) SUBCLASSABLE(NS, CLASS)
@@ -44,12 +44,14 @@
 %define STANDARD_IGNORES(NS, CLASS)
     %ignore NS::CLASS::internal;
     %ignore NS::CLASS::CLASS(Internal*);
+    %ignore NS::CLASS::CLASS(Internal&);
     %ignore NS::CLASS::operator=;
 %enddef
 #else
 %define STANDARD_IGNORES(NS, CLASS)
     %ignore NS::CLASS::internal;
     %ignore NS::CLASS::CLASS(Internal*);
+    %ignore NS::CLASS::CLASS(Internal&);
     %ignore NS::CLASS::operator=;
     %ignore NS::CLASS::CLASS(const CLASS &);
 %enddef
@@ -64,6 +66,13 @@
 #else
 /* Otherwise, next and prev return void. */
 #define INC_OR_DEC(METHOD, OP, NS, CLASS, RET_TYPE) void METHOD() { OP(*self); }
+#endif
+
+/* For other languages, SWIG already renames operator() suitably. */
+#if defined SWIGJAVA || defined SWIGPHP || defined SWIGTCL
+%rename(apply) *::operator();
+#elif defined SWIGCSHARP
+%rename(Apply) *::operator();
 #endif
 
 /* We use %ignore and %extend rather than %rename on operator* so that any
@@ -131,8 +140,42 @@
 /* ErrorHandler isn't currently wrapped. */
 /* %include <xapian/errorhandler.h> */
 
-/* Currently wrapped via declarations in xapian.i: */
-/* %include <xapian/dbfactory.h> */
+#if defined SWIGCSHARP || defined SWIGJAVA
+
+/* xapian/dbfactory.h is currently wrapped via fake class declarations in
+ * fake_dbfactory.i for C# and Java. */
+
+#else
+
+#ifndef SWIGPHP
+/* PHP renames this to auto_open_stub() in php/php.i. */
+%rename("open_stub") Xapian::Auto::open_stub;
+#endif
+
+/* SWIG Tcl wrappers don't call destructors for classes returned by factory
+ * functions, so we don't wrap them so users are forced to use the
+ * WritableDatabase ctor instead. */
+#ifdef SWIGTCL
+%ignore Xapian::Brass::open(const std::string &dir, int action, int block_size = 8192);
+%ignore Xapian::Chert::open(const std::string &dir, int action, int block_size = 8192);
+#endif
+
+#define XAPIAN_HAS_INMEMORY_BACKEND
+%rename("inmemory_open") Xapian::InMemory::open;
+
+#define XAPIAN_HAS_BRASS_BACKEND
+%rename("brass_open") Xapian::Brass::open;
+
+#define XAPIAN_HAS_CHERT_BACKEND
+%rename("chert_open") Xapian::Chert::open;
+
+#define XAPIAN_HAS_REMOTE_BACKEND
+%rename("remote_open") Xapian::Remote::open;
+%rename("remote_open_writable") Xapian::Remote::open_writable;
+
+%include <xapian/dbfactory.h>
+
+#endif
 
 INPUT_ITERATOR_METHODS(Xapian, PositionIterator, Xapian::termpos, get_termpos)
 %include <xapian/positioniterator.h>

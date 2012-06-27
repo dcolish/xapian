@@ -89,32 +89,6 @@ ChertTable_base::ChertTable_base()
 {
 }
 
-ChertTable_base::ChertTable_base(const ChertTable_base &other)
-	: revision(other.revision),
-	  block_size(other.block_size),
-	  root(other.root),
-	  level(other.level),
-	  bit_map_size(other.bit_map_size),
-	  item_count(other.item_count),
-	  last_block(other.last_block),
-	  have_fakeroot(other.have_fakeroot),
-	  sequential(other.sequential),
-	  bit_map_low(other.bit_map_low),
-	  bit_map0(0),
-	  bit_map(0)
-{
-    try {
-	bit_map0 = new byte[bit_map_size];
-	bit_map = new byte[bit_map_size];
-
-	memcpy(bit_map0, other.bit_map0, bit_map_size);
-	memcpy(bit_map, other.bit_map, bit_map_size);
-    } catch (...) {
-	delete [] bit_map0;
-	delete [] bit_map;
-    }
-}
-
 void
 ChertTable_base::swap(ChertTable_base &other)
 {
@@ -236,7 +210,7 @@ ChertTable_base::read(const string & name, char ch, bool read_bitmap,
     if (have_fakeroot && !sequential) {
 	sequential = true; // FIXME : work out why we need this...
 	/*
-	err_msg += "Corrupt base file, `" + basename + "':\n"
+	err_msg += "Corrupt base file, '" + basename + "':\n"
 		"sequential must be set whenever have_fakeroot is set.\n" +
 		"sequential=" + (sequential?"true":"false") +
 		", have_fakeroot=" + (have_fakeroot?"true":"false") + "\n";
@@ -507,39 +481,25 @@ ChertTable_base::block_free_now(uint4 n)
 void
 ChertTable_base::calculate_last_block()
 {
-    if (bit_map_size == 0) {
-	last_block = 0;
-	return;
-    }
     int i = bit_map_size - 1;
-    while (bit_map[i] == 0 && i > 0) {
+    while (i >= 0 && bit_map[i] == 0) {
 	i--;
     }
     bit_map_size = i + 1;
 
-    int x = bit_map[i];
-
     /* Check for when there are no blocks */
-    if (x == 0) {
+    if (bit_map_size == 0) {
 	last_block = 0;
 	return;
     }
+
+    int x = bit_map[i];
+
     uint4 n = (i + 1) * CHAR_BIT - 1;
     int d = 0x1 << (CHAR_BIT - 1);
     while ((x & d) == 0) { d >>= 1; n--; }
 
     last_block = n;
-}
-
-bool
-ChertTable_base::is_empty() const
-{
-    for (uint4 i = 0; i < bit_map_size; i++) {
-	if (bit_map[i] != 0) {
-	    return false;
-	}
-    }
-    return true;
 }
 
 void

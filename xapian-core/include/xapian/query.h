@@ -23,8 +23,8 @@
 #define XAPIAN_INCLUDED_QUERY_H
 
 #include <string>
-#include <vector>
 
+#include <xapian/attributes.h>
 #include <xapian/intrusive_ptr.h>
 #include <xapian/postingiterator.h>
 #include <xapian/registry.h>
@@ -107,7 +107,8 @@ class XAPIAN_VISIBILITY_DEFAULT Query {
     };
 
     /// Default constructor.
-    Query() : internal(0) { }
+    XAPIAN_NOTHROW(Query())
+	: internal(0) { }
 
     /// Destructor.
     ~Query() { }
@@ -181,22 +182,31 @@ class XAPIAN_VISIBILITY_DEFAULT Query {
     // provide this fake specialised form of the above prototype.
     Query::Query(op op_, XapianSWIGQueryItor qbegin, XapianSWIGQueryItor qend,
 		 Xapian::termcount parameter = 0);
+
+# ifdef SWIGJAVA
+    Query::Query(op op_, XapianSWIGStrItor qbegin, XapianSWIGStrItor qend,
+		 Xapian::termcount parameter = 0);
+# endif
 #endif
 
     const TermIterator get_terms_begin() const;
 
-    const TermIterator get_terms_end() const { return TermIterator(); }
+    const TermIterator XAPIAN_NOTHROW(get_terms_end() const) {
+	return TermIterator();
+    }
 
-    Xapian::termcount get_length() const;
+    Xapian::termcount get_length() const XAPIAN_PURE_FUNCTION;
 
-    bool empty() const { return internal.get() == 0; }
+    bool XAPIAN_NOTHROW(empty() const) XAPIAN_PURE_FUNCTION {
+	return internal.get() == 0;
+    }
 
     std::string serialise() const;
 
     static const Query unserialise(const std::string & s,
 				   const Registry & reg = Registry());
 
-    std::string get_description() const;
+    std::string get_description() const XAPIAN_PURE_FUNCTION;
 
     const Query operator&=(const Query & o) {
 	return (*this = Query(OP_AND, *this, o));
@@ -218,11 +228,14 @@ class XAPIAN_VISIBILITY_DEFAULT Query {
 	return (*this = Query(1.0 / factor, *this));
     }
 
-  private:
-    // Pass a reference to avoid ambiguity for Query(NULL) (not useful, but the
-    // testsuite does it...)  FIXME
-    Query(Query::Internal & internal_) : internal(&internal_) { }
+    /** @private @internal
+     *
+     *  Pass a reference to avoid ambiguity for Query(NULL) (not useful, but the
+     *  testsuite does it...)  FIXME
+     */
+    Query(Internal & internal_) : internal(&internal_) { }
 
+  private:
     void init(Query::op op_, size_t n_subqueries, Xapian::termcount window = 0);
 
     template<typename I>
@@ -329,7 +342,7 @@ class XorContext;
 
 class Query::Internal : public Xapian::Internal::intrusive_base {
   public:
-    Internal() { }
+    XAPIAN_NOTHROW(Internal()) { }
 
     virtual ~Internal();
 
@@ -347,15 +360,16 @@ class Query::Internal : public Xapian::Internal::intrusive_base {
 				  QueryOptimiser * qopt,
 				  double factor) const;
 
-    virtual termcount get_length() const;
+    virtual termcount get_length() const XAPIAN_PURE_FUNCTION;
 
     virtual void serialise(std::string & result) const = 0;
 
     static Query::Internal * unserialise(const char ** p, const char * end, const Registry & reg);
 
-    virtual std::string get_description() const = 0;
+    virtual std::string get_description() const XAPIAN_PURE_FUNCTION = 0;
 
-    virtual void gather_terms(std::vector<std::pair<Xapian::termpos, std::string> > &terms) const;
+    // Pass argument as void* to avoid need to include <vector>.
+    virtual void gather_terms(void * void_terms) const;
 };
 
 }
