@@ -14,9 +14,13 @@ CLEANFILES = SmokeTest.class MyMatchDecider.class MyExpandDecider.class\
 
 SmokeTest: SmokeTest.class
 
-# To get debug symbols, use: make JAVACFLAGS=-g
+if MAINTAINER_MODE
 .java.class:
-	$(JAVAC) $(JAVACFLAGS) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $<
+	$(JAVAC) -g -classpath $(srcdir)$(JAVA_PATHSEP). -d . $(JFLAGS) $<
+else
+.java.class:
+	$(JAVAC) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $(JFLAGS) $<
+endif
 
 XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/Auto.java\
@@ -77,6 +81,7 @@ XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/ValueWeightPostingSource.java\
 	org/xapian/Version.java\
 	org/xapian/Weight.java\
+	org/xapian/WrappedMSetIterator.java\
 	org/xapian/WritableDatabase.java\
 	org/xapian/Xapian.java\
 	org/xapian/XapianConstants.java\
@@ -163,7 +168,7 @@ xapian_wrap.stamp:
 
 -include xapian_wrap.d
 
-CLEANFILES += xapian_wrap.stamp
+CLEANFILES += xapian_wrap.stamp xapian_wrap.cc xapian_wrap.h
 endif
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 

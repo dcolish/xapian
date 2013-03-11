@@ -1,6 +1,7 @@
 // Simple test that we can use xapian from java
 //
 // Copyright (C) 2005,2006,2007,2008,2011 Olly Betts
+// Copyright (C) 2012 Dan Colish
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -16,6 +17,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 // USA
+
+import java.util.Iterator;
 
 import org.xapian.*;
 
@@ -36,6 +39,32 @@ class MyMatchDecider extends MatchDecider {
 */
     }
 }
+
+// class WrappedMSetIterator implements Iterator<Long> {
+//     private MSetIterator begin;
+//     private MSetIterator end;
+
+//     public WrappedMSetIterator(MSet m) {
+// 	this.begin = m.begin();
+// 	this.end = m.end();
+//     }
+    
+//     @Override
+//     public Long next() { 
+// 	return begin.next();
+//     }
+    
+//     @Override
+//     public boolean hasNext() { 
+// 	return begin != end;
+//     }
+
+//     @Override
+//     public void remove() {
+// 	throw new RuntimeException("WTF");
+//     }
+    
+// }
 
 // FIXME: "implements" not "extends" in JNI Java API
 class MyExpandDecider extends ExpandDecider {
@@ -112,14 +141,14 @@ public class SmokeTest {
 		System.err.println("Unexpected mset.size()");
 		System.exit(1);
 	    }
-	    MSetIterator m_itor = mset.begin();
+
 	    Document m_doc = null;
-	    long m_id;
-	    while(m_itor.hasNext()) {
-		m_id = m_itor.next();
-		if(m_itor.hasNext()) {
-		    m_doc = mset.getDocument(m_id);
-		}
+	    Long m_id;
+	    
+	    for(WrappedMSetIterator it = mset.iterator(); it.hasNext();) {
+		Long foo = it.next();
+		System.err.println(foo);
+		m_doc = mset.getDocument(foo);
 	    }
 
 	    // Only one doc exists in this mset
@@ -129,12 +158,13 @@ public class SmokeTest {
 	    }
 
 	    String term_str = "";
-	    TermIterator itor = enq.getMatchingTermsBegin(mset.getElement(0));
-	    while (itor.hasNext()) {
-		term_str += itor.next();
-		if (itor.hasNext())
+	    for(TermIterator it = enq.getMatchingTermsBegin(mset.getElement(0));
+		it.hasNext();) {
+		term_str += it.next();
+		if (it.hasNext())
 		    term_str += ' ';
 	    }
+
 	    if (!term_str.equals("is there")) {
 		System.err.println("Unexpected term_str");
 		System.exit(1);
@@ -170,7 +200,6 @@ public class SmokeTest {
 
 	    int count = 0;
 	    for(ESetIterator eit = eset.begin(); eit.hasNext(); ) {
-	    // for (int i = 0; i < eset.size(); i++) {
 		if (eit.getTerm().charAt(0) == 'a') {
 		    System.err.println("MyExpandDecider wasn't used");
 		    System.exit(1);

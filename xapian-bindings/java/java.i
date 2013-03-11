@@ -76,6 +76,10 @@
 %rename("accept") Xapian::MatchDecider::operator();
 %rename("accept") Xapian::ExpandDecider::operator();
 
+/* %ignore Xapian::MSet::begin; */
+/* %ignore Xapian::MSet::end; */
+%ignore Xapian::MSet::back;
+
 // By default, valueno is wrapped as long and "(long, bool)" collides with
 // some of SWIG/Java's machinery, so for now we wrap valueno as int to avoid
 // this problem.
@@ -100,6 +104,43 @@ class Version {
 }
 }
 
+%inline %{ 
+    namespace Xapian {
+	 class WrappedMSetIterator {
+	     Xapian::MSetIterator begin;
+	     Xapian::MSetIterator end;
+
+	 public:
+	     WrappedMSetIterator() { }
+	 WrappedMSetIterator(const Xapian::MSet &m)
+	     : begin(m.begin()), end(m.end()) {  }
+	     bool hasNext() { return begin != end; }    
+	     Xapian::docid next() { return *(++begin); }
+	 };
+
+     }
+ }
+
+%typemap(javaimports) Xapian::WrappedMSetIterator %{ 
+    import java.util.NoSuchElementException;
+    import java.lang.UnsupportedOperationException;
+%}
+
+%typemap(javainterfaces) Xapian::WrappedMSetIterator "java.util.Iterator<Long>"
+%typemap(javacode) Xapian::WrappedMSetIterator %{
+    public Long next() throws NoSuchElementException {
+	if (this.hasNext()) {
+	    return this.next();
+	} else {
+	    throw new NoSuchElementException();
+	}
+    }
+
+    public void remove() throws UnsupportedOperationException {
+	throw new UnsupportedOperationException();
+    }
+%}
+
 namespace Xapian {
 
 %ignore version_string;
@@ -108,8 +149,12 @@ namespace Xapian {
 %ignore revision;
 
 // For compatibility with the original JNI wrappers.
+
 // FIXME: These make use of the fact that the default ctor for PostingIterator,
-// TermIterator, and ValueIterator produces an end iterator.
+// termiterator, and ValueIterator produces an end iterator.
+
+// TODO:dc: Implement ListIterator for PostingIterator, TermIterator,
+// ValueIterator, MSetIterator, and ESetIterator
 %extend PostingIterator {
     Xapian::docid next () {
         Xapian::docid tmp;
@@ -168,23 +213,13 @@ namespace Xapian {
     }
 
     bool hasNext() const { return !self->at_end(); }
-}
-
-%extend MSetIterator {
-    Xapian::docid next () {
-	Xapian::docid tmp;
-	if (!self->at_end()) {
-	    tmp = (**self);
-	    ++(*self);
-	} else {
-	    tmp = -1;
-	}
-	return tmp;
     }
 
-    bool hasNext() const { return !self->at_end(); }
-}
-
+%extend MSet {
+	Xapian::WrappedMSetIterator iterator() {
+	    return Xapian::WrappedMSetIterator(*self);
+	}
+    }
 }
 
 #define XAPIAN_MIXED_SUBQUERIES_BY_ITERATOR_TYPEMAP
