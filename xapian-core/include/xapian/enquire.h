@@ -396,6 +396,9 @@ class XAPIAN_VISIBILITY_DEFAULT MSetIterator {
 	 */
 	int get_percent() const;
 
+	/// @private @internal Determine if the iterator has been exhausted.
+	bool at_end() const { return index == mset.size(); }
+
 	/// Return a string describing this object.
 	std::string get_description() const;
 
@@ -548,6 +551,9 @@ class XAPIAN_VISIBILITY_DEFAULT ESetIterator {
 
 	/// Return a string describing this object.
 	std::string get_description() const;
+
+	/// @private @internal Determine if the iterator has been exhausted.
+	bool at_end() const { return index == eset.size(); }
 
 	/// Allow use as an STL iterator
 	//@{
@@ -912,7 +918,7 @@ class XAPIAN_VISIBILITY_DEFAULT Enquire {
 	 *
 	 * @param sort_key  value number to sort on.
 	 *
-	 * @param reverse   If true, reverses the sort order.
+	 * @param reverse   If true, reverses the sort order of sort_key.
 	 */
 	void set_sort_by_relevance_then_value(Xapian::valueno sort_key,
 					      bool reverse);
@@ -929,7 +935,8 @@ class XAPIAN_VISIBILITY_DEFAULT Enquire {
 	 *
 	 * @param sorter    The functor to use for generating keys.
 	 *
-	 * @param reverse   If true, reverses the sort order.
+	 * @param reverse   If true, reverses the sort order of the generated
+	 *		    keys.
 	 */
 	void set_sort_by_relevance_then_key(Xapian::KeyMaker * sorter,
 					    bool reverse);

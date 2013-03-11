@@ -43,16 +43,18 @@
 #include "omassert.h"
 #include "filetests.h"
 #include "fileutils.h"
-#ifdef __WIN32__
-# include "msvc_posix_wrapper.h"
-#endif
+#include "posixy_wrapper.h"
 #include "stringutils.h"
 #include "str.h"
 
+#ifdef XAPIAN_HAS_BRASS_BACKEND
 #include "backends/brass/brass_compact.h"
 #include "backends/brass/brass_version.h"
+#endif
+#ifdef XAPIAN_HAS_CHERT_BACKEND
 #include "backends/chert/chert_compact.h"
 #include "backends/chert/chert_version.h"
+#endif
 
 #include <xapian/database.h>
 #include <xapian/error.h>
@@ -453,6 +455,7 @@ Compactor::Internal::compact(Xapian::Compactor & compactor)
 	compact_chert(compactor, destdir.c_str(), sources, offset, block_size,
 		      compaction, multipass, last_docid);
 #else
+	(void)compactor;
 	throw Xapian::FeatureUnavailableError("Chert backend disabled at build time");
 #endif
     } else if (backend == BRASS) {
@@ -460,6 +463,7 @@ Compactor::Internal::compact(Xapian::Compactor & compactor)
 	compact_brass(compactor, destdir.c_str(), sources, offset, block_size,
 		      compaction, multipass, last_docid);
 #else
+	(void)compactor;
 	throw Xapian::FeatureUnavailableError("Brass backend disabled at build time");
 #endif
     }
@@ -496,11 +500,7 @@ Compactor::Internal::compact(Xapian::Compactor & compactor)
 #endif
 	    new_stub << "auto " << destdir.substr(slash + 1) << '\n';
 	}
-#ifndef __WIN32__
-	if (rename(new_stub_file.c_str(), stub_file.c_str()) < 0) {
-#else
-	if (msvc_posix_rename(new_stub_file.c_str(), stub_file.c_str()) < 0) {
-#endif
+	if (posixy_rename(new_stub_file.c_str(), stub_file.c_str()) < 0) {
 	    // FIXME: try to clean up?
 	    string msg = "Cannot rename '";
 	    msg += new_stub_file;
@@ -513,4 +513,3 @@ Compactor::Internal::compact(Xapian::Compactor & compactor)
 }
 
 }
-

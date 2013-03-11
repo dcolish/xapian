@@ -1,6 +1,6 @@
 /* diritor.h: Iterator through entries in a directory.
  *
- * Copyright (C) 2007,2008,2010,2011 Olly Betts
+ * Copyright (C) 2007,2008,2010,2011,2012 Olly Betts
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "safeerrno.h"
 #include "safefcntl.h"
 #include "safesysstat.h"
+#include "safeunistd.h"
 
 #include <sys/types.h>
 
@@ -40,6 +41,8 @@
 
 #include "loadfile.h"
 #include "runfilter.h" // For class ReadError.
+
+struct FileNotFound { };
 
 class DirectoryIterator {
 #if defined O_NOATIME && O_NOATIME != 0
@@ -56,6 +59,7 @@ class DirectoryIterator {
     struct stat statbuf;
     bool statbuf_valid;
     bool follow_symlinks;
+    int fd;
 
     void call_stat();
 
@@ -71,10 +75,11 @@ class DirectoryIterator {
   public:
 
     DirectoryIterator(bool follow_symlinks_)
-	: dir(NULL), follow_symlinks(follow_symlinks_) { }
+	: dir(NULL), follow_symlinks(follow_symlinks_), fd(-1) { }
 
     ~DirectoryIterator() {
 	if (dir) closedir(dir);
+	if (fd >= 0) close(fd);
     }
 
     /// Start iterating through entries in @a path.
@@ -88,6 +93,10 @@ class DirectoryIterator {
     //
     //  @return false if there are no more entries.
     bool next() {
+	if (fd >= 0) {
+	    close(fd);
+	    fd = -1;
+	}
 	path.resize(path_len);
 	errno = 0;
 	do {
@@ -210,7 +219,11 @@ class DirectoryIterator {
 	std::string out;
 	int flags = NOCACHE;
 	if (try_noatime()) flags |= NOATIME;
-	if (!load_file(path, out, flags)) throw ReadError();
+	fd = load_file_fd(path, out, flags);
+	if (fd < 0) {
+	    if (errno == ENOENT) throw FileNotFound();
+	    throw ReadError();
+	}
 	return out;
     }
 };

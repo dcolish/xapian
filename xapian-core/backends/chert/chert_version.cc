@@ -31,10 +31,6 @@
 #include "stringutils.h" // For STRINGIZE() and CONST_STRLEN().
 #include "str.h"
 
-#ifdef __WIN32__
-# include "msvc_posix_wrapper.h"
-#endif
-
 #include <cstdio> // For rename().
 #include <cstring> // For memcmp() and memcpy().
 #include <string>
@@ -73,7 +69,7 @@ ChertVersion::create()
     uuid_generate(uuid);
     memcpy(buf + MAGIC_LEN + 4, (void*)uuid, 16);
 
-    int fd = ::open(filename.c_str(), O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0666);
+    int fd = ::open(filename.c_str(), O_WRONLY|O_CREAT|O_TRUNC|O_BINARY|O_CLOEXEC, 0666);
 
     if (fd < 0) {
 	string msg("Failed to create chert version file: ");
@@ -98,7 +94,7 @@ ChertVersion::create()
 void
 ChertVersion::read_and_check()
 {
-    int fd = ::open(filename.c_str(), O_RDONLY|O_BINARY);
+    int fd = ::open(filename.c_str(), O_RDONLY|O_BINARY|O_CLOEXEC);
 
     if (fd < 0) {
 	string msg = filename;

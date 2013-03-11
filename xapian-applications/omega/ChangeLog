@@ -1,3 +1,253 @@
+Thu Mar 07 00:40:20 GMT 2013  Olly Betts <olly@survex.com>
+
+	* jsonescape.cc: Fix C+11 compatibility issue highlighted by GCC
+	  warning.
+
+Wed Mar 06 03:35:43 GMT 2013  Olly Betts <olly@survex.com>
+
+	* gen-myhtmltags,myhtmlparse.cc: Distinguish page breaks from other
+	  whitespace in samples.
+
+Tue Mar 05 19:37:55 GMT 2013  Olly Betts <olly@survex.com>
+
+	* INSTALL,configure.ac: Provide hints as to what package to install
+	  for magic.h.
+
+Mon Mar 04 03:56:22 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac,omindex.cc,runfilter.cc,runfilter.h: If omindex
+	  receives a SIGHUP, SIGINT, SIGQUIT or SIGTERM, then kill any active
+	  external filter child process before handling the signal as we
+	  otherwise would.
+
+Sun Mar 03 23:52:37 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac,runfilter.cc: If setpgid() is available, put each
+	  external filter in its own process group so we can easily kill it
+	  along with any processes which it starts.
+
+Mon Feb 25 19:03:06 GMT 2013  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst: Update to add com to the list of ignored
+	  extensions.
+
+Thu Feb 21 22:09:44 GMT 2013  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Ignore .com files by default.
+
+Tue Feb 19 04:19:50 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Update from ChangeLog.
+
+Tue Feb 19 03:13:08 GMT 2013  Olly Betts <olly@survex.com>
+
+	* htmlparsetest.cc,myhtmlparse.cc,myhtmlparse.h: Sample from HTML now
+	  contains \n where a line or paragraph break would appear, and \t
+	  between table cells.
+
+Tue Feb 19 03:02:58 GMT 2013  Olly Betts <olly@survex.com>
+
+	* gen-myhtmltags,htmlparsetest.cc,myhtmlparse.cc,myhtmlparse.tokens:
+	  Generate a lookup table for where we should insert a space in place
+	  of an HTML tag rather than using a switch statement for that.
+
+Tue Feb 12 20:43:14 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Remove my-html-tok.h in "make clean" not "make
+	  distclean", since it's built by "make" and that's what the automake
+	  manual recommends for files built by "make".
+
+Tue Feb 12 20:41:53 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Clean up my-html-tok.h in "make distclean".
+
+Tue Feb 12 20:03:51 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Ship common/keyword.h.
+
+Tue Feb 12 19:27:26 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Ship common/Tokeniseise.pm.
+
+Tue Feb 12 00:44:23 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Fix to work in VPATH build.
+
+Mon Feb 11 22:38:16 GMT 2013  Olly Betts <olly@survex.com>
+
+	* xlsxparse.cc: Correct "max" -> "min" when reserving space for shared
+	  strings.  This only means we now reserve a more appropriate amount
+	  of space to start with.
+
+Fri Feb 01 04:11:50 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Ship new file myhtmlparse.tokens.
+
+Thu Jan 31 23:42:23 GMT 2013  Olly Betts <olly@survex.com>
+
+	* myhtmlparse.cc,myhtmlparse.tokens: Add <APPLET>, <OBJECT>, and
+	  <TR> to the tags handled.
+
+Thu Jan 31 06:24:13 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am,gen-myhtmltags,myhtmlparse.cc,myhtmlparse.tokens: Use
+	  a generated compact and efficient table to convert HTML tag names
+	  to enum codes, which we can then use a C switch statement to
+	  dispatch.  The table first checks the token length, and then does a
+	  binary chop on tokens of the same length.  This is both faster and
+	  smaller than the approach we were using, with the benefit that the
+	  table is auto-generated.
+
+Thu Jan 31 06:21:22 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Update from ChangeLog.
+
+Mon Jan 28 23:41:21 GMT 2013  Olly Betts <olly@survex.com>
+
+	* utf8convert.cc,utf8converttest.cc: Always use our built-in
+	  conversion code for the character sets it can handle, and only use
+	  iconv as a fall-back.  This gives us more consistent results, and
+	  in particular means we now handle BOMs better (at least with GNU
+	  iconv).
+
+Mon Jan 28 23:16:08 GMT 2013  Olly Betts <olly@survex.com>
+
+	* utf8convert.cc,utf8converttest.cc: A lot of data labelled as
+	  "iso-8859-1" is actually "windows-1252".  The two only differ
+	  in characters which are control characters in iso-8859-1, so
+	  assume the latter when we see the former.
+
+Mon Jan 28 23:13:24 GMT 2013  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Use charset name "iso-8859-1" in lower case
+	  consistently.
+
+Thu Jan 24 08:44:24 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Ship jsonescape.h.
+
+Thu Jan 24 07:21:17 GMT 2013  Olly Betts <olly@survex.com>
+
+	* jsonescape.cc: Add missing header includes.
+
+Thu Jan 24 03:08:39 GMT 2013  Olly Betts <olly@survex.com>
+
+	* docs/omegascript.rst: Document $json and $jsonarray.
+
+Thu Jan 24 02:55:53 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am,jsonescape.cc,jsonescape.h,jsonesctest.cc,query.cc:
+	  Add new $json and $jsonarray OmegaScript commands.
+
+Wed Jan 09 11:53:19 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Update from ChangeLog and 1.2 branch.
+
+Fri Jan 04 02:21:05 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am,docs/omegascript.rst,omindex.cc,query.cc,sample.cc,
+	  sample.h: Add $truncate command to break a string after a word.
+
+Thu Jan 03 04:44:22 GMT 2013  Olly Betts <olly@survex.com>
+
+	* commonhelp.cc: Tweak wording about default to match other options
+	  better.
+
+Thu Jan 03 04:07:57 GMT 2013  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Note default size limit on files to index is unlimited.
+	  Update --help to reflect that --sample-size now accepts the same
+	  formats as --max-size).
+
+Thu Jan 03 03:52:34 GMT 2013  Olly Betts <olly@survex.com>
+
+	* omindex.cc: When generating a sample for a CSV file, limit the
+	  reserved size to the CSV file size as sample_size could be set
+	  really high by the user.
+
+Thu Jan 03 03:46:46 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Update from ChangeLog.
+
+Tue Dec 18 04:49:41 GMT 2012  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Fix typo in previous change (2>dev/null should be
+	  2>/dev/null).
+
+Tue Dec 18 03:48:36 GMT 2012  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst,omindex.cc: Extend --filter to allow commands which
+	  produce HTML on stdout to be specified with it.
+
+Sun Dec 16 21:25:28 GMT 2012  Olly Betts <olly@survex.com>
+
+	* diritor.cc: If libmagic hits ENOENT trying to classify a file, throw
+	  FileNotFound so we quietly skip the file in non-verbose mode.
+
+Sun Dec 16 21:23:25 GMT 2012  Olly Betts <olly@survex.com>
+
+	* diritor.cc: MAGIC_MIME_TYPE was added in 4.22, so note that in the
+	  comment about its conditional use.
+
+Fri Dec 14 21:22:12 GMT 2012  Olly Betts <olly@survex.com>
+
+	* Makefile.am: In automake, INCLUDES is now deprecated in favour of
+	  AM_CPPFLAGS so update to use the latter.
+
+Fri Dec 14 04:45:12 GMT 2012  Olly Betts <olly@survex.com>
+
+	* omindex.cc: If md5_file() fails with ENOENT, assume the file was
+	  removed during indexing and only report this with --verbose as we
+	  do in other such cases.
+
+Fri Dec 14 04:42:34 GMT 2012  Olly Betts <olly@survex.com>
+
+	* md5wrap.cc: If we get a read error while calculating the md5 checksum
+	  of a file, fail rather than returning the checksum of the file up to
+	  that point.
+
+Fri Dec 14 04:35:52 GMT 2012  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Calculate the md5 from the loaded file contents when
+	  indexing SVG and Atom files.  Use a const ref to avoid a string
+	  copy of the file contents for HTML and uncompressed ABI word.
+
+Fri Dec 14 04:24:17 GMT 2012  Olly Betts <olly@survex.com>
+
+	* configure.ac,diritor.cc,diritor.h,loadfile.cc,loadfile.h,omindex.cc:
+	  If we open a file to index it, keep the fd around and use it with
+	  libmagic, provided magic_descriptor() is available.
+
+Tue Dec 11 03:35:29 GMT 2012  Olly Betts <olly@survex.com>
+
+	* diritor.cc,diritor.h,omindex.cc: If we get ENOENT for a file or
+	  directory we're trying to index, assume it has been removed between
+	  us reading the directory entry for it and trying to open it, and
+	  only report the failure to index under --verbose.
+
+Wed Nov 21 04:06:54 GMT 2012  Olly Betts <olly@survex.com>
+
+	* omindex.cc: Fix omindex not to segfault when -F option without a ':'
+	  is passed.
+
+Tue Sep 25 23:57:12 GMT 2012  Olly Betts <olly@survex.com>
+
+	* Makefile.am,omindex.cc: Replace shell_protect() with
+	  append_filename_argument() from common/append_filename_arg.h.
+	  Extracting text using external filters now works for filenames
+	  containing a newline character.
+
+Thu Aug 09 20:07:59 GMT 2012  Dan Colish <dcolish@gmail.com>
+
+	* Makefile.am,configure.ac: Allow users to configure with
+	  MAGIC_PREFIX for non-standard installs of libmagic
+
+Wed Jul 18 10:51:39 GMT 2012  Olly Betts <olly@survex.com>
+
+	* urldecode.h: Fix to decode escaped character at the end of the
+	  string.
+	* urlenctest.cc: Add regression testcase.
+
 Sun Jul 01 10:53:35 GMT 2012  Olly Betts <olly@survex.com>
 
 	* NEWS: Update from ChangeLog and 1.2 branch.
@@ -1592,7 +1842,7 @@ Thu Apr 16 08:20:01 GMT 2009  Olly Betts <olly@survex.com>
 	  problems reported by James Aylett with Mac OS X on #xapian-devel.
 	  Fix expansion of \1 to \9 to work correctly and document these
 	  and \\.  Fix handling of unescaped \ at the end of the pattern, and
-	  leave unrecognised \<x> sequences unchanged. 
+	  leave unrecognised \<x> sequences unchanged.
 
 Thu Apr 16 04:38:20 GMT 2009  Olly Betts <olly@survex.com>
 
@@ -1779,11 +2029,11 @@ Wed Sep 03 12:26:58 GMT 2008  Olly Betts <olly@survex.com>
 	  document then reparse the document if it isn't the encoding we're
 	  already using so that any preceding <title> is converted correctly
 	  (bug#292).
-	  
+
 	  Convert text from meta tag parameters to UTF-8 (bug#293).
 
 	  Handle <meta charset="..."> (new in HTML 5).
-	  
+
 	  Fix bug in parameter parsing which was probably just a small
 	  performance penalty in real world cases, but could perhaps result in
 	  parsing bogus extra parameters in carefully contrived situations.
@@ -5736,6 +5986,3 @@ Mon Nov  5 12:42:26 GMT 2001  Richard Boulton <richard@tartarus.org>
 
 	* Omega moved to new home, from om-examples/omega.
 	  Standalone build system added.
-
-
-

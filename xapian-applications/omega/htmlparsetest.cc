@@ -1,6 +1,6 @@
 /* htmlparsetest.cc: test the MyHtmlParser class
  *
- * Copyright (C) 2006,2008,2011,2012 Olly Betts
+ * Copyright (C) 2006,2008,2011,2012,2013 Olly Betts
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -58,6 +58,8 @@ static const testcase tests[] = {
     { "foo<![CDATA[bar", "foobar", "", "", "" },
     // Test that handling of multiple body tags matches modern browser behaviour (ticket#599).
     { "a<html>b<head>c<title>bad</title>d</head>e<body>f</body>g<body>h</body>i</html>j<body>k", "abcdefghijk", "bad", "", "" },
+    { "check<object id='foo'>for<applet foo=\"bar\" />spaces<br> in <p>\tout</p>put\r\n", "check for spaces\nin\nout\nput", "", "", "" },
+    { "table<tr><th>col 1</th><th>col 2</th></tr><tr><td>test</td><td><img src='foo.jpg'> <img src='bar.jpg'></td></tr><tr><td colspan=2>hello world</td></tr></table>done", "table\ncol 1\tcol 2\ntest\nhello world\ndone", "", "", "" },
     { 0, 0, 0, 0, 0 }
 };
 

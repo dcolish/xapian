@@ -14,8 +14,9 @@ CLEANFILES = SmokeTest.class MyMatchDecider.class MyExpandDecider.class\
 
 SmokeTest: SmokeTest.class
 
+# To get debug symbols, use: make JAVACFLAGS=-g
 .java.class:
-	$(JAVAC) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $<
+	$(JAVAC) $(JAVACFLAGS) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $<
 
 XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/Auto.java\
@@ -33,6 +34,7 @@ XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/ESetIterator.java\
 	org/xapian/ExpandDecider.java\
 	org/xapian/ExpandDeciderAnd.java\
+	org/xapian/FieldProcessor.java\
 	org/xapian/FixedWeightPostingSource.java\
 	org/xapian/GreatCircleMetric.java\
 	org/xapian/InMemory.java\

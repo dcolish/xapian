@@ -1,7 +1,7 @@
 if VPATH_BUILD
 # We need this so that generated sources can find non-generated headers and
 # non-generated sources can find generated headers in a VPATH build from SVN.
-INCLUDES += -I$(top_srcdir)/languages -Ilanguages
+AM_CPPFLAGS += -I$(top_srcdir)/languages -Ilanguages
 endif
 
 noinst_HEADERS +=\
@@ -48,6 +48,7 @@ snowball_headers =\
 	languages/compiler/syswords2.h
 
 EXTRA_DIST += $(snowball_sources) $(snowball_headers) $(snowball_algorithms) $(snowball_built_sources)\
+	languages/sbl-dispatch.h\
 	languages/dir_contents\
 	languages/Makefile\
 	languages/allsnowballheaders.h
@@ -67,8 +68,12 @@ languages/snowball: $(snowball_sources) $(snowball_headers)
 languages/allsnowballheaders.h: languages/generate-allsnowballheaders languages/Makefile.mk
 	languages/generate-allsnowballheaders $(snowball_built_sources)
 
+languages/sbl-dispatch.h: languages/collate-sbl languages/Makefile.mk common/Tokeniseise.pm
+	$(PERL) -I'$(srcdir)/common' '$(srcdir)/languages/collate-sbl' '$(srcdir)' $(snowball_algorithms)
+
 BUILT_SOURCES += $(snowball_built_sources)\
-	languages/allsnowballheaders.h
+	languages/allsnowballheaders.h\
+	languages/sbl-dispatch.h
 CLEANFILES += languages/snowball
 endif
 

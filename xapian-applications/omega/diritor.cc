@@ -1,6 +1,6 @@
 /* diritor.cc: Iterator through entries in a directory.
  *
- * Copyright (C) 2007,2008,2010,2011 Olly Betts
+ * Copyright (C) 2007,2008,2010,2011,2012 Olly Betts
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,8 @@ DirectoryIterator::call_stat()
     }
 #endif
     if (retval == -1) {
+	if (errno == ENOENT)
+	    throw FileNotFound();
 	string error = "Can't stat \"";
 	error += path;
 	error += "\" (";
@@ -76,6 +78,8 @@ DirectoryIterator::start(const std::string & path_)
     path_len = path.length();
     dir = opendir(path.c_str());
     if (dir == NULL) {
+	if (errno == ENOENT)
+	    throw FileNotFound();
 	string error = "Can't open directory \"";
 	error += path;
 	error += "\" (";
@@ -103,9 +107,8 @@ DirectoryIterator::get_magic_mimetype()
 #ifdef MAGIC_MIME_TYPE
 	magic_cookie = magic_open(MAGIC_SYMLINK|MAGIC_MIME_TYPE|MAGIC_ERROR);
 #else
-	// MAGIC_MIME_TYPE is relatively new - the changelog doesn't mention it
-	// being added, but 4.21 didn't have it and 4.26 did.  If we don't have
-	// it then use MAGIC_MIME instead and trim any encoding off below.
+	// MAGIC_MIME_TYPE was added in 4.22, released 2007-12-27.  If we don't
+	// have it then use MAGIC_MIME instead and trim any encoding off below.
 	magic_cookie = magic_open(MAGIC_SYMLINK|MAGIC_MIME|MAGIC_ERROR);
 #endif
 	if (magic_cookie == NULL) {
@@ -124,12 +127,22 @@ DirectoryIterator::get_magic_mimetype()
 	}
     }
 
-    // FIXME: handle NOATIME here and share the fd with load_file().
-    build_path();
-    const char * res = magic_file(magic_cookie, path.c_str());
+    const char * res = NULL;
+#ifdef HAVE_MAGIC_DESCRIPTOR
+    if (fd >= 0) {
+	if (lseek(fd, 0, SEEK_SET) == 0)
+	    res = magic_descriptor(magic_cookie, fd);
+    } else
+#endif
+    {
+	build_path();
+	res = magic_file(magic_cookie, path.c_str());
+    }
     if (!res) {
 	const char * err = magic_error(magic_cookie);
 	if (rare(err)) {
+	    if (magic_errno(magic_cookie) == ENOENT)
+		throw FileNotFound();
 	    string m("Failed to use magic on file: ");
 	    m += err;
 	    throw m;

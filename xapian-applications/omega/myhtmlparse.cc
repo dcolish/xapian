@@ -1,7 +1,7 @@
 /* myhtmlparse.cc: subclass of HtmlParser for extracting text.
  *
  * Copyright 1999,2000,2001 BrightStation PLC
- * Copyright 2002,2003,2004,2006,2007,2008,2010,2011,2012 Olly Betts
+ * Copyright 2002,2003,2004,2006,2007,2008,2010,2011,2012,2013 Olly Betts
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,12 +23,16 @@
 
 #include "myhtmlparse.h"
 
+#include "keyword.h"
+#include "my-html-tok.h"
 #include "utf8convert.h"
 
 #include <cctype>
 #include <cstring>
 
 using namespace std;
+
+static const char whitespace[] = "_ \t\n\n\f";
 
 inline void
 lowercase_string(string &str)
@@ -52,17 +56,18 @@ MyHtmlParser::process_text(const string &text)
 {
     if (!text.empty() && !in_script_tag && !in_style_tag) {
 	string::size_type b = text.find_first_not_of(WHITESPACE);
-	if (b) pending_space = true;
+	if (b && !pending_space) pending_space = SPACE;
 	while (b != string::npos) {
 	    if (pending_space && !target->empty())
-		*target += ' ';
+		*target += whitespace[pending_space];
 	    string::size_type e = text.find_first_of(WHITESPACE, b);
-	    pending_space = (e != string::npos);
-	    if (!pending_space) {
+	    if (e == string::npos) {
 		target->append(text.data() + b, text.size() - b);
+		pending_space = 0;
 		return;
 	    }
 	    target->append(text.data() + b, e - b);
+	    pending_space = SPACE;
 	    b = text.find_first_not_of(WHITESPACE, e + 1);
 	}
     }
@@ -71,45 +76,22 @@ MyHtmlParser::process_text(const string &text)
 bool
 MyHtmlParser::opening_tag(const string &tag)
 {
-    if (tag.empty()) return true;
-    switch (tag[0]) {
-	case 'a':
-	    if (tag == "address") pending_space = true;
+    int k = keyword(tab, tag.data(), tag.size());
+    if (k < 0)
+	return true;
+    pending_space = max(pending_space, (token_space[k] & TOKEN_SPACE_MASK));
+    switch ((html_tag)k) {
+	case P:
+	    if (pending_space < PAGE) {
+		string style;
+		if (get_parameter("style", style)) {
+		    // As produced by Libreoffice's HTML export:
+		    if (style.find("page-break-before: always") != string::npos)
+			pending_space = PAGE;
+		}
+	    }
 	    break;
-	case 'b':
-	    if (tag == "blockquote" || tag == "br") pending_space = true;
-	    break;
-	case 'c':
-	    if (tag == "center") pending_space = true;
-	    break;
-	case 'd':
-	    if (tag == "dd" || tag == "dir" || tag == "div" || tag == "dl" ||
-		tag == "dt") pending_space = true;
-	    break;
-	case 'e':
-	    if (tag == "embed") pending_space = true;
-	    break;
-	case 'f':
-	    if (tag == "fieldset" || tag == "form") pending_space = true;
-	    break;
-	case 'h':
-	    // hr, and h1, ..., h6
-	    if (tag.length() == 2 && strchr("r123456", tag[1]))
-		pending_space = true;
-	    break;
-	case 'i':
-	    if (tag == "iframe" || tag == "img" || tag == "isindex" ||
-		tag == "input") pending_space = true;
-	    break;
-	case 'k':
-	    if (tag == "keygen") pending_space = true;
-	    break;
-	case 'l':
-	    if (tag == "legend" || tag == "li" || tag == "listing")
-		pending_space = true;
-	    break;
-	case 'm':
-	    if (tag == "meta") {
+	case META: {
 		string content;
 		if (get_parameter("content", content)) {
 		    string name;
@@ -192,43 +174,18 @@ MyHtmlParser::opening_tag(const string &tag)
 		}
 		break;
 	    }
-	    if (tag == "marquee" || tag == "menu" || tag == "multicol")
-		pending_space = true;
+	case STYLE:
+	    in_style_tag = true;
 	    break;
-	case 'o':
-	    if (tag == "ol" || tag == "option") pending_space = true;
+	case SCRIPT:
+	    in_script_tag = true;
 	    break;
-	case 'p':
-	    if (tag == "p" || tag == "pre" || tag == "plaintext")
-		pending_space = true;
+	case TITLE:
+	    target = &title;
+	    pending_space = 0;
 	    break;
-	case 'q':
-	    if (tag == "q") pending_space = true;
-	    break;
-	case 's':
-	    if (tag == "style") {
-		in_style_tag = true;
-		break;
-	    }
-	    if (tag == "script") {
-		in_script_tag = true;
-		break;
-	    }
-	    if (tag == "select") pending_space = true;
-	    break;
-	case 't':
-	    if (tag == "table" || tag == "td" || tag == "textarea" ||
-		tag == "th") pending_space = true;
-	    else if (tag == "title") {
-		target = &title;
-		pending_space = false;
-	    }
-	    break;
-	case 'u':
-	    if (tag == "ul") pending_space = true;
-	    break;
-	case 'x':
-	    if (tag == "xmp") pending_space = true;
+	default:
+	    /* No action */
 	    break;
     }
     return true;
@@ -237,73 +194,23 @@ MyHtmlParser::opening_tag(const string &tag)
 bool
 MyHtmlParser::closing_tag(const string &tag)
 {
-    if (tag.empty()) return true;
-    switch (tag[0]) {
-	case 'a':
-	    if (tag == "address") pending_space = true;
+    int k = keyword(tab, tag.data(), tag.size());
+    if (k < 0 || (token_space[k] & NOCLOSE))
+	return true;
+    pending_space = max(pending_space, (token_space[k] & TOKEN_SPACE_MASK));
+    switch ((html_tag)k) {
+	case STYLE:
+	    in_style_tag = false;
 	    break;
-	case 'b':
-	    if (tag == "blockquote" || tag == "br") pending_space = true;
+	case SCRIPT:
+	    in_script_tag = false;
 	    break;
-	case 'c':
-	    if (tag == "center") pending_space = true;
+	case TITLE:
+	    target = &dump;
+	    pending_space = 0;
 	    break;
-	case 'd':
-	    if (tag == "dd" || tag == "dir" || tag == "div" || tag == "dl" ||
-		tag == "dt") pending_space = true;
-	    break;
-	case 'f':
-	    if (tag == "fieldset" || tag == "form") pending_space = true;
-	    break;
-	case 'h':
-	    // hr, and h1, ..., h6
-	    if (tag.length() == 2 && strchr("r123456", tag[1]))
-		pending_space = true;
-	    break;
-	case 'i':
-	    if (tag == "iframe") pending_space = true;
-	    break;
-	case 'l':
-	    if (tag == "legend" || tag == "li" || tag == "listing")
-		pending_space = true;
-	    break;
-	case 'm':
-	    if (tag == "marquee" || tag == "menu") pending_space = true;
-	    break;
-	case 'o':
-	    if (tag == "ol" || tag == "option") pending_space = true;
-	    break;
-	case 'p':
-	    if (tag == "p" || tag == "pre") pending_space = true;
-	    break;
-	case 'q':
-	    if (tag == "q") pending_space = true;
-	    break;
-	case 's':
-	    if (tag == "style") {
-		in_style_tag = false;
-		break;
-	    }
-	    if (tag == "script") {
-		in_script_tag = false;
-		break;
-	    }
-	    if (tag == "select") pending_space = true;
-	    break;
-	case 't':
-	    if (tag == "table" || tag == "td" || tag == "textarea" ||
-		tag == "th") pending_space = true;
-	    else if (tag == "title") {
-		target = &dump;
-		pending_space = false;
-		break;
-	    }
-	    break;
-	case 'u':
-	    if (tag == "ul") pending_space = true;
-	    break;
-	case 'x':
-	    if (tag == "xmp") pending_space = true;
+	default:
+	    /* No action */
 	    break;
     }
     return true;

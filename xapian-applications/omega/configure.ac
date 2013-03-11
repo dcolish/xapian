@@ -81,11 +81,32 @@ AC_CHECK_HEADERS([netinet/in.h arpa/inet.h sys/time.h]dnl
 dnl libmagic used to detect MIME types for files we don't detect by extension.
 AC_CHECK_HEADERS([magic.h])
 if test $ac_cv_header_magic_h != yes ; then
-  AC_MSG_ERROR([libmagic required but magic.h not found])
+  if test -r /etc/debian_version ; then
+    pkg="libmagic-dev"
+  else
+    pkg="file-devel (or maybe libmagic-devl)"
+  fi
+  AC_MSG_ERROR([libmagic required but magic.h not found.  If you're installing from packages, you probably need to install a package called something like $pkg in order to be able to build $PACKAGE_NAME.])
 fi
 save_LIBS=$LIBS
 LIBS=
+AC_ARG_VAR(MAGIC_PREFIX, [Prefix for libmagic])
+if test "$MAGIC_PREFIX"; then
+AC_SEARCH_LIBS([magic_open], [magic], [], [
+   MAGIC_LDFLAGS=-L$MAGIC_PREFIX/lib
+   save_LDFLAGS=$LDFLAGS
+   LDFLAGS="$LDFLAGS $MAGIC_LDFLAGS"
+   AC_CHECK_LIB([magic], [magic_open], [], [
+      MAGIC_LIBS=
+      ])
+   LDFLAGS=$save_LDFLAGS
+   AC_SUBST([MAGIC_LDFLAGS])
+ ])
+else
 AC_SEARCH_LIBS([magic_open], [magic])
+fi
+dnl magic_descriptor was added in file-4.22 released 2007-12-27.
+AC_CHECK_FUNCS([magic_descriptor])
 MAGIC_LIBS=$LIBS
 LIBS=$save_LIBS
 AC_SUBST([MAGIC_LIBS])
@@ -143,7 +164,7 @@ AC_LINK_IFELSE([
 
 dnl omindex uses fork(), socketpair(), and setrlimit() to impose resource
 dnl limits on filter programs.
-AC_CHECK_FUNCS([mmap fork setrlimit sysmp pstat_getdynamic])
+AC_CHECK_FUNCS([mmap fork setrlimit sysmp pstat_getdynamic setpgid sigaction])
 
 dnl -lxnet is needed on Solaris and apparently on HP-UX too.
 AC_SEARCH_LIBS([socketpair], [xnet],

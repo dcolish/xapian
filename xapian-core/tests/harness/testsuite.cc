@@ -360,7 +360,7 @@ test_driver::runtest(const test_desc *test)
 		    // Record the current position so we can restore it so
 		    // REPORT_FAIL_VG() gets the whole output.
 		    off_t curpos = lseek(vg_log_fd, 0, SEEK_CUR);
-		    char buf[1024];
+		    char buf[4096];
 		    while (true) {
 			ssize_t c = read(vg_log_fd, buf, sizeof(buf));
 			if (c == 0 || (c < 0 && errno != EINTR)) {
@@ -369,10 +369,10 @@ test_driver::runtest(const test_desc *test)
 			}
 			if (c > 0) {
 			    // Valgrind output has "==<pid>== \n" between
-			    // report "records", so skip to the next occurrence
-			    // of ' ' not followed by '\n'.
+			    // report "records", so skip any lines like that,
+			    // and also any warnings and continuation lines.
 			    ssize_t i = 0;
-			    do {
+			    while (true) {
 				const char * spc;
 				spc = static_cast<const char *>(
 					memchr(buf + i, ' ', c - i));
@@ -381,7 +381,26 @@ test_driver::runtest(const test_desc *test)
 				    break;
 				}
 				i = spc - buf;
-			    } while (++i < c && buf[i] == '\n');
+				if (++i >= c) break;
+				if (buf[i] == '\n')
+				    continue;
+				if (c - i >= 8 &&
+				    (memcmp(buf + i, "Warning:", 8) == 0 ||
+				     memcmp(buf + i, "   ", 3) == 0)) {
+				    // Skip this line.
+				    i += 3;
+				    const char * nl;
+				    nl = static_cast<const char *>(
+					    memchr(buf + i, '\n', c - i));
+				    if (!nl) {
+					i = c;
+					break;
+				    }
+				    i = nl - buf;
+				    continue;
+				}
+				break;
+			    }
 
 			    char *start = buf + i;
 			    c -= i;
@@ -689,7 +708,7 @@ test_driver::report(const test_driver::result &r, const string &desc)
 void
 test_driver::add_command_line_option(const string &l, char s, string * arg)
 {
-    short_opts.insert(make_pair<int, string *>(int(s), arg));
+    short_opts.insert(make_pair(int(s), arg));
     opt_help += "[-";
     opt_help += s;
     opt_help += ' ';
@@ -767,12 +786,7 @@ test_driver::parse_command_line(int argc, char **argv)
 	    // Open the valgrind log file, and unlink it.
 	    char fname[64];
 	    sprintf(fname, ".valgrind.log.%lu", (unsigned long)getpid());
-	    vg_log_fd = open(fname, O_RDONLY|O_NONBLOCK);
-	    if (vg_log_fd == -1 && errno == ENOENT) {
-		// Older valgrind versions named the log output differently.
-		sprintf(fname, ".valgrind.log.pid%lu", (unsigned long)getpid());
-		vg_log_fd = open(fname, O_RDONLY|O_NONBLOCK);
-	    }
+	    vg_log_fd = open(fname, O_RDONLY|O_NONBLOCK|O_CLOEXEC);
 	    if (vg_log_fd != -1) unlink(fname);
 	}
     }

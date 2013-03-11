@@ -33,6 +33,7 @@
 
 #include "apitest.h"
 
+#include "safefcntl.h"
 #include "safesysstat.h"
 #include "safeunistd.h"
 
@@ -197,6 +198,24 @@ DEFINE_TESTCASE(lockfilefd0or1, brass || chert) {
     close(old_stdin);
     close(old_stdout);
 #endif
+
+    return true;
+}
+
+/// Regression test for bug fixed in 1.2.13 and 1.3.1.
+DEFINE_TESTCASE(lockfilealreadyopen1, brass || chert) {
+    string path = get_named_writable_database_path("lockfilealreadyopen1");
+    int fd = ::open((path + "/flintlock").c_str(), O_RDONLY);
+    try {
+	Xapian::WritableDatabase db(path, Xapian::DB_CREATE_OR_OPEN);
+	TEST_EXCEPTION(Xapian::DatabaseLockError,
+	    Xapian::WritableDatabase db2(path, Xapian::DB_CREATE_OR_OPEN)
+	);
+    } catch (...) {
+	close(fd);
+	throw;
+    }
+    close(fd);
 
     return true;
 }
@@ -777,5 +796,51 @@ DEFINE_TESTCASE(stubdb7, !backend) {
 		   Xapian::Auto::open_stub("nosuchdirectory"));
     TEST_EXCEPTION(Xapian::DatabaseOpeningError,
 		   Xapian::Auto::open_stub("nosuchdirectory", Xapian::DB_OPEN));
+    return true;
+}
+
+/// Test which checks the weights are as expected.
+//  This runs for multi_* too, so serves to check that we get the same weights
+//  with multiple databases as without.
+DEFINE_TESTCASE(msetweights1, backend) {
+    Xapian::Database db = get_database("apitest_simpledata");
+    Xapian::Enquire enq(db);
+    Xapian::Query q(Xapian::Query::OP_OR,
+		    Xapian::Query("paragraph"),
+		    Xapian::Query("word"));
+    enq.set_query(q);
+    // 5 documents match, and the 4th and 5th have the same weight, so ask for
+    // 4 as that's a good test that we get the right one in this case.
+    Xapian::MSet mset = enq.get_mset(0, 4);
+
+    static const struct { Xapian::docid did; double wt; } expected[] = {
+	{ 2, 1.2058248004573934864 },
+	{ 4, 0.81127876655507624726 },
+	{ 1, 0.17309550762546158098 },
+	{ 3, 0.14609528172558261527 }
+    };
+
+    TEST_EQUAL(mset.size(), sizeof(expected) / sizeof(expected[0]));
+    for (size_t i = 0; i < mset.size(); ++i) {
+	TEST_EQUAL(*mset[i], expected[i].did);
+	TEST_EQUAL_DOUBLE(mset[i].get_weight(), expected[i].wt);
+    }
+
+    // Now test a query which matches only even docids, so in the multi case
+    // one subdatabase doesn't match.
+    enq.set_query(Xapian::Query("one"));
+    mset = enq.get_mset(0, 3);
+
+    static const struct { Xapian::docid did; double wt; } expected2[] = {
+	{ 6, 0.73354729848273669823 },
+	{ 2, 0.45626501034348893038 }
+    };
+
+    TEST_EQUAL(mset.size(), sizeof(expected2) / sizeof(expected2[0]));
+    for (size_t i = 0; i < mset.size(); ++i) {
+	TEST_EQUAL(*mset[i], expected2[i].did);
+	TEST_EQUAL_DOUBLE(mset[i].get_weight(), expected2[i].wt);
+    }
+
     return true;
 }

@@ -22,19 +22,14 @@ dnl setting MACOSX_DEPLOYMENT_TARGET to at least 10.3 seems to be the
 dnl appropriate thing to do.  Most Mac OS X developers will have upgraded
 dnl from 10.1 and 10.2 by now anyhow.
 dnl
-dnl NB we must do this *BEFORE* AC_PROG_LIBTOOL since that is what checks
+dnl NB we must do this *BEFORE* LT_INIT since that is what checks
 dnl MACOSX_DEPLOYMENT_TARGET.
 AC_CANONICAL_HOST
 OVERRIDE_MACOSX_DEPLOYMENT_TARGET=
-NEED_JNILIB_EXT=no
-NEED_INTREE_DYLD=no
-
 case $host in
 *86*-darwin8*|*-darwin[[91]]*)
   dnl On 10.5 or later, and 10.4 on x86, the deployment target defaults to the
   dnl OS version, so we don't need to override on these.
-  NEED_JNILIB_EXT=yes
-  NEED_INTREE_DYLD=yes
   ;;
 *-darwin*)
   case $MACOSX_DEPLOYMENT_TARGET in
@@ -44,8 +39,6 @@ case $host in
     AC_MSG_WARN([Overriding MACOSX_DEPLOYMENT_TARGET from $MACOSX_DEPLOYMENT_TARGET to 10.3])
     OVERRIDE_MACOSX_DEPLOYMENT_TARGET=10.3 ;;
   esac
-  NEED_JNILIB_EXT=yes
-  NEED_INTREE_DYLD=yes
   ;;
 esac
 AM_CONDITIONAL(OVERRIDE_MACOSX_DEPLOYMENT_TARGET, test -n "$OVERRIDE_MACOSX_DEPLOYMENT_TARGET")
@@ -53,8 +46,6 @@ AC_SUBST(OVERRIDE_MACOSX_DEPLOYMENT_TARGET)
 if test -n "$OVERRIDE_MACOSX_DEPLOYMENT_TARGET" ; then
   MACOSX_DEPLOYMENT_TARGET=$OVERRIDE_MACOSX_DEPLOYMENT_TARGET
 fi
-AM_CONDITIONAL(NEED_JNILIB_EXT, test yes = "$NEED_JNILIB_EXT")
-AM_CONDITIONAL(NEED_INTREE_DYLD, test yes = "$NEED_INTREE_DYLD")
 
 dnl Use libtool to manage our libraries, but don't build static libraries as
 dnl the bindings only have a use for dynamic ones.
@@ -95,6 +86,38 @@ AC_LANG_CPLUSPLUS
 
 dnl Check for xapian-core.
 XO_LIB_XAPIAN([], [], [xapian-config])
+
+NEED_JNILIB_EXT=no
+NEED_INTREE_DYLD=no
+INTREE_DYLD_PATH=
+case $host_os in
+darwin*)
+  NEED_JNILIB_EXT=yes
+  dnl If we're building against an uninstalled xapian-core, xapian-config
+  dnl --libs will give an error.
+  if $XAPIAN_CONFIG --libs >/dev/null 2>/dev/null ; then
+    :
+  else
+    NEED_INTREE_DYLD=yes
+    dnl $XAPIAN_LIBS may have some options first, so grab the last argument,
+    dnl which should be the .la file.
+    set x $XAPIAN_LIBS
+    as_fn_arith $# - 1
+    shift $as_val
+    INTREE_DYLD_PATH=$1
+    dnl Make sure the path is absolute.
+    case $INTREE_DYLD_PATH in
+      /*) ;;
+      *) INTREE_DYLD_PATH=`pwd`/$INTREE_DYLD_PATH ;;
+    esac
+    dnl Add .libs or equivalent.
+    INTREE_DYLD_PATH=`echo "$INTREE_DYLD_PATH"|sed 's,\(.*/\).*,\1,'`$lt_cv_objdir
+    AC_SUBST([INTREE_DYLD_PATH])
+  fi
+  ;;
+esac
+AM_CONDITIONAL(NEED_JNILIB_EXT, test yes = "$NEED_JNILIB_EXT")
+AM_CONDITIONAL(NEED_INTREE_DYLD, test yes = "$NEED_INTREE_DYLD")
 
 dnl We want XAPIAN_CXXFLAGS to be used for configure tests, so add it to
 dnl CXXFLAGS for the duration of configure.
@@ -469,31 +492,34 @@ if test no != "$with_tcl" ; then
       fi
       AC_SUBST(TCL_LIB)
 
-      dnl There's no obvious way to get "/usr/include/tcl8.N" directly, so
-      dnl first we find the prefix Tcl is installed under (e.g. "/usr") from
-      dnl the path on TCLSH (or default to /usr if the path doesn't contain
-      dnl "/bin/"), and then we add "/include/tcl" and $tcl_version.
-      tcl_prefix=`echo "$TCLSH"|sed 's!/bin/.*!!p;d'`
-      test -n "$tcl_prefix" || tcl_prefix=/usr
-      TCL_INC=${tcl_prefix}/include/tcl${tcl_version}
+      AC_ARG_VAR([TCL_INC], [Directory to include for Tcl headers])
+      if test -z "$TCL_INC" ; then
+	dnl There's no obvious way to get "/usr/include/tcl8.N" directly, so
+	dnl first we find the prefix Tcl is installed under (e.g. "/usr") from
+	dnl the path on TCLSH (or default to /usr if the path doesn't contain
+	dnl "/bin/"), and then we add "/include/tcl" and $tcl_version.
+	tcl_prefix=`echo "$TCLSH"|sed 's!/bin/.*!!p;d'`
+	test -n "$tcl_prefix" || tcl_prefix=/usr
+	TCL_INC=${tcl_prefix}/include/tcl${tcl_version}
+	test -f "$TCL_INC/tcl.h" || TCL_INC=/usr/include
+      fi
 
       dnl Check that the headers are there (the tcl8.N-dev package
       dnl may not be installed).
       TCL_CPPFLAGS=
       AC_MSG_CHECKING([for tcl.h for version $tcl_version])
       if test -f "$TCL_INC/tcl.h" ; then
-	AC_MSG_RESULT([$TCL_INC/tcl.h])
-	BINDINGS="$BINDINGS tcl8"
-	TCL_CPPFLAGS="-I$TCL_INC"
-      elif test -f "/usr/include/tcl.h" ; then
-	tcl_hdr_version=`awk '($1 == "#define" && $2 == "TCL_VERSION") {print $3}' /usr/include/tcl.h`
-	if test x"$tcl_hdr_version" = x'"'"$tcl_version"'"' ; then
-	  AC_MSG_RESULT([/usr/include/tcl.h])
+	tcl_hdr_version=`awk '($1 == "#define" && $2 == "TCL_VERSION") {print $3}' "$TCL_INC/tcl.h"|sed 's/"//g'`
+	if test x"$tcl_hdr_version" = x"$tcl_version" ; then
+	  AC_MSG_RESULT([$TCL_INC/tcl.h])
 	  BINDINGS="$BINDINGS tcl8"
+	  if test x"$TCL_INC" != x"/usr/include" ; then
+	    TCL_CPPFLAGS="-I$TCL_INC"
+	  fi
 	else
 	  AC_MSG_RESULT([not found])
 	  if test yes = "$with_tcl" ; then
-	    AC_MSG_ERROR([Can't find tcl.h for version $tcl_version])
+	    AC_MSG_ERROR([Found tcl.h for version $tcl_hdr_version, not $tcl_version])
 	  fi
 	fi
       else
@@ -536,9 +562,37 @@ if test no != "$with_csharp" ; then
     AC_PATH_PROGS(CSC, ["$CSC"], [])
   fi
   if test -z "$CSC" ; then
-    dnl gmcs is the newer name for the Mono CSharp compiler.
-    dnl cscc is the Portable.NET CSharp compiler.
-    AC_PATH_PROGS(CSC, [gmcs cscc], [])
+    dnl First we try cli-csc and mono-csc, which are used by Debian and Ubuntu
+    dnl as "alternatives" which can be mapped to the CSharp compiler the admin
+    dnl favours.
+    AC_PATH_PROGS(CSC, [cli-csc mono-csc], [])
+    if test -z "$CSC" ; then
+      dnl mcs is the Mono CSharp compiler, which is a unified compiler
+      dnl available from Mono 2.11 (and also the compiler in Mono 1.0, but
+      dnl that's no longer relevant).
+      AC_PATH_PROGS(CSC, [mcs], [])
+      if test -n "$CSC" ; then
+	dnl There are other tools called mcs (such as /usr/bin/mcs on Tru64),
+	dnl so we check that the mcs we found understands --version which is
+	dnl sufficient to distinguish mono's mcs from the Tru64 one.
+	AC_MSG_CHECKING([whether $CSC is from GNU Mono])
+	if (exec >&5 2>&5;$CSC --version </dev/null;exit $?) ; then
+	  AC_MSG_RESULT(yes)
+	else
+	  AC_MSG_RESULT(no)
+	  CSC=
+	  csc_note="$csc_note (found different mcs program)"
+	fi
+      fi
+    fi
+    if test -z "$CSC" ; then
+      dnl gmcs, smcs, and dmcs are versions of the Mono CSharp compiler
+      dnl targetting various runtime versions, deprecated in favour of mcs
+      dnl (checked for above) as of Mono 2.11.
+      dnl
+      dnl cscc is the Portable.NET CSharp compiler.
+      AC_PATH_PROGS(CSC, [dmcs smcs gmcs cscc], [])
+    fi
     if test -z "$CSC" ; then
       dnl csc is the Microsoft CSharp compiler.
       AC_PATH_PROGS(CSC, [csc], [])
@@ -557,34 +611,24 @@ if test no != "$with_csharp" ; then
 	fi
       fi
     fi
-    if test -z "$CSC" ; then
-      dnl mcs is the Mono CSharp compiler.
-      AC_PATH_PROGS(CSC, [mcs], [])
-      if test -n "$CSC" ; then
-	dnl There are other tools called mcs (such as /usr/bin/mcs on Tru64),
-	dnl so we check that the mcs we found understands --version which is
-	dnl sufficient to distinguish mono's mcs from the Tru64 one.
-	AC_MSG_CHECKING([whether $CSC is from GNU Mono])
-	if (exec >&5 2>&5;$CSC --version </dev/null;exit $?) ; then
-	  AC_MSG_RESULT(yes)
-	else
-	  AC_MSG_RESULT(no)
-	  CSC=
-	  csc_note="$csc_note (found different mcs program)"
-	fi
-      fi
-    fi
   fi
 
   if test -n "$CSC" ; then
-    AC_PATH_PROGS(GACUTIL, ["${GACUTIL-gacutil}"], [])
+    AC_ARG_VAR(GACUTIL, [gacutil utility to use for CSharp bindings])
+    if test -n "$GACUTIL" ; then
+      AC_PATH_PROGS(GACUTIL, ["$GACUTIL"], [])
+    fi
     if test -z "$GACUTIL" ; then
-      AC_PATH_PROGS(GACUTIL, [ilgac], [])
+      AC_PATH_PROGS(GACUTIL, [cli-gacutil gacutil ilgac], [])
     fi
 
-    AC_PATH_PROGS(SN, ["${SN-sn}"], [])
-    AC_ARG_VAR(GACUTIL, [gacutil utility to use for CSharp bindings])
     AC_ARG_VAR(SN, [sn utility to use for CSharp bindings])
+    if test -n "$SN" ; then
+      AC_PATH_PROGS(SN, ["$SN"], [])
+    fi
+    if test -z "$SN" ; then
+      AC_PATH_PROGS(SN, [cli-sn sn], [])
+    fi
     if test -z "$SN" ; then
       case $GACUTIL in
       dnl Portable.net doesn't support strong naming yet and ilgac doesn't

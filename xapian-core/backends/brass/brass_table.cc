@@ -28,11 +28,9 @@
 #include <xapian/error.h>
 
 #include "safeerrno.h"
-#ifdef __WIN32__
-# include "msvc_posix_wrapper.h"
-#endif
 
 #include "omassert.h"
+#include "posixy_wrapper.h"
 #include "str.h"
 #include "stringutils.h" // For STRINGIZE().
 
@@ -375,6 +373,8 @@ BrassTable::block_to_cursor(Brass::Cursor * C_, int j, uint4 n) const
 
     if (rare(j != GET_LEVEL(p))) {
 	string msg = "Expected block ";
+	msg += str(n);
+	msg += " to be level ";
 	msg += str(j);
 	msg += ", not ";
 	msg += str(GET_LEVEL(p));
@@ -1490,7 +1490,7 @@ BrassTable::do_open_to_write(bool revision_supplied,
     if (handle == -2) {
 	BrassTable::throw_database_closed();
     }
-    int flags = O_RDWR | O_BINARY;
+    int flags = O_RDWR | O_BINARY | O_CLOEXEC;
     if (create_db) flags |= O_CREAT | O_TRUNC;
     handle = ::open((name + "DB").c_str(), flags, 0666);
     if (handle < 0) {
@@ -1758,12 +1758,7 @@ BrassTable::commit(brass_revision_number_t revision, int changes_fd,
 	    throw Xapian::DatabaseError("Can't commit new revision - failed to flush DB to disk");
 	}
 
-#if defined __WIN32__
-	if (msvc_posix_rename(tmp.c_str(), basefile.c_str()) < 0)
-#else
-	if (rename(tmp.c_str(), basefile.c_str()) < 0)
-#endif
-	{
+	if (posixy_rename(tmp.c_str(), basefile.c_str()) < 0) {
 	    // With NFS, rename() failing may just mean that the server crashed
 	    // after successfully renaming, but before reporting this, and then
 	    // the retried operation fails.  So we need to check if the source
@@ -1914,7 +1909,7 @@ BrassTable::do_open_to_read(bool revision_supplied, brass_revision_number_t revi
     if (handle == -2) {
 	BrassTable::throw_database_closed();
     }
-    handle = ::open((name + "DB").c_str(), O_RDONLY | O_BINARY);
+    handle = ::open((name + "DB").c_str(), O_RDONLY | O_BINARY | O_CLOEXEC);
     if (handle < 0) {
 	if (lazy) {
 	    // This table is optional when reading!

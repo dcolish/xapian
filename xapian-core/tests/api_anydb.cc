@@ -248,55 +248,7 @@ DEFINE_TESTCASE(wildquery1, backend) {
     return true;
 }
 
-// tests a query across multiple databases
-DEFINE_TESTCASE(multidb1, backend) {
-    Xapian::Database mydb1(get_database("apitest_simpledata", "apitest_simpledata2"));
-    Xapian::Enquire enquire1(mydb1);
-
-    Xapian::Database mydb2(get_database("apitest_simpledata"));
-    mydb2.add_database(get_database("apitest_simpledata2"));
-    Xapian::Enquire enquire2(mydb2);
-
-    // make a simple query, with one word in it - "word".
-    Xapian::Query myquery("word");
-    enquire1.set_query(myquery);
-    enquire2.set_query(myquery);
-
-    // retrieve the top ten results from each method of accessing
-    // multiple text files
-    Xapian::MSet mymset1 = enquire1.get_mset(0, 10);
-    Xapian::MSet mymset2 = enquire2.get_mset(0, 10);
-
-    TEST_EQUAL(mymset1.size(), mymset2.size());
-    TEST(mset_range_is_same_weights(mymset1, 0, mymset2, 0, mymset1.size()));
-    return true;
-}
-
-// tests a query across multiple databases with terms only
-// in one of the two databases
-DEFINE_TESTCASE(multidb2, backend && !multi) {
-    Xapian::Database mydb1(get_database("apitest_simpledata",
-				  "apitest_simpledata2"));
-    Xapian::Enquire enquire1(mydb1);
-
-    Xapian::Database mydb2(get_database("apitest_simpledata"));
-    mydb2.add_database(get_database("apitest_simpledata2"));
-    Xapian::Enquire enquire2(mydb2);
-
-    // make a simple query
-    Xapian::Query myquery = query(Xapian::Query::OP_OR, "inmemory", "word");
-    enquire1.set_query(myquery);
-    enquire2.set_query(myquery);
-
-    // retrieve the top ten results from each method of accessing
-    // multiple text files
-    Xapian::MSet mymset1 = enquire1.get_mset(0, 10);
-    Xapian::MSet mymset2 = enquire2.get_mset(0, 10);
-
-    TEST_EQUAL(mymset1.size(), mymset2.size());
-    TEST(mset_range_is_same_weights(mymset1, 0, mymset2, 0, mymset1.size()));
-    return true;
-}
+// multidb1 and multidb2 no longer exist.
 
 // test that a multidb with 2 dbs query returns correct docids
 DEFINE_TESTCASE(multidb3, backend && !multi) {
@@ -919,11 +871,13 @@ DEFINE_TESTCASE(reversebool1, backend) {
     {
 	Xapian::MSetIterator i = mymset1.begin();
 	Xapian::MSetIterator j = mymset2.begin();
-	for ( ; i != mymset1.end(), j != mymset2.end(); ++i, j++) {
+	for ( ; i != mymset1.end(); ++i, j++) {
+	    TEST(j != mymset2.end());
 	    // if this fails, then setting match_sort_forward=true was not
 	    // the same as the default.
 	    TEST_EQUAL(*i, *j);
 	}
+	TEST(j == mymset2.end());
     }
 
     // mymset1 and mymset3 should be same but reversed
@@ -931,13 +885,11 @@ DEFINE_TESTCASE(reversebool1, backend) {
 
     {
 	Xapian::MSetIterator i = mymset1.begin();
-	vector<Xapian::docid> rev(mymset3.begin(), mymset3.end());
-	// Next iterator not const because of compiler brokenness (egcs 1.1.2)
-	vector<Xapian::docid>::reverse_iterator j = rev.rbegin();
-	for ( ; i != mymset1.end(); ++i, j++) {
+	Xapian::MSetIterator j = mymset3.end();
+	for ( ; i != mymset1.end(); ++i) {
 	    // if this fails, then setting match_sort_forward=false didn't
 	    // reverse the results.
-	    TEST_EQUAL(*i, *j);
+	    TEST_EQUAL(*i, *--j);
 	}
     }
 
@@ -966,24 +918,25 @@ DEFINE_TESTCASE(reversebool2, backend) {
     {
 	Xapian::MSetIterator i = mymset1.begin();
 	Xapian::MSetIterator j = mymset2.begin();
-	for ( ; i != mymset1.end(), j != mymset2.end(); ++i, j++) {
+	for ( ; j != mymset2.end(); ++i, j++) {
+	    TEST(i != mymset1.end());
 	    // if this fails, then setting match_sort_forward=true was not
 	    // the same as the default.
 	    TEST_EQUAL(*i, *j);
 	}
+	// mymset1 should be larger.
+	TEST(i != mymset1.end());
     }
 
     // mymset3 should be last msize items of mymset1, in reverse order
     TEST_EQUAL(msize, mymset3.size());
     {
-	vector<Xapian::docid> rev(mymset1.begin(), mymset1.end());
-	// Next iterator not const because of compiler brokenness (egcs 1.1.2)
-	vector<Xapian::docid>::reverse_iterator i = rev.rbegin();
-	Xapian::MSetIterator j = mymset3.begin();
-	for ( ; j != mymset3.end(); ++i, j++) {
+	Xapian::MSetIterator i = mymset1.end();
+	Xapian::MSetIterator j;
+	for (j = mymset3.begin(); j != mymset3.end(); j++) {
 	    // if this fails, then setting match_sort_forward=false didn't
 	    // reverse the results.
-	    TEST_EQUAL(*i, *j);
+	    TEST_EQUAL(*--i, *j);
 	}
     }
 
@@ -2294,6 +2247,32 @@ DEFINE_TESTCASE(tradweight1, backend) {
     // the weights as stated in the documentation.
     TEST_EQUAL(mset[0].get_weight(), mset[5].get_weight());
 
+    return true;
+}
+
+// Test TradWeight when weighting documents using an RSet.
+// Simply changed the weighting scheme used by rset2 testcase.
+DEFINE_TESTCASE(tradweight4, backend) {
+    Xapian::Database mydb(get_database("apitest_rset"));
+    Xapian::Enquire enquire(mydb);
+    Xapian::Query myquery = query(Xapian::Query::OP_OR, "cuddly", "people");   
+    
+    enquire.set_query(myquery); 
+    enquire.set_weighting_scheme(Xapian::TradWeight()); 
+
+    Xapian::MSet mymset1 = enquire.get_mset(0, 10);    
+
+    Xapian::RSet myrset;
+    myrset.add_document(2);
+
+    Xapian::MSet mymset2 = enquire.get_mset(0, 10, &myrset);
+
+    mset_expect_order(mymset1, 1, 2);    
+    // Document 2 should have higher weight than document 1 despite the wdf of
+    // "people" being 1 because "people" indexes a document in the RSet whereas
+    // "cuddly" (wdf=2) does not.
+    mset_expect_order(mymset2, 2, 1);
+    
     return true;
 }
 

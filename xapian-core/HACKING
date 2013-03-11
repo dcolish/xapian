@@ -237,7 +237,9 @@ To use Insure (another proprietary tool):
 
   ./configure CXX=insure
 
-To use lcov to generate a test coverage report there are two make targets:
+To use lcov (at least version 1.10) to generate a test coverage report (see
+`lcov.xapian.org <http://lcov.xapian.org/>`_ for reports) there are two make
+targets:
 
   * coverage-reconfigure: reruns configure in the source tree.  See
     Makefile.am for details of the configure options used and why they
@@ -386,7 +388,7 @@ for them there.
 For a recent version of Debian or Ubuntu, this command should install all the
 required documentation tools::
 
-    apt-get install doxygen graphviz gs texlive-latex-base texlive-extra-utils texlive-base-bin texlive-fonts-extra texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended help2man python-docutils pngcrush
+    apt-get install doxygen graphviz ghostscript texlive-latex-base texlive-extra-utils texlive-base-bin texlive-fonts-extra texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended help2man python-docutils pngcrush
 
 Autotools versions
 ------------------
@@ -405,7 +407,7 @@ Autotools versions
 
   autoconf 2.64 generates smaller configure scripts by using shell functions.
 
-* automake 1.12 is used to generate snapshots and releases.
+* automake 1.12.4 is used to generate snapshots and releases.
 
   automake 1.10.2 is a hard minimum requirement.
 
@@ -427,7 +429,7 @@ Please tell us if you find that newer versions of any of these tools work or
 fail to work.
 
 There is a good GNU autotools tutorial at
-<http://www-src.lip6.fr/homepages/Alexandre.Duret-Lutz/autotools.html>.
+<http://www.lrde.epita.fr/~adl/autotools.html>.
 
 Building from SVN on Windows with MSVC
 --------------------------------------
@@ -524,7 +526,11 @@ To help us move towards a consistent ordering of #include lines in source
 files, please follow the following policy when ordering them:
 
 * #include <config.h> should be first, and use <> not "" (as recommended by the
-  autoconf manual).
+  autoconf manual).  Always include config.h from C/C++ source files, but don't
+  include it from header files - the autoconf manual recommends that it should
+  be included first, so including it from headers is either redundant, or may
+  hide a missing config.h include in the source file the header was included
+  from (better to get an error in this case).
 
 * The header corresponding to the source file should be next. This means that
   compilation of the library ensures that each header with a corresponding
@@ -601,6 +607,13 @@ works around a problem with Compaq's C++ compiler.
 Don't directly '#include <sys/select.h>' - instead '#include "safesysselect.h"'
 which supports older UNIX platforms which predate POSIX 1003.1-2001 and works
 around a problem on Solaris.
+
+<sys/socket.h>:
+---------------
+
+Don't directly '#include <sys/socket.h>' - instead '#include "safesyssocket.h"'
+which supports older UNIX platforms which predate POSIX 1003.1-2001 and works
+on Windows too.
 
 <sys/stat.h>:
 -------------
@@ -1238,8 +1251,8 @@ so please check with your employer if this applies.  Be aware that even if you
 are a student your university may try and claim some rights on code which you
 write.
 
-Patches which are submitted to Xapian will only be included if they are
-licensed for distribution under each of the following licenses:
+Patches which are submitted to Xapian will only be included if the copyright
+holder(s) dual-license them under each of the following licences:
 
  - GPL version 2 and all later versions (see the file "COPYING" for details).
  - MIT/X license::
@@ -1427,6 +1440,13 @@ single "tab" character!
 
 Don't forget to remove (or rename) this and check the documentation builds
 before committing or generating a patch though!
+
+If you are using an editor or other tool capable of running syntax checks as you
+work there you can use the `make` target 'check-syntax'. For 'emacs' users this
+works well with 'flymake'. Usage from a shell::
+
+    make check-syntax check_sources=api/omdatabase.cc
+
 
 How to make a release
 =====================

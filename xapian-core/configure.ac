@@ -40,7 +40,8 @@ dnl 26:0:4 1.2.6 QueryParser::set_max_wildcard_expansion() added
 dnl
 dnl LIBRARY_VERSION_INFO for libxapian-1.3:
 dnl 0:0:0 1.3.0 Reset as library renamed
-LIBRARY_VERSION_INFO=0:0:0
+dnl 1:0:0 1.3.0_svn16813 Default stemming strategy now STEM_SOME
+LIBRARY_VERSION_INFO=1:0:0
 AC_SUBST(LIBRARY_VERSION_INFO)
 
 LIBRARY_VERSION_SUFFIX=-1.3
@@ -443,8 +444,9 @@ AC_CHECK_FUNCS([setenv])
 dnl Check for a more efficient way of closing fds during daemonisation.
 dnl Apparently closefrom() is available on at least "Solaris 9 or later, NetBSD
 dnl 3.0 or later, OpenBSD 3.5 or later".  If we don't have closefrom(), then
-dnl dirfd() is useful for an efficient implementation on some platforms.
-AC_CHECK_FUNCS([closefrom dirfd])
+dnl dirfd() and getrlimit are useful for an efficient implementation on some
+dnl platforms.
+AC_CHECK_FUNCS([closefrom dirfd getrlimit])
 
 dnl See if ftime returns void (as it does on mingw)
 AC_MSG_CHECKING([return type of ftime])
@@ -529,6 +531,8 @@ dnl AC_SUBST(DL_LIBS)
 
 dnl Checks for header files.
 AC_CHECK_HEADERS([fcntl.h limits.h sys/errno.h sys/select.h], [], [], [ ])
+AC_CHECK_HEADERS([sys/resource.h],
+		 [], [], [#include <sys/types.h>])
 
 dnl If valgrind is installed and new enough, we use it for leak checking in the
 dnl testsuite.  If VALGRIND is set to an empty value, then skip the check and
@@ -667,22 +671,6 @@ XAPIAN_BACKEND_ENABLE(chert)
 XAPIAN_BACKEND_ENABLE(inmemory)
 XAPIAN_BACKEND_ENABLE(remote)
 
-if test yes = "$enable_backend_brass" ; then
-  dnl We would need to implement a locking strategy for MSDOS before we
-  dnl could build brass there.
-  case $host_os in
-    *djgpp* | *msdos* ) enable_backend_brass=no ;;
-  esac
-fi
-
-if test yes = "$enable_backend_chert" ; then
-  dnl We would need to implement a locking strategy for MSDOS before we
-  dnl could build chert there.
-  case $host_os in
-    *djgpp* | *msdos* ) enable_backend_chert=no ;;
-  esac
-fi
-
 use_win32_uuid_api=0
 case $enable_backend_chert$enable_backend_brass in
 *yes*)
@@ -700,7 +688,6 @@ case $enable_backend_chert$enable_backend_brass in
 
   dnl Check for zlibVersion in -lz.
   SAVE_LIBS=$LIBS
-  LIBS=
   dnl mingw build needs -lzlib or -lzdll.
   AC_SEARCH_LIBS([zlibVersion], [z zlib zdll], [], [
     AC_MSG_ERROR([zlibVersion() not found in -lz, -lzlib, or -lzdll - required for brass and chert (you may need to install the zlib1g-dev or zlib-devel package)])
@@ -723,7 +710,6 @@ case $enable_backend_chert$enable_backend_brass in
 	dnl util-linux-ng's uuid/uuid.h found - check for uuid_generate in
 	dnl -luuid.
 	SAVE_LIBS=$LIBS
-	LIBS=
 	AC_SEARCH_LIBS([uuid_generate], [uuid], [], [
 	  AC_MSG_ERROR([uuid_generate() not found in -luuid - required for brass and chert (you may need to install the uuid-dev, libuuid-devel or e2fsprogs-devel package)])
 	  ])
@@ -768,8 +754,7 @@ if test "$enable_backend_remote" = yes ; then
   case $host_os-$win32 in
     *-yes )
       dnl For mingw and msvc we have an alternative implementation which
-      dnl doesn't need fork().  Also the "prog" variant isn't built
-      dnl currently so socketpair() isn't required either.
+      dnl doesn't need fork() or socketpair().
       dnl
       dnl We need -lws2_32 for gethostbyname(), etc.  Hardcode that knowledge
       dnl here because AC_SEARCH_LIBS fails to link the test program (I think
@@ -778,32 +763,38 @@ if test "$enable_backend_remote" = yes ; then
       ;;
     *djgpp* | *msdos* )
       dnl DJGPP has a dummy implementation of fork which always fails.
-      enable_backend_remote=no ;;
+      dnl
+      dnl For disk-based backend, use flock() for locking, which doesn't need
+      dnl fork() or socketpair().
+      AC_DEFINE([FLINTLOCK_USE_FLOCK], 1, [Define to use flock() for flint-compatible locking])
+      dnl If someone actually wanted remote backend support, then DJGPP has a
+      dnl pthreads port, so using threads like we do on Windows would make more
+      dnl sense.
+      enable_backend_remote=no
+      ;;
     *)
       dnl On Unix, we need fork and socketpair for the remotebackend.
-      AC_CHECK_FUNCS(fork)
       SAVE_LIBS=$LIBS
-      LIBS=
-      if test "$ac_cv_func_fork" = no ; then
-	enable_backend_remote=no
-      else
-	dnl Check if -lsocket is required for socketpair (Solaris needs it).
-	AC_SEARCH_LIBS(socketpair, socket, [], [enable_backend_remote=no])
-	if test "$enable_backend_remote" = yes ; then
-	  AC_DEFINE(HAVE_SOCKETPAIR, 1,
-		    [Define to 1 if you have the 'socketpair' function.])
-	  dnl Check if -lnsl is required for gethostbyname (Solaris needs it).
-	  AC_SEARCH_LIBS(gethostbyname, nsl, [], [enable_backend_remote=no])
-	  if test "$enable_backend_remote" = yes ; then
-	    dnl Check if -lnsl is required for gethostbyname (Solaris needs it).
-	    AC_SEARCH_LIBS(gethostbyaddr, nsl, [], [enable_backend_remote=no])
-	    if test "$enable_backend_remote" = yes ; then
-	      REMOTE_LDFLAGS=$LIBS
-	    fi
-	  fi
-	fi
-      fi
-      LIBS="$SAVE_LIBS"
+      AC_CHECK_FUNCS(fork, [], [
+	AC_MSG_ERROR([fork() required for the remote backend - if an extra library is needed, pass LIBS=-lfoo to configure.  Or --disable-backend-remote to disable it.)])
+      ])
+      dnl Check if -lsocket is required for socketpair (Solaris needs it).
+      dnl And on Haiku it's in -lnetwork.
+      AC_SEARCH_LIBS(socketpair, [socket network], [], [
+	AC_MSG_ERROR([socketpair() required for the remote backend - if an extra library is needed, pass LIBS=-lfoo to configure.  Or --disable-backend-remote to disable it.)])
+      ])
+      AC_DEFINE(HAVE_SOCKETPAIR, 1,
+		[Define to 1 if you have the 'socketpair' function.])
+      dnl Check if -lnsl is required for gethostbyname (Solaris needs it).
+      AC_SEARCH_LIBS(gethostbyname, nsl, [], [
+	AC_MSG_ERROR([gethostbyname() required for the remote backend - if an extra library is needed, pass LIBS=-lfoo to configure.  Or --disable-backend-remote to disable it.)])
+      ])
+      dnl Check if -lnsl is required for gethostbyname (Solaris needs it).
+      AC_SEARCH_LIBS(gethostbyaddr, nsl, [], [
+	AC_MSG_ERROR([gethostbyaddr() required for the remote backend - if an extra library is needed, pass LIBS=-lfoo to configure.  Or --disable-backend-remote to disable it.)])
+      ])
+      REMOTE_LDFLAGS=$LIBS
+      LIBS=$SAVE_LIBS
       ;;
   esac
 
@@ -864,10 +855,9 @@ fi
 AM_CONDITIONAL([USE_ZLIB_VG], [test yes = "$use_zlib_vg"])
 
 dnl See if we have fdatasync, and what libraries are needed for it.
-SAVE_LIBS="$LIBS"
-LIBS=
+SAVE_LIBS=$LIBS
 AC_SEARCH_LIBS(fdatasync, rt, [XAPIAN_LDFLAGS="$LIBS $XAPIAN_LDFLAGS"])
-LIBS="$SAVE_LIBS"
+LIBS=$SAVE_LIBS
 
 AC_CHECK_FUNCS(fsync)
 

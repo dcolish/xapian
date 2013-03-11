@@ -1,3 +1,136 @@
+Sat Feb 16 02:08:29 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac: Allow TCL_INC to be passed to configure.  (fixes #612)
+
+Wed Jan 23 00:07:52 GMT 2013  Olly Betts <olly@survex.com>
+
+	* perl/t/10query.t: Perl 5.16.1 adds a '.' after "at foo line 123" so
+	  adjust regexp in testcase to allow an optional '.' there.
+	  (ticket#610)
+
+Wed Jan 16 10:00:00 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Start to update in preparation for 1.3.1 release.
+
+Wed Jan 16 02:32:38 GMT 2013  Olly Betts <olly@survex.com>
+
+	* ruby/smoketest.rb: Extend testcase to check returned MSet size.
+
+Wed Jan 16 01:41:33 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac,generic/generic.mk: Improve workaround which allows
+	  building against an uninstalled xapian-core on OS X - this should
+	  now work with any uninstalled xapian-core (not only in a tree
+	  with the same layout as an SVN or git checkout) and it also won't
+	  try to build against "../xapian-core/.libs" just because it happens
+	  to exist.  (Fixes #322)
+
+Wed Jan 16 01:34:09 GMT 2013  Olly Betts <olly@survex.com>
+
+	* java/run-java-test: Document how to run tests under gdb.
+
+Wed Jan 16 01:30:28 GMT 2013  Olly Betts <olly@survex.com>
+
+	* java/Makefile.am: Don't automatically pass -g to javac when in
+	  maintainer-mode, as the two should really be orthogonal.  Instead
+	  use JAVACFLAGS when running JAVAC to allow extra flags to be
+	  specified by running "make JAVACFLAGS=-g".
+
+Wed Jan 09 11:57:01 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Update from ChangeLog and 1.2 branch.
+
+Mon Dec 24 05:15:56 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/Search/Xapian/Stem.pm: Fix documentation typo.
+
+Mon Dec 24 05:15:12 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/util.i.in: Update list of unwrapped things.
+
+Mon Dec 24 04:42:42 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/Makefile.am,perl/t/stem.t: Add test that we can create all the
+	  stemmers returned by Stem::get_available_languages().
+
+Mon Dec 17 02:13:16 GMT 2012  Olly Betts <olly@survex.com>
+
+	* README,php/docs/index.html: Bump minimum supported PHP version to
+	  5.3 - 5.2 was officially EOLed 2011-01-06, and the only distros
+	  which seem to still have PHP 5.2 are Ubuntu hardy (which will reach
+	  EOL in April 2013) and older probably RHEL (which are aimed at the
+	  ultra-conservative types who would likely be happy to stick with
+	  Xapian 1.2 anyway.
+
+Sat Oct 13 04:28:16 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/t/databasemodified.t,perl/t/index.t,perl/t/parser.t: Using
+	  UNIVERSAL::isa() as a function is deprecated.
+
+Sat Oct 13 02:57:22 GMT 2012  Olly Betts <olly@survex.com>
+
+	* perl/t/parser.t: Forward port tests of StringValueRangeProcessor
+	  with a prefix or suffix from 1.2's XS Search::Xapian.  (ticket#607)
+
+Tue Aug 28 04:33:21 GMT 2012  Dan Colish <dcolish@gmail.com>
+
+	* java/SmokeTest.java,java/java.i: Implement and test MSetIterator,
+	  ESetIterator. Fix PostingIterator, ValueIterator, and TermIterator.
+
+Sun Aug 12 05:45:32 GMT 2012  Dan Colish <dcolish@gmail.com>
+
+	* java/Makefile.am,java/run-java-test: Remove jdb target from
+	  Makefile. 
+
+Sun Aug 12 04:54:04 GMT 2012  Dan Colish <dcolish@gmail.com>
+
+	* java/Makefile.am,java/SmokeTest.java,java/java.i: Add a typemap for
+	  TermIterator pairs to String[] for the Enquire.getMatchingTerms
+	  API. Use debug symbols when configured with MAINTAINER_MODE.
+
+Sun Aug 12 04:46:59 GMT 2012  Dan Colish <dcolish@gmail.com>
+
+	* java/Makefile.am,java/SmokeTest.java,java/java.i: Add typemap for
+	  TermIterator pairs to String[] to conform with the
+	  Enquire::getMatchingterms binding API. Build bindings with
+	  debugging symbols.
+
+Tue Jul 24 09:06:14 GMT 2012  Olly Betts <olly@survex.com>
+
+	* lua/util.i: Fix functor wrappers which return strings to be zero-byte
+	  clean.
+
+Tue Jul 24 06:06:24 GMT 2012  Olly Betts <olly@survex.com>
+
+	* lua/util.i: Fix wrapping of FieldProcessor.
+	* lua/smoketest.lua: Add test coverage for wrapping of FieldProcessor.
+
+Tue Jul 24 04:11:50 GMT 2012  Olly Betts <olly@survex.com>
+
+	* php/smoketest.php: Fix XapianFieldProcessor testcase.
+
+Tue Jul 24 03:45:15 GMT 2012  Olly Betts <olly@survex.com>
+
+	* csharp/Makefile.am,java/Makefile.am,lua/util.i,perl/util.i.in,
+	  python/extra.i,python/generate-python-exceptions,xapian-headers.i:
+	  Wrap FieldProcessor.
+	* php/smoketest.php: Add simple test of subclassing
+	  XapianFieldProcessor.
+
+Sat Jul 21 13:18:48 GMT 2012  Olly Betts <olly@survex.com>
+
+	* lua/docs/examples/simpleexpand.lua,
+	  lua/docs/examples/simplematchdecider.lua,
+	  lua/docs/examples/simplesearch.lua: query:get_description() should
+	  be str(query).  Fixes #600.
+	* lua/docs/index.html: Document that get_description() is mapped to
+	  str(), and end() to _end().
+
+Thu Jul 12 05:11:26 GMT 2012  Olly Betts <olly@survex.com>
+
+	* configure.ac: Overhaul checking the C# tools to use modern names in
+	  preference.
+
 Tue Jul 03 03:13:40 GMT 2012  Dan Colish <dcolish@gmail.com>
 
 	* generic/.gitignore,php/.gitignore,tcl8/.gitignore: Update for

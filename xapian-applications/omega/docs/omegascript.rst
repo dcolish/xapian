@@ -215,6 +215,14 @@ $httpheader{NAME,VALUE}
 $id
 	document id of current document
 
+$json{STRING}
+        encode STRING as a JSON string (not including the enclosing quotes), e.g.
+        ``$json{The path is "C:\"}`` gives ``The path is \"C:\\\"``
+
+$jsonarray{LIST}
+        encodes LIST (a string of tab-separated values) as a JSON array, e.g.
+        ``$jsonarray{$split{a "b" c:\}}`` gives ``["a","\"b\"","c:\\"]``
+
 $last
 	MSet index of last hit on this page
 
@@ -539,6 +547,15 @@ $transform{REGEXP,SUBST,STRING}
         In SUBST, ``\1`` to ``\9`` are substituted by the 1st to 9th bracket
         grouping (or are empty if there is no such bracket grouping).  ``\\``
         is a literal backslash.
+
+$truncate{STRING,LEN[,IND[,IND2]]}
+	truncate STRING to LEN bytes, but try to break after a word (unless
+	that would mean truncating to much less than LEN).  If we have to
+	split a word, then IND is appended (if specified).  If we have to
+	truncate (but don't split a word) then IND2 is appended (if specified).
+	For example::
+
+	 $truncate{$field{text},500,..., ...}
 
 $uniq{LIST}
 	remove duplicates from a sorted list
