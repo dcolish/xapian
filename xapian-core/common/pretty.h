@@ -39,6 +39,10 @@ struct PrettyOStream {
     S & os;
 
     PrettyOStream(S & os_) : os(os_) { }
+    template <typename T> PrettyOStream & operator|(const T & t){
+	os << ", ";
+	return *this << t;
+    }
 };
 
 struct Literal {
@@ -293,6 +297,7 @@ operator<<(PrettyOStream<S> &ps, const C &) {\
 }
 
 XAPIAN_PRETTY_AS_CLASSNAME(Xapian::ExpandDecider)
+XAPIAN_PRETTY_AS_CLASSNAME(Xapian::LatLongMetric)
 XAPIAN_PRETTY_AS_CLASSNAME(Xapian::MatchDecider)
 XAPIAN_PRETTY_AS_CLASSNAME(Xapian::Registry)
 XAPIAN_PRETTY_AS_CLASSNAME(Xapian::Weight)
@@ -310,7 +315,7 @@ XAPIAN_PRETTY_AS_CLASSNAME(ChertTable);
 template<class S>
 inline PrettyOStream<S> &
 operator<<(PrettyOStream<S> &ps, const Xapian::Weight *p) {
-    ps.os << "(Xapian:Weight*)" << (void*)p;
+    ps.os << "(Xapian:Weight*)" << (const void*)p;
     return ps;
 }
 
@@ -328,7 +333,7 @@ operator<<(PrettyOStream<S> &ps, const RemoteConnection &) {
 template<class S>
 inline PrettyOStream<S> &
 operator<<(PrettyOStream<S> &ps, const Xapian::Database::Internal *p) {
-    ps.os << "(Database::Internal*)" << (void*)p;
+    ps.os << "(Database::Internal*)" << (const void*)p;
     return ps;
 }
 
@@ -336,13 +341,6 @@ template<class S, class T>
 inline PrettyOStream<S> &
 operator<<(PrettyOStream<S> &ps, Xapian::Internal::intrusive_ptr<const T> t) {
     ps.os << "intrusive_ptr->";
-    return ps << t;
-}
-
-template<class S, typename T>
-inline PrettyOStream<S> &
-operator|(PrettyOStream<S> &ps, const T & t) {
-    ps.os << ", ";
     return ps << t;
 }
 

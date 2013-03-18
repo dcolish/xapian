@@ -1,3 +1,49 @@
+Sun Mar 17 20:45:48 GMT 2013  Olly Betts <olly@survex.com>
+
+	* common/pretty.h: Restore space after comma in output.
+
+Sun Mar 17 03:59:52 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* common/pretty.h: Correct recursion issue.
+
+Sun Mar 17 02:58:52 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* common/pretty.h: Resolve ambiguity by moving operator| to a memeber
+	  function of PrettyOStream
+
+Sat Mar 16 21:43:32 GMT 2013  Olly Betts <olly@survex.com>
+
+	* queryparser/queryparser.lemony: std::less provides a total order over
+	  pointers, so we can just use that to implement
+	  filter_group_id::operator<() - we only need a consistent order so we
+	  can use it as the key to a std::map.
+
+Fri Mar 15 06:36:32 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* backends/brass/brass_table.cc,backends/chert/chert_table.cc,
+	  common/pretty.h: Avoid needlessly casting away const-ness in
+	  debug logging.
+
+Fri Mar 15 06:31:32 GMT 2013  Olly Betts <olly@survex.com>
+
+	* matcher/multiandpostlist.cc,matcher/multixorpostlist.cc: Add a
+	  couple more LOGCALL annotations.
+
+Fri Mar 15 06:27:42 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* api/registry.cc,common/pretty.h: Fix incorrect LOGCALL return value.
+
+Fri Mar 15 06:24:11 GMT 2013  Olly Betts <olly@survex.com>
+
+	* api/registry.cc,common/Makefile.mk,common/registryinternal.h:
+	  common/registryinternal.h is only included by api/registry.cc so
+	  just inline its contents.
+
+Fri Mar 15 06:11:14 GMT 2013  Olly Betts <olly@survex.com>
+
+	* api/registry.cc: No need to explicitly default initialise std::map
+	  members or the base class.
+
 Fri Mar 08 04:05:31 GMT 2013  Olly Betts <olly@survex.com>
 
 	* backends/brass/brass_compact.cc,backends/chert/chert_compact.cc: Fix
