@@ -40,32 +40,6 @@ class MyMatchDecider extends MatchDecider {
     }
 }
 
-// class WrappedMSetIterator implements Iterator<Long> {
-//     private MSetIterator begin;
-//     private MSetIterator end;
-
-//     public WrappedMSetIterator(MSet m) {
-// 	this.begin = m.begin();
-// 	this.end = m.end();
-//     }
-    
-//     @Override
-//     public Long next() { 
-// 	return begin.next();
-//     }
-    
-//     @Override
-//     public boolean hasNext() { 
-// 	return begin != end;
-//     }
-
-//     @Override
-//     public void remove() {
-// 	throw new RuntimeException("WTF");
-//     }
-    
-// }
-
 // FIXME: "implements" not "extends" in JNI Java API
 class MyExpandDecider extends ExpandDecider {
     public boolean accept(String s) { return s.charAt(0) != 'a'; }
@@ -143,22 +117,19 @@ public class SmokeTest {
 	    }
 
 	    Document m_doc = null;
-	    Long m_id;
-	    
-	    for(WrappedMSetIterator it = mset.iterator(); it.hasNext();) {
-		Long foo = it.next();
-		System.err.println(foo);
-		m_doc = mset.getDocument(foo);
+	    for (MSetIterator it = mset.iterator(); it.hasNext();) {
+		Long docid = it.next();
+		m_doc = db.getDocument(docid);
 	    }
 
 	    // Only one doc exists in this mset
-	    if(m_doc != null && m_doc.getDocId() != 0) {
+	    if (m_doc == null || m_doc.getDocId() != 1) {
 		System.err.println("Unexpected docid");
 		    System.exit(1);
 	    }
 
 	    String term_str = "";
-	    for(TermIterator it = enq.getMatchingTermsBegin(mset.getElement(0));
+	    for(TermIterator it = enq.getMatchingTermsBegin(mset.iterator().next());
 		it.hasNext();) {
 		term_str += it.next();
 		if (it.hasNext())
