@@ -28,6 +28,22 @@
 // Use SWIG directors for Java wrappers.
 #define XAPIAN_SWIG_DIRECTORS
 
+%ignore Xapian::MSetIterator;
+// FIXME: Some of these should be replaced using %extend with version which
+// take WrappedMSetIterator instead of MSetIterator.
+%ignore Xapian::MSet::fetch;
+%ignore Xapian::MSet::convert_to_percent(const MSetIterator&) const;
+%ignore Xapian::MSet::begin;
+%ignore Xapian::MSet::end;
+%ignore Xapian::MSet::operator[](Xapian::doccount) const;
+%ignore Xapian::MSet::get_hit;
+%ignore Xapian::Enquire::get_matching_terms_begin(const MSetIterator&) const;
+%ignore Xapian::Enquire::get_matching_terms_end(const MSetIterator&) const;
+%ignore Xapian::Enquire::get_matching_terms;
+%ignore Xapian::RSet::add_document(const Xapian::MSetIterator&);
+%ignore Xapian::RSet::remove_document(const Xapian::MSetIterator&);
+%ignore Xapian::RSet::contains(const Xapian::MSetIterator&) const;
+
 %include ../xapian-head.i
 
 // Rename function and method names to match Java conventions (e.g. from
@@ -104,24 +120,24 @@ class Version {
 }
 }
 
-%inline %{ 
+%rename("MSetIterator") Xapian::WrappedMSetIterator;
+%inline %{
     namespace Xapian {
-	 class WrappedMSetIterator {
-	     Xapian::MSetIterator begin;
-	     Xapian::MSetIterator end;
+	class WrappedMSetIterator {
+	    Xapian::MSetIterator begin;
+	    Xapian::MSetIterator end;
 
-	 public:
-	     WrappedMSetIterator() { }
-	 WrappedMSetIterator(const Xapian::MSet &m)
-	     : begin(m.begin()), end(m.end()) {  }
-	     bool hasNext() { return begin != end; }    
-	     Xapian::docid next() { return *(++begin); }
-	 };
+	  public:
+	    WrappedMSetIterator() { }
+	    WrappedMSetIterator(const Xapian::MSet &m)
+		: begin(m.begin()), end(m.end()) {  }
+	    bool hasNext() const { return begin != end; }
+	    Xapian::docid next() { return *(begin++); }
+	};
+    }
+%}
 
-     }
- }
-
-%typemap(javaimports) Xapian::WrappedMSetIterator %{ 
+%typemap(javaimports) Xapian::WrappedMSetIterator %{
     import java.util.NoSuchElementException;
     import java.lang.UnsupportedOperationException;
 %}
@@ -151,7 +167,7 @@ namespace Xapian {
 // For compatibility with the original JNI wrappers.
 
 // FIXME: These make use of the fact that the default ctor for PostingIterator,
-// termiterator, and ValueIterator produces an end iterator.
+// TermIterator, and ValueIterator produces an end iterator.
 
 // TODO:dc: Implement ListIterator for PostingIterator, TermIterator,
 // ValueIterator, MSetIterator, and ESetIterator
@@ -213,13 +229,13 @@ namespace Xapian {
     }
 
     bool hasNext() const { return !self->at_end(); }
-    }
+}
 
 %extend MSet {
-	Xapian::WrappedMSetIterator iterator() {
-	    return Xapian::WrappedMSetIterator(*self);
-	}
+    Xapian::WrappedMSetIterator iterator() {
+        return Xapian::WrappedMSetIterator(*self);
     }
+}
 }
 
 #define XAPIAN_MIXED_SUBQUERIES_BY_ITERATOR_TYPEMAP
