@@ -81,7 +81,6 @@ XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/ValueWeightPostingSource.java\
 	org/xapian/Version.java\
 	org/xapian/Weight.java\
-	org/xapian/WrappedMSetIterator.java\
 	org/xapian/WritableDatabase.java\
 	org/xapian/Xapian.java\
 	org/xapian/XapianConstants.java\
