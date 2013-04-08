@@ -2,12 +2,16 @@
 
 include ../generic/generic.mk
 
-TESTS_ENVIRONMENT = trap 'rm -f "$(srcdir)"/*.pyc' 0 1 2 13 15; \
-    PYTHONPATH=".:$$PYTHONPATH" PYTHONDONTWRITEBYTECODE=1 \
-    abs_builddir=@abs_builddir@ $(PYTHON)
-
 ## Test programs to be run
 TESTS = smoketest.py pythontest.py
+AM_TESTS_ENVIRONMENT = \
+	abs_builddir='$(abs_builddir)' ;\
+	srcdir='$(srcdir)' ;\
+	PYTHON='$(PYTHON)' ;\
+	export abs_builddir ;\
+	export srcdir ;\
+	export PYTHON ;
+LOG_COMPILER = '$(srcdir)'/run-python-test
 
 # FIXME: replicationtest.py attempts to test performing replication whilst
 # modifications are in progress.  However, it sometimes fails due to a race
@@ -21,6 +25,7 @@ BUILT_SOURCES = modern/xapian_wrap.cc modern/xapian_wrap.h modern/xapian.py
 EXTRA_DIST = python.i util.i extra.i extracomments.i except.i \
 	generate-python-exceptions \
 	module_top.py \
+	run-python-test \
 	testsuite.py testsuite2.py testsuite3.py \
 	test_xapian_star.py \
 	smoketest2.py smoketest3.py \
@@ -111,11 +116,12 @@ doccomments.i: doxy2swig.py ../../xapian-core/exception_data.pm ../doxygen-xml/i
 	$(PYTHON) $(srcdir)/doxy2swig.py ../doxygen-xml/index.xml doccomments.i
 endif
 
-RUN_SWIG = $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
+stamp = modern/xapian_wrap.stamp
+RUN_SWIG = stamp='$(stamp)' $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
 
-modern/xapian_wrap.cc modern/xapian_wrap.h modern/xapian.py modern/xapian_wrap.d: modern/xapian_wrap.stamp
-	@stamp=modern/xapian_wrap.stamp; $(make_many_locked)
-modern/xapian_wrap.stamp: except.i doccomments.i
+modern/xapian_wrap.cc modern/xapian_wrap.h modern/xapian.py modern/xapian_wrap.d: $(stamp)
+	$(make_many_locked)
+$(stamp): except.i doccomments.i
 	-test -d modern || mkdir modern
 	$(multitarget_begin)
 	$(RUN_SWIG) $(SWIG_WERROR) -I. -I'$(srcdir)' $(SWIG_FLAGS) -c++ \
@@ -126,7 +132,7 @@ modern/xapian_wrap.stamp: except.i doccomments.i
 
 -include modern/xapian_wrap.d
 
-CLEANFILES += modern/xapian_wrap.d modern/xapian_wrap.stamp
+CLEANFILES += modern/xapian_wrap.d $(stamp)
 endif
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 

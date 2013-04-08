@@ -4,16 +4,16 @@ include ../generic/generic.mk
 
 abs_builddir = @abs_builddir@
 
+## Test programs to be run
+TESTS = smoketest.php
+LOG_COMPILER = $(PHP)
 # Use -n to disable use of the system php.ini (which might prevent php from
 # using dl() which would make our test fail).  It would be nicer to use "-c"
 # and provide an alternative php.ini but with "-c" it seems PHP still loads the
 # system.ini first (at least with PHP 4.3.10).
-TESTS_ENVIRONMENT = $(PHP) -n -d safe_mode=off -d enable_dl=on \
+AM_LOG_FLAGS = -n -d safe_mode=off -d enable_dl=on \
 	-d extension_dir='$(abs_builddir)/.libs' \
 	-d include_path='php5$(PHP_PATH_SEPARATOR)$(srcdir)/php5'
-
-## Test programs to be run
-TESTS = smoketest.php
 
 BUILT_SOURCES =\
 	php5/xapian_wrap.cc\
@@ -63,11 +63,12 @@ except.i: $(srcdir)/generate-php-exceptions ../../xapian-core/exception_data.pm
 # "\" when extracting the output directory from the value passed to the -o
 # option.
 
-RUN_SWIG = $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
+stamp = php5/xapian_wrap.stamp
+RUN_SWIG = stamp='$(stamp)' $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
 
-php5/xapian_wrap.cc php5/xapian_wrap.h php5/php_xapian.h php5/xapian.php: php5/xapian_wrap.stamp
-	@stamp=php5/xapian_wrap.stamp; $(make_many_locked)
-php5/xapian_wrap.stamp: except.i add-php-type-hints
+php5/xapian_wrap.cc php5/xapian_wrap.h php5/php_xapian.h php5/xapian.php: $(stamp)
+	$(make_many_locked)
+$(stamp): except.i add-php-type-hints
 	-test -d php5 || mkdir php5
 	$(multitarget_begin)
 	$(RUN_SWIG) $(SWIG_WERROR) -I'$(srcdir)' $(SWIG_FLAGS) -c++ \
@@ -79,7 +80,7 @@ php5/xapian_wrap.stamp: except.i add-php-type-hints
 
 -include php5/xapian_wrap.d
 
-CLEANFILES = php5/xapian_wrap.stamp
+CLEANFILES = $(stamp)
 endif
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 

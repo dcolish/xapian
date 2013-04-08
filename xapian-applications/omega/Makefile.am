@@ -1,9 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-# 'make QUIET=' overrides './configure --enable-quiet'.
-# 'make QUIET=y' overrides './configure' without '--enable-quiet'.
-LIBTOOL = @LIBTOOL@ $(QUIET:y=--quiet)
-
 if MAINTAINER_MODE
 # Export these so that we run the locally installed autotools when building
 # from a bootstrapped SVN tree.
@@ -144,7 +140,7 @@ libtransform_la_LIBADD = $(PCRE_LIBS)
 omega_SOURCES = omega.cc query.cc cgiparam.cc utils.cc configfile.cc date.cc\
  cdb_init.cc cdb_find.cc cdb_hash.cc cdb_unpack.cc jsonescape.cc loadfile.cc\
  datematchdecider.cc common/str.cc sample.cc unixperm.cc urlencode.cc\
- utf8convert.cc weight.cc
+ weight.cc
 omega_LDADD =  $(MAGIC_LIBS) $(XAPIAN_LIBS) libtransform.la
 
 omindex_SOURCES = omindex.cc myhtmlparse.cc htmlparse.cc\

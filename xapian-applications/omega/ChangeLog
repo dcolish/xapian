@@ -1,3 +1,37 @@
+Thu Apr 04 06:42:01 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am,configure.ac: Remove support for 'configure
+	  --enable-quiet', 'make QUIET=' and 'make QUIET=y' - automake now
+	  supports 'configure --enable-silent-rules', 'make V=1' and 'make
+	  V=0' which are broadly equivalent and more standard.
+
+Wed Mar 27 09:20:28 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am: Don't link utf8convert.cc code into omega CGI.
+
+Sun Mar 24 23:33:56 GMT 2013  Olly Betts <olly@survex.com>
+
+	* htmlparsetest.cc: Fix table parsing test to have a <table> tag in!
+
+Sun Mar 17 22:00:58 GMT 2013  Olly Betts <olly@survex.com>
+
+	* docs/overview.rst,omindex.cc: Use rst2html to indexing .rst and
+	  .rest files.
+
+Sun Mar 17 21:34:06 GMT 2013  Olly Betts <olly@survex.com>
+
+	* htmlparsetest.cc: Update testcase to match previous change.
+
+Sun Mar 17 21:13:49 GMT 2013  Olly Betts <olly@survex.com>
+
+	* myhtmlparse.cc: Make paragraph break in sample \r not \n, as \n
+	  is used by Omega to indicate the end of a field in the document
+	  data.
+
+Fri Mar 15 03:48:50 GMT 2013  Olly Betts <olly@survex.com>
+
+	* md5wrap.cc,md5wrap.h: Add md5_block() to checksum a block of memory.
+
 Thu Mar 07 00:40:20 GMT 2013  Olly Betts <olly@survex.com>
 
 	* jsonescape.cc: Fix C+11 compatibility issue highlighted by GCC

@@ -21,7 +21,6 @@ noinst_HEADERS +=\
 	common/posixy_wrapper.h\
 	common/pretty.h\
 	common/realtime.h\
-	common/registryinternal.h\
 	common/remoteprotocol.h\
 	common/replicate_utils.h\
 	common/replicationprotocol.h\
@@ -67,7 +66,6 @@ lib_src +=\
 	common/str.cc\
 	common/stringutils.cc
 
-# echo hello
 if BUILD_BACKEND_BRASS_OR_CHERT
 lib_src +=\
 	common/compression_stream.cc

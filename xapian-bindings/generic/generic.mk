@@ -2,10 +2,6 @@
 ## SWIG.  Any makefile rules or variables which should be set for all SWIG
 ## bindings should be placed here.
 
-# 'make QUIET=' overrides './configure --enable-quiet'.
-# 'make QUIET=y' overrides './configure' without '--enable-quiet'.
-LIBTOOL = @LIBTOOL@ $(QUIET:y=--quiet)
-
 if MAINTAINER_MODE
 # Export these so that we run the locally installed autotools when building
 # from a bootstrapped SVN tree.
@@ -29,15 +25,15 @@ SWIG_WERROR = -Werror
 # Recover from the removal of $@.  A full explanation of this is in the
 # automake manual under the heading "Multiple Outputs".
 make_many_locked = \
-if test -f $@; then :; else \
-  trap 'rm -rf "$$stamp-lck" "$$stamp"' 1 2 13 15; \
-  if mkdir "$$stamp-lck" 2>/dev/null; then \
-    rm -f "$$stamp"; \
-    $(MAKE) $(AM_MAKEFLAGS) "$$stamp"; \
-    result=$$?; rm -rf "$$stamp-lck"; exit $$result; \
+@if test -f $@; then :; else \
+  trap 'rm -rf "$(stamp)-lck" "$(stamp)"' 1 2 13 15; \
+  if mkdir '$(stamp)-lck' 2>/dev/null; then \
+    rm -f '$(stamp)'; \
+    $(MAKE) $(AM_MAKEFLAGS) '$(stamp)'; \
+    result=$$?; rm -rf '$(stamp)-lck'; exit $$result; \
   else \
-    while test -d "$$stamp-lck"; do sleep 1; done; \
-    test -f "$$stamp"; \
+    while test -d '$(stamp)-lck'; do sleep 1; done; \
+    test -f '$(stamp)'; \
   fi; \
 fi
 

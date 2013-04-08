@@ -1,3 +1,63 @@
+Mon Apr 08 06:31:46 GMT 2013  Olly Betts <olly@survex.com>
+
+	* csharp/Makefile.am,java/Makefile.am: Update for new class
+	  TfIdfWeight.
+
+Sat Apr 06 23:09:53 GMT 2013  Olly Betts <olly@survex.com>
+
+	* tcl8/Makefile.am: Fix typo in AM_TESTS_ENVIRONMENT value.
+
+Fri Apr 05 06:15:39 GMT 2013  Olly Betts <olly@survex.com>
+
+	* perl/perl.i,perl/util.i.in: Fix PostingIterator wrapper to work.
+	* perl/t/databasemodified.t,perl/t/index.t,perl/t/writabledatabase.t:
+	  Add missing test coverage for this, and some other features.
+
+Thu Apr 04 06:40:09 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am,configure.ac,generic/generic.mk: Remove support for
+	  'make QUIET=y' - automake now supports 'make V=0' which is broadly
+	  equivalent and more standard.
+
+Thu Apr 04 06:17:32 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac,perl/Makefile.am: Probe for 'prove' in configure.
+
+Thu Apr 04 06:05:54 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac,csharp/Makefile.am,java/Makefile.am,lua/Makefile.am,
+	  perl/Makefile.am,php/Makefile.am,python/Makefile.am,
+	  python/run-python-test,ruby/Makefile.am,tcl8/Makefile.am: Fix the
+	  tests to work with the new automake parallel test driver.
+
+Thu Mar 28 04:27:46 GMT 2013  Olly Betts <olly@survex.com>
+
+	* csharp/Makefile.am,java/Makefile.am: Update for new
+	  ExpandDeciderFilterPrefix class.
+
+Tue Mar 19 06:07:04 GMT 2013  Olly Betts <olly@survex.com>
+
+	* python/Makefile.am: Fix dependency generation to take into account
+	  the stamp file.
+
+Mon Mar 18 10:59:39 GMT 2013  Olly Betts <olly@survex.com>
+
+	* NEWS: Update from 1.2.14 and ChangeLog.
+
+Mon Mar 18 04:11:01 GMT 2013  Olly Betts <olly@survex.com>
+
+	* configure.ac: Fix deprecation warning from Ruby 1.9.3.
+
+Thu Mar 14 09:56:27 GMT 2013  Olly Betts <olly@survex.com>
+
+	* python/extra.i: Fix typo in doccomment.
+
+Thu Mar 14 09:16:45 GMT 2013  Olly Betts <olly@survex.com>
+
+	* csharp/Makefile.am,generic/generic.mk,java/Makefile.am,
+	  perl/Makefile.am,php/Makefile.am,python/Makefile.am,ruby/Makefile.am,
+	  swig-depcomp: Fix handling of stamp file by swig-depcomp script.
+
 Sat Feb 16 02:08:29 GMT 2013  Olly Betts <olly@survex.com>
 
 	* configure.ac: Allow TCL_INC to be passed to configure.  (fixes #612)

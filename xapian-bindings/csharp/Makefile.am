@@ -2,10 +2,9 @@
 
 include ../generic/generic.mk
 
-TESTS_ENVIRONMENT = $(RUN_CSHARP)
-
 ## Test programs to be run
 TESTS = SmokeTest.exe
+LOG_COMPILER = $(RUN_CSHARP)
 
 ASSEMBLY=XapianSharp
 
@@ -25,6 +24,7 @@ XAPIAN_SWIG_CS_SRCS=\
 	generated-csharp/Enquire.cs \
 	generated-csharp/ExpandDecider.cs \
 	generated-csharp/ExpandDeciderAnd.cs \
+	generated-csharp/ExpandDeciderFilterPrefix.cs \
 	generated-csharp/FieldProcessor.cs \
 	generated-csharp/FixedWeightPostingSource.cs \
 	generated-csharp/GreatCircleMetric.cs \
@@ -58,6 +58,7 @@ XAPIAN_SWIG_CS_SRCS=\
 	generated-csharp/StringValueRangeProcessor.cs \
 	generated-csharp/TermGenerator.cs \
 	generated-csharp/TermIterator.cs \
+	generated-csharp/TfIdfWeight.cs \
 	generated-csharp/TradWeight.cs \
 	generated-csharp/ValueCountMatchSpy.cs \
 	generated-csharp/ValueIterator.cs \
@@ -120,11 +121,12 @@ all-am: $(ASSEMBLY).dll
 CLEANFILES = XapianSharp.snk $(ASSEMBLY).dll SmokeTest.exe
 
 if MAINTAINER_MODE
+stamp = xapian_wrap.stamp
 RUN_SWIG = $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
 
-xapian_wrap.cc xapian_wrap.h $(XAPIAN_SWIG_CS_SRCS): xapian_wrap.stamp
-	@stamp=xapian_wrap.stamp; $(make_many_locked)
-xapian_wrap.stamp:
+xapian_wrap.cc xapian_wrap.h $(XAPIAN_SWIG_CS_SRCS): $(stamp)
+	$(make_many_locked)
+$(stamp):
 	$(multitarget_begin)
 	: # Make sure that we don't package stale generated sources in the
 	: # case where SWIG changes its mind as to which files it generates.
@@ -140,7 +142,7 @@ xapian_wrap.stamp:
 
 -include xapian_wrap.d
 
-CLEANFILES += xapian_wrap.stamp
+CLEANFILES += $(stamp)
 endif
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 

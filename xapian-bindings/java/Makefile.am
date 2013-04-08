@@ -2,11 +2,16 @@
 
 include ../generic/generic.mk
 
-TESTS_ENVIRONMENT = \
-  LIBTOOL="$(LIBTOOL)" JAVA="$(JAVA)" PATHSEP="$(JAVA_PATHSEP)" $(srcdir)/run-java-test
-
 ## Test programs to be run
 TESTS = SmokeTest.class
+AM_TESTS_ENVIRONMENT = \
+	LIBTOOL="$(LIBTOOL)" ;\
+	JAVA="$(JAVA)" ;\
+	PATHSEP="$(JAVA_PATHSEP)" ;\
+	export LIBTOOL ;\
+	export JAVA ;\
+	export PATHSEP ;
+LOG_COMPILER = $(srcdir)/run-java-test
 
 CLEANFILES = SmokeTest.class MyMatchDecider.class MyExpandDecider.class\
 	built/xapian_jni.jar\
@@ -14,13 +19,9 @@ CLEANFILES = SmokeTest.class MyMatchDecider.class MyExpandDecider.class\
 
 SmokeTest: SmokeTest.class
 
-if MAINTAINER_MODE
+# To get debug symbols, use: make JAVACFLAGS=-g
 .java.class:
-	$(JAVAC) -g -classpath $(srcdir)$(JAVA_PATHSEP). -d . $(JFLAGS) $<
-else
-.java.class:
-	$(JAVAC) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $(JFLAGS) $<
-endif
+	$(JAVAC) $(JAVACFLAGS) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $<
 
 XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/Auto.java\
@@ -38,6 +39,7 @@ XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/ESetIterator.java\
 	org/xapian/ExpandDecider.java\
 	org/xapian/ExpandDeciderAnd.java\
+	org/xapian/ExpandDeciderFilterPrefix.java\
 	org/xapian/FieldProcessor.java\
 	org/xapian/FixedWeightPostingSource.java\
 	org/xapian/GreatCircleMetric.java\
@@ -71,6 +73,7 @@ XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/SWIGTYPE_p_std__string.java\
 	org/xapian/TermGenerator.java\
 	org/xapian/TermIterator.java\
+	org/xapian/TfIdfWeight.java\
 	org/xapian/TradWeight.java\
 	org/xapian/ValueCountMatchSpy.java\
 	org/xapian/ValueIterator.java\
@@ -81,7 +84,6 @@ XAPIAN_SWIG_JAVA_SRCS=\
 	org/xapian/ValueWeightPostingSource.java\
 	org/xapian/Version.java\
 	org/xapian/Weight.java\
-	org/xapian/WrappedMSetIterator.java\
 	org/xapian/WritableDatabase.java\
 	org/xapian/Xapian.java\
 	org/xapian/XapianConstants.java\
@@ -146,11 +148,12 @@ BUILT_SOURCES = xapian_wrap.cc xapian_wrap.h $(XAPIAN_SWIG_JAVA_SRCS)
 EXTRA_DIST = run-java-test SmokeTest.java $(BUILT_SOURCES)
 
 if MAINTAINER_MODE
-RUN_SWIG = $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
+stamp = xapian_wrap.stamp
+RUN_SWIG = stamp='$(stamp)' $(PERL) '$(top_srcdir)'/swig-depcomp $(SWIG)
 
-xapian_wrap.cc xapian_wrap.h $(XAPIAN_SWIG_JAVA_SRCS): xapian_wrap.stamp
-	@stamp=xapian_wrap.stamp; $(make_many_locked)						       
-xapian_wrap.stamp:
+xapian_wrap.cc xapian_wrap.h $(XAPIAN_SWIG_JAVA_SRCS): $(stamp)
+	$(make_many_locked)
+$(stamp):
 	$(multitarget_begin)
 	: # Make sure that we don't package stale generated sources in the
 	: # case where SWIG changes its mind as to which files it generates.
@@ -168,7 +171,7 @@ xapian_wrap.stamp:
 
 -include xapian_wrap.d
 
-CLEANFILES += xapian_wrap.stamp xapian_wrap.cc xapian_wrap.h
+CLEANFILES += $(stamp)
 endif
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 

@@ -1,3 +1,127 @@
+Mon Apr 08 06:30:40 GMT 2013  Aarsh Shah <aarshkshah1992@gmail.com>
+
+	* weight/: Added tfidfweight.cc containing the implementation of the
+	  TfIdfWeight class.
+
+	* include/xapian/weight.h: Added TfIdfWeight class for the tf-idf
+	  weighting scheme.
+
+	* tests/api_weight.cc: Added tests for TfIdfWeight.
+
+	* tests/api_nodb.cc: Added simple tests for TfIdfWeight.
+
+Sat Apr 06 00:21:34 GMT 2013  Olly Betts <olly@survex.com>
+
+	* m4-macros/xapian-1.3.m4: XO_LIB_XAPIAN now handles the user
+	  specifying XAPIAN_CONFIG without a path - e.g.: "./configure
+	  XAPIAN_CONFIG=xapian-config-1.3"
+
+Thu Apr 04 12:02:36 GMT 2013  Olly Betts <olly@survex.com>
+
+	* common/Makefile.mk: Remove random comment.
+
+Thu Apr 04 10:06:53 GMT 2013  Olly Betts <olly@survex.com>
+
+	* Makefile.am,configure.ac,tests/Makefile.am: Remove support for
+	  'configure --enable-quiet', 'make QUIET=' and 'make QUIET=y' -
+	  automake now supports 'configure --enable-silent-rules', 'make V=1'
+	  and 'make V=0' which are broadly equivalent and more standard.
+
+Thu Apr 04 09:58:35 GMT 2013  Olly Betts <olly@survex.com>
+
+	* HACKING: Update to note that automake 1.12.2 is now a hard
+	  requirement.
+
+Tue Apr 02 10:22:44 GMT 2013  Olly Betts <olly@survex.com>
+
+	* queryparser/lemon.c: Comment typo fixes.
+
+Tue Apr 02 09:47:14 GMT 2013  Olly Betts <olly@survex.com>
+
+	* queryparser/lemon.c,queryparser/queryparser.lt: Sync with latest
+	  upstream version of lemon.  The only notable change is a bug fix for
+	  platforms where sizeof(long) < sizeof(void*) (LLP64 model).
+
+Tue Apr 02 05:51:12 GMT 2013  Olly Betts <olly@survex.com>
+
+	* HACKING: Tell vim to syntax highlight as rst.
+
+Tue Apr 02 05:50:26 GMT 2013  Olly Betts <olly@survex.com>
+
+	* HACKING: Update for recent changes to bootstrap.  In particular, we
+	  now bootstrap snapshots with automake 1.13.1.
+
+Fri Mar 29 05:18:11 GMT 2013  Olly Betts <olly@survex.com>
+
+	* net/tcpclient.cc: Fix __WIN32__ conditional, accidentally broken in
+	  last change to this file.
+
+Thu Mar 28 04:19:26 GMT 2013  jiangwen jiang <jiangwen127@gmail.com>
+
+	* api/expanddecider.cc,include/xapian/expanddecider.h,
+	  tests/api_anydb.cc,tests/api_nodb.cc: Add ExpandDeciderFilterPrefix
+	  class to only return terms with a particular prefix.  (fixes #467)
+
+Thu Mar 21 23:55:26 GMT 2013  Olly Betts <olly@survex.com>
+
+	* tests/queryparsertest.cc: Add test coverage for change to
+	  QueryParser CJK handling in previous commit.
+
+Thu Mar 21 07:21:30 GMT 2013  Greg Banks <gnb@fastmail.fm>
+
+	* queryparser/cjk-tokenizer.cc,queryparser/termgenerator_internal.cc,
+	  tests/termgentest.cc: Some CJK codepoints are also punctuation and
+	  hence not word characters, and should not really be used as fodder
+	  for generating N-grams.  Also fixes a pre-existing bug where every
+	  second sequence of N-grammable CJK characters in the text failed to
+	  generate the first 2-gram.
+
+Sun Mar 17 20:45:48 GMT 2013  Olly Betts <olly@survex.com>
+
+	* common/pretty.h: Restore space after comma in output.
+
+Sun Mar 17 03:59:52 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* common/pretty.h: Correct recursion issue.
+
+Sun Mar 17 02:58:52 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* common/pretty.h: Resolve ambiguity by moving operator| to a memeber
+	  function of PrettyOStream
+
+Sat Mar 16 21:43:32 GMT 2013  Olly Betts <olly@survex.com>
+
+	* queryparser/queryparser.lemony: std::less provides a total order over
+	  pointers, so we can just use that to implement
+	  filter_group_id::operator<() - we only need a consistent order so we
+	  can use it as the key to a std::map.
+
+Fri Mar 15 06:36:32 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* backends/brass/brass_table.cc,backends/chert/chert_table.cc,
+	  common/pretty.h: Avoid needlessly casting away const-ness in
+	  debug logging.
+
+Fri Mar 15 06:31:32 GMT 2013  Olly Betts <olly@survex.com>
+
+	* matcher/multiandpostlist.cc,matcher/multixorpostlist.cc: Add a
+	  couple more LOGCALL annotations.
+
+Fri Mar 15 06:27:42 GMT 2013  Dan Colish <dcolish@gmail.com>
+
+	* api/registry.cc,common/pretty.h: Fix incorrect LOGCALL return value.
+
+Fri Mar 15 06:24:11 GMT 2013  Olly Betts <olly@survex.com>
+
+	* api/registry.cc,common/Makefile.mk,common/registryinternal.h:
+	  common/registryinternal.h is only included by api/registry.cc so
+	  just inline its contents.
+
+Fri Mar 15 06:11:14 GMT 2013  Olly Betts <olly@survex.com>
+
+	* api/registry.cc: No need to explicitly default initialise std::map
+	  members or the base class.
+
 Fri Mar 08 04:05:31 GMT 2013  Olly Betts <olly@survex.com>
 
 	* backends/brass/brass_compact.cc,backends/chert/chert_compact.cc: Fix
