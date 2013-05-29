@@ -117,8 +117,7 @@ public class SmokeTest {
 	    }
 
 	    Document m_doc = null;
-	    for (MSetIterator it = mset.iterator(); it.hasNext();) {
-		Long docid = it.next();
+	    for (Long docid : mset) {
 		m_doc = db.getDocument(docid);
 	    }
 
@@ -170,14 +169,14 @@ public class SmokeTest {
 	    }
 
 	    int count = 0;
-	    for(ESetIterator eit = eset.begin(); eit.hasNext(); ) {
-		if (eit.getTerm().charAt(0) == 'a') {
+	    for(String term : eset ) {
+		if (term.charAt(0) == 'a') {
 		    System.err.println("MyExpandDecider wasn't used");
 		    System.exit(1);
 		}
 		++count;
-		eit.next();
 	    }
+
 	    if (count != eset.size()) {
 		System.err.println("ESet.size() mismatched number of terms returned by ESetIterator");
 		System.err.printf("%s %s", count, eset.size());

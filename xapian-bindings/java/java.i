@@ -33,8 +33,10 @@
 // take WrappedMSetIterator instead of MSetIterator.
 %ignore Xapian::MSet::fetch;
 %ignore Xapian::MSet::convert_to_percent(const MSetIterator&) const;
-%ignore Xapian::MSet::begin;
+%ignore Xapian::MSet::begin; // It is more natural to call .iterator
+%ignore Xapian::MSet::back;
 %ignore Xapian::MSet::end;
+// This can become mset.get(i) as per other java apis
 %ignore Xapian::MSet::operator[](Xapian::doccount) const;
 %ignore Xapian::MSet::get_hit;
 %ignore Xapian::Enquire::get_matching_terms_begin(const MSetIterator&) const;
@@ -43,6 +45,14 @@
 %ignore Xapian::RSet::add_document(const Xapian::MSetIterator&);
 %ignore Xapian::RSet::remove_document(const Xapian::MSetIterator&);
 %ignore Xapian::RSet::contains(const Xapian::MSetIterator&) const;
+
+%ignore Xapian::ESetIterator;
+%ignore Xapian::ESet::begin;
+%ignore Xapian::ESet::end;
+%ignore Xapian::ESet::back;
+// This can become eset.get(i) as per other java apis
+%ignore Xapian::ESet::operator[](Xapian::termcount) const;
+
 
 %include ../xapian-head.i
 
@@ -92,10 +102,6 @@
 %rename("accept") Xapian::MatchDecider::operator();
 %rename("accept") Xapian::ExpandDecider::operator();
 
-/* %ignore Xapian::MSet::begin; */
-/* %ignore Xapian::MSet::end; */
-%ignore Xapian::MSet::back;
-
 // By default, valueno is wrapped as long and "(long, bool)" collides with
 // some of SWIG/Java's machinery, so for now we wrap valueno as int to avoid
 // this problem.
@@ -120,10 +126,40 @@ class Version {
 }
 }
 
+
+%define ITERATIZE(KLAZZ, TYPE)
+
+%typemap(javaimports) KLAZZ %{
+    import java.util.NoSuchElementException;
+    import java.lang.UnsupportedOperationException;
+    import java.lang.IllegalStateException;
+%}
+
+%typemap(javainterfaces) KLAZZ "java.util.Iterator<TYPE>"
+%typemap(javacode) KLAZZ %{
+    public TYPE next() throws NoSuchElementException {
+	if (this.hasNext()) {
+	    return this.nextInternal();
+	} else {
+	    throw new NoSuchElementException();
+	}
+    }
+
+    public void remove() throws UnsupportedOperationException, IllegalStateException {
+	throw new UnsupportedOperationException();
+    }
+%}
+%javamethodmodifiers KLAZZ::nextInteral() "private";
+
+%enddef
+
+
+ITERATIZE(Xapian::WrappedMSetIterator, Long)
 %rename("MSetIterator") Xapian::WrappedMSetIterator;
 %inline %{
     namespace Xapian {
 	class WrappedMSetIterator {
+
 	    Xapian::MSetIterator begin;
 	    Xapian::MSetIterator end;
 
@@ -132,30 +168,31 @@ class Version {
 	    WrappedMSetIterator(const Xapian::MSet &m)
 		: begin(m.begin()), end(m.end()) {  }
 	    bool hasNext() const { return begin != end; }
-	    Xapian::docid next() { return *(begin++); }
+            Xapian::docid nextInternal() { return *(begin++); }
 	};
     }
 %}
 
-%typemap(javaimports) Xapian::WrappedMSetIterator %{
-    import java.util.NoSuchElementException;
-    import java.lang.UnsupportedOperationException;
+ITERATIZE(Xapian::WrappedESetIterator, String)
+%rename("ESetIterator") Xapian::WrappedESetIterator;
+%inline %{
+    namespace Xapian {
+	class WrappedESetIterator {
+
+	    Xapian::ESetIterator begin;
+	    Xapian::ESetIterator end;
+
+	  public:
+	    WrappedESetIterator() { }
+	    WrappedESetIterator(const Xapian::ESet &m)
+		: begin(m.begin()), end(m.end()) {  }
+	    bool hasNext() const { return begin != end; }
+            std::string nextInternal() { return *(begin++); }
+	};
+    }
 %}
 
-%typemap(javainterfaces) Xapian::WrappedMSetIterator "java.util.Iterator<Long>"
-%typemap(javacode) Xapian::WrappedMSetIterator %{
-    public Long next() throws NoSuchElementException {
-	if (this.hasNext()) {
-	    return this.next();
-	} else {
-	    throw new NoSuchElementException();
-	}
-    }
 
-    public void remove() throws UnsupportedOperationException {
-	throw new UnsupportedOperationException();
-    }
-%}
 
 namespace Xapian {
 
@@ -171,8 +208,11 @@ namespace Xapian {
 
 // TODO:dc: Implement ListIterator for PostingIterator, TermIterator,
 // ValueIterator, MSetIterator, and ESetIterator
+
+ITERATIZE(PostingIterator, Long)
+%ignore PostingIterator::next;
 %extend PostingIterator {
-    Xapian::docid next () {
+    Xapian::docid nextInternal () {
         Xapian::docid tmp;
         if ((*self) != Xapian::PostingIterator()) {
             tmp = (**self);
@@ -186,8 +226,11 @@ namespace Xapian {
     bool hasNext() const { return (*self) != Xapian::PostingIterator(); }
 }
 
+
+ITERATIZE(TermIterator, String)
+%ignore TermIterator::next;
 %extend TermIterator {
-    std::string next () {
+    std::string nextInternal () {
         std:string tmp;
         if ((*self) != Xapian::TermIterator()) {
             tmp = (**self);
@@ -201,8 +244,10 @@ namespace Xapian {
     bool hasNext() const { return (*self) != Xapian::TermIterator(); }
 }
 
+ITERATIZE(ValueIterator, String)
+%ignore ValueIterator::next;
 %extend ValueIterator {
-    std::string next () {
+    std::string nextInternal () {
         std:string tmp;
         if ((*self) != Xapian::ValueIterator()) {
             tmp = (**self);
@@ -216,26 +261,20 @@ namespace Xapian {
     bool hasNext() const { return (*self) != Xapian::ValueIterator(); }
 }
 
-%extend ESetIterator {
-    std::string next () {
-	std:string tmp;
-	if (!self->at_end()) {
-	    tmp = (**self);
-	    ++(*self);
-	} else {
-	    tmp = "";
-	}
-	return tmp;
+%typemap(javainterfaces) Xapian::MSet "java.lang.Iterable<Long>"
+%typemap(javacode) MSet %{
+    public java.util.Iterator<Long> iterator() {
+        return new MSetIterator(this);
     }
+%}
 
-    bool hasNext() const { return !self->at_end(); }
-}
-
-%extend MSet {
-    Xapian::WrappedMSetIterator iterator() {
-        return Xapian::WrappedMSetIterator(*self);
+%typemap(javainterfaces) Xapian::ESet "java.lang.Iterable<String>"
+%typemap(javacode) ESet %{
+    public java.util.Iterator<String> iterator() {
+        return new ESetIterator(this);
     }
-}
+%}
+
 }
 
 #define XAPIAN_MIXED_SUBQUERIES_BY_ITERATOR_TYPEMAP
