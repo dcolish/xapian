@@ -14,103 +14,106 @@ AM_TESTS_ENVIRONMENT = \
 LOG_COMPILER = $(srcdir)/run-java-test
 
 CLEANFILES = SmokeTest.class MyMatchDecider.class MyExpandDecider.class\
-	built/xapian_jni.jar\
-	$(XAPIAN_SWIG_JAVA_CLASS) $(XAPIAN_SWIG_JAVA_EXTRA_CLASSES)
+	$(XAPIAN_SWIG_JAVA_CLASS)
 
-SmokeTest: SmokeTest.class
+# SmokeTest: SmokeTest.class
 
-# To get debug symbols, use: make JAVACFLAGS=-g
-.java.class:
-	$(JAVAC) $(JAVACFLAGS) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $<
+# # To get debug symbols, use: make JAVACFLAGS=-g
+# .java.class:
+# 	$(JAVAC) $(JAVACFLAGS) -classpath $(srcdir)$(JAVA_PATHSEP). -d . $<
 
 XAPIAN_SWIG_JAVA_SRCS=\
-	org/xapian/Auto.java\
-	org/xapian/BM25Weight.java\
-	org/xapian/BoolWeight.java\
-	org/xapian/Brass.java\
-	org/xapian/Chert.java\
-	org/xapian/Compactor.java\
-	org/xapian/Database.java\
-	org/xapian/DateValueRangeProcessor.java\
-	org/xapian/DecreasingValueWeightPostingSource.java\
-	org/xapian/Document.java\
-	org/xapian/Enquire.java\
-	org/xapian/ESet.java\
-	org/xapian/ESetIterator.java\
-	org/xapian/ExpandDecider.java\
-	org/xapian/ExpandDeciderAnd.java\
-	org/xapian/ExpandDeciderFilterPrefix.java\
-	org/xapian/FieldProcessor.java\
-	org/xapian/FixedWeightPostingSource.java\
-	org/xapian/GreatCircleMetric.java\
-	org/xapian/InMemory.java\
-	org/xapian/KeyMaker.java\
-	org/xapian/LatLongCoord.java\
-	org/xapian/LatLongCoords.java\
-	org/xapian/LatLongCoordsIterator.java\
-	org/xapian/LatLongDistanceKeyMaker.java\
-	org/xapian/LatLongDistancePostingSource.java\
-	org/xapian/LatLongMetric.java\
-	org/xapian/MatchDecider.java\
-	org/xapian/MatchSpy.java\
-	org/xapian/MSet.java\
-	org/xapian/MSetIterator.java\
-	org/xapian/MultiValueKeyMaker.java\
-	org/xapian/NumberValueRangeProcessor.java\
-	org/xapian/PositionIterator.java\
-	org/xapian/PostingIterator.java\
-	org/xapian/PostingSource.java\
-	org/xapian/Query.java\
-	org/xapian/QueryParser.java\
-	org/xapian/Registry.java\
-	org/xapian/Remote.java\
-	org/xapian/RSet.java\
-	org/xapian/SimpleStopper.java\
-	org/xapian/Stem.java\
-	org/xapian/StemImplementation.java\
-	org/xapian/Stopper.java\
-	org/xapian/StringValueRangeProcessor.java\
-	org/xapian/SWIGTYPE_p_std__string.java\
-	org/xapian/TermGenerator.java\
-	org/xapian/TermIterator.java\
-	org/xapian/TfIdfWeight.java\
-	org/xapian/TradWeight.java\
-	org/xapian/ValueCountMatchSpy.java\
-	org/xapian/ValueIterator.java\
-	org/xapian/ValueMapPostingSource.java\
-	org/xapian/ValuePostingSource.java\
-	org/xapian/ValueRangeProcessor.java\
-	org/xapian/ValueSetMatchDecider.java\
-	org/xapian/ValueWeightPostingSource.java\
-	org/xapian/Version.java\
-	org/xapian/Weight.java\
-	org/xapian/WritableDatabase.java\
-	org/xapian/Xapian.java\
-	org/xapian/XapianConstants.java\
-	org/xapian/XapianJNI.java
+	org/xapian/core/Auto.java\
+	org/xapian/core/BM25Weight.java\
+	org/xapian/core/BoolWeight.java\
+	org/xapian/core/Brass.java\
+	org/xapian/core/Chert.java\
+	org/xapian/core/Compactor.java\
+	org/xapian/core/Database.java\
+	org/xapian/core/DateValueRangeProcessor.java\
+	org/xapian/core/DecreasingValueWeightPostingSource.java\
+	org/xapian/core/Document.java\
+	org/xapian/core/Enquire.java\
+	org/xapian/core/ESet.java\
+	org/xapian/core/ESetIterator.java\
+	org/xapian/core/ExpandDecider.java\
+	org/xapian/core/ExpandDeciderAnd.java\
+	org/xapian/core/ExpandDeciderFilterPrefix.java\
+	org/xapian/core/FieldProcessor.java\
+	org/xapian/core/FixedWeightPostingSource.java\
+	org/xapian/core/GreatCircleMetric.java\
+	org/xapian/core/InMemory.java\
+	org/xapian/core/KeyMaker.java\
+	org/xapian/core/LatLongCoord.java\
+	org/xapian/core/LatLongCoords.java\
+	org/xapian/core/LatLongCoordsIterator.java\
+	org/xapian/core/LatLongDistanceKeyMaker.java\
+	org/xapian/core/LatLongDistancePostingSource.java\
+	org/xapian/core/LatLongMetric.java\
+	org/xapian/core/MatchDecider.java\
+	org/xapian/core/MatchSpy.java\
+	org/xapian/core/MSet.java\
+	org/xapian/core/MSetIterator.java\
+	org/xapian/core/MultiValueKeyMaker.java\
+	org/xapian/core/NumberValueRangeProcessor.java\
+	org/xapian/core/PositionIterator.java\
+	org/xapian/core/PostingIterator.java\
+	org/xapian/core/PostingSource.java\
+	org/xapian/core/Query.java\
+	org/xapian/core/QueryParser.java\
+	org/xapian/core/Registry.java\
+	org/xapian/core/Remote.java\
+	org/xapian/core/RSet.java\
+	org/xapian/core/SimpleStopper.java\
+	org/xapian/core/Stem.java\
+	org/xapian/core/StemImplementation.java\
+	org/xapian/core/Stopper.java\
+	org/xapian/core/StringValueRangeProcessor.java\
+	org/xapian/core/SWIGTYPE_p_std__string.java\
+	org/xapian/core/TermGenerator.java\
+	org/xapian/core/TermIterator.java\
+	org/xapian/core/TfIdfWeight.java\
+	org/xapian/core/TradWeight.java\
+	org/xapian/core/ValueCountMatchSpy.java\
+	org/xapian/core/ValueIterator.java\
+	org/xapian/core/ValueMapPostingSource.java\
+	org/xapian/core/ValuePostingSource.java\
+	org/xapian/core/ValueRangeProcessor.java\
+	org/xapian/core/ValueSetMatchDecider.java\
+	org/xapian/core/ValueWeightPostingSource.java\
+	org/xapian/core/Version.java\
+	org/xapian/core/Weight.java\
+	org/xapian/core/WritableDatabase.java\
+	org/xapian/core/Xapian.java\
+	org/xapian/core/XapianConstants.java\
+	org/xapian/core/XapianJNI.java
 
 XAPIAN_SWIG_JAVA_CLASS = $(XAPIAN_SWIG_JAVA_SRCS:.java=.class)
 
-# Java generates nested classes with filenames containing a $ (smart move) so
-# we pick them up with a wildcard and omit them from dependencies to avoid
-# escaping hell.  The lack of a dependency shouldn't really be an issue since
-# these classes are always generated along with the containing class which
-# is listed in the dependencies.
-XAPIAN_SWIG_JAVA_EXTRA_CLASSES=\
-	org/xapian/Compactor*compaction_level.class\
-	org/xapian/Enquire*docid_order.class\
-	org/xapian/Query*1.class\
-	org/xapian/Query*op.class\
-	org/xapian/QueryParser*feature_flag.class\
-	org/xapian/QueryParser*stem_strategy.class\
-	org/xapian/TermGenerator*flags.class
+# # Java generates nested classes with filenames containing a $ (smart move) so
+# # we pick them up with a wildcard and omit them from dependencies to avoid
+# # escaping hell.  The lack of a dependency shouldn't really be an issue since
+# # these classes are always generated along with the containing class which
+# # is listed in the dependencies.
+# XAPIAN_SWIG_JAVA_EXTRA_CLASSES=\
+# 	org/xapian/Compactor*compaction_level.class\
+# 	org/xapian/Enquire*docid_order.class\
+# 	org/xapian/Query*1.class\
+# 	org/xapian/Query*op.class\
+# 	org/xapian/QueryParser*feature_flag.class\
+# 	org/xapian/QueryParser*stem_strategy.class\
+# 	org/xapian/TermGenerator*flags.class
 
-noinst_DATA = built/xapian_jni.jar
+# noinst_DATA = built/xapian_jni.jar
 
-built/xapian_jni.jar: $(XAPIAN_SWIG_JAVA_CLASS)
-	-test -d built || mkdir built
-	$(JAR) -cf built/xapian_jni.jar org/xapian/*.class
+# built/xapian_jni.jar: $(XAPIAN_SWIG_JAVA_CLASS)
+# 	-test -d built || mkdir built
+# 	$(JAR) -cf built/xapian_jni.jar org/xapian/*.class
 ##$(XAPIAN_SWIG_JAVA_CLASS) $(XAPIAN_SWIG_JAVA_EXTRA_CLASSES)
+
+noinst_DATA = xapian-core/src/main/resources/libxapian_jni.so
+xapian-core/src/main/resources/libxapian_jni.so:
+	cp .libs/libxapian_jni.so xapian-core/src/main/resources/
 
 jnidir = `pwd`/built
 
@@ -157,26 +160,30 @@ $(stamp):
 	$(multitarget_begin)
 	: # Make sure that we don't package stale generated sources in the
 	: # case where SWIG changes its mind as to which files it generates.
-	-rm -f org/xapian/*
-	$(MKDIR_P) org/xapian
+	-rm -f org/xapian/core/*
+	$(MKDIR_P) org/xapian/core
 	$(RUN_SWIG) $(SWIG_WERROR) -I'$(srcdir)' $(SWIG_FLAGS) -c++ \
-	    -java -module Xapian -package org.xapian -outdir org/xapian \
+	    -java -module Xapian -package org.xapian.core \
+	    -outdir org/xapian/core \
 	    -o xapian_wrap.cc '$(srcdir)/'java.i
 	: # Insert code to automatically load the JNI library.
-	$(PERL) -pi -e 'print "    System.loadLibrary(\"xapian_jni\");\n" if /^\s*swig_module_init/' org/xapian/XapianJNI.java
+	$(PERL) -pi -e 'print "    org.xapian.util.LoaderUtils.loadDynamic();\n" if /^\s*swig_module_init/' org/xapian/core/XapianJNI.java
 	: # Check that exactly the sources we expected were generated.
-	$(PERL) -e 'print "$$_\n" for sort @ARGV' org/xapian/*.java > org/xapian/list
-	$(PERL) -e 'print "$$_\n" for sort @ARGV' $(XAPIAN_SWIG_JAVA_SRCS)|diff -c - org/xapian/list
+	$(PERL) -e 'print "$$_\n" for sort @ARGV' org/xapian/core/*.java > org/xapian/core/list
+	$(PERL) -e 'print "$$_\n" for sort @ARGV' $(XAPIAN_SWIG_JAVA_SRCS) |diff -c - org/xapian/core/list
+	cp -r org/xapian/core/* xapian-core/src/main/java/org/xapian/core/
 	$(multitarget_end)
 
 -include xapian_wrap.d
 
-CLEANFILES += $(stamp)
+CLEANFILES += $(stamp) \
+	xapian-core/src/main/java/org/xapian/core/*.java
+
 endif
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 
 maintainer-clean-local:
-	rm -rf built org
+	rm -rf built org 
 
 exampledatadir = $(docdir)/java/examples
 dist_exampledata_DATA =\
